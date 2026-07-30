@@ -4,7 +4,11 @@ import random
 
 from game.combat import przeprowadz_walke
 from game.player import Gracz
-from game.shop import otworz_sklep
+from game.shop import otworz_sklep, otworz_kuznia
+from game.dialogues import (
+    dialog_karczmarz, dialog_kupiec, dialog_kowal,
+    dialog_kaplan, dialog_stary_rycerz, dialog_tajemniczy, losowy_npc,
+)
 from game.utils import wyczysc, wyswietl_linie, nacisnij_enter
 
 
@@ -28,6 +32,7 @@ _BIOMY = {
             "budynki": [
                 {"nazwa": "zajazd na rozstaju", "typ": "karczma"},
                 {"nazwa": "stara strażnica", "typ": "jaskinia"},
+                {"nazwa": "wiejska kuźnia", "typ": "kuźnia"},
             ],
         },
         {
@@ -84,6 +89,7 @@ _BIOMY = {
             "budynki": [
                 {"nazwa": "kamienna strażnica", "typ": "jaskinia"},
                 {"nazwa": "górski posterunek", "typ": "karczma"},
+                {"nazwa": "kuźnia pod szczytem", "typ": "kuźnia"},
             ],
         },
         {
@@ -211,12 +217,18 @@ def _losowa_lokacja(gracz: Gracz, biom: dict) -> None:
 
 def _zdarzenie_karczma(gracz: Gracz, nazwa_budynku: str) -> None:
     """Obsługuje karczmę z osobnymi zdarzeniami."""
-    wynik = random.choice(["odpoczynek", "kupiec", "plotka"])
     wyczysc()
     wyswietl_linie()
-    print(f"  🍺  Wchodzisz do miejsca: {nazwa_budynku}.")
+    print(f"  🍺  Wchodzisz do miejsca: {nazwa_budynku}.\n")
+    print("  Co chcesz zrobić?\n")
+    print("  [1]  Odpocząć przy ogniu")
+    print("  [2]  Porozmawiać z karczmarzem")
+    print("  [3]  Skorzystać ze sklepu wędrownego kupca")
+    print("  [4]  Posłuchać plotek")
+    print()
+    wybor = input("  Twój wybór: ").strip()
 
-    if wynik == "odpoczynek":
+    if wybor == "1":
         poprzednie_hp = gracz.hp
         poprzednia_mana = gracz.mana
         _odnawianie(gracz, hp=30, mana=15)
@@ -224,17 +236,23 @@ def _zdarzenie_karczma(gracz: Gracz, nazwa_budynku: str) -> None:
         print(f"  ❤️  HP +{gracz.hp - poprzednie_hp}")
         if gracz.max_mana > 0:
             print(f"  🔮  Mana +{gracz.mana - poprzednia_mana}")
-    elif wynik == "kupiec":
+        nacisnij_enter()
+    elif wybor == "2":
+        dialog_karczmarz()
+    elif wybor == "3":
         print("  Przy stoliku czeka wędrowny handlarz.")
         nacisnij_enter()
         otworz_sklep(gracz)
-        return
-    else:
+    elif wybor == "4":
         print("  Słyszysz plotki o pobliskich skrytkach i dostajesz napiwek od podróżnych.")
         zloto = random.randint(10, 20)
         gracz.zloto += zloto
         print(f"  💰  Zyskujesz {zloto} szt. złota.")
-    nacisnij_enter()
+        nacisnij_enter()
+        losowy_npc()
+    else:
+        print("  Nic nie robisz i szybko wychodzisz.")
+        nacisnij_enter()
 
 
 def _zdarzenie_jaskinia(gracz: Gracz, nazwa_budynku: str, biom_nazwa: str) -> str | None:
@@ -268,11 +286,25 @@ def _zdarzenie_jaskinia(gracz: Gracz, nazwa_budynku: str, biom_nazwa: str) -> st
 
 def _zdarzenie_swiatynia(gracz: Gracz, nazwa_budynku: str) -> None:
     """Obsługuje świątynię z błogosławieństwem lub darem."""
-    wynik = random.choice(["blogoslawienstwo", "mana", "dar"])
     wyczysc()
     wyswietl_linie()
-    print(f"  🛕  Wchodzisz do miejsca: {nazwa_budynku}.")
+    print(f"  🛕  Wchodzisz do miejsca: {nazwa_budynku}.\n")
 
+    # Zarejestruj wizytę w świątyni dla questa
+    gracz.statystyki["odwiedzone_swiatynie"] = gracz.statystyki.get("odwiedzone_swiatynie", 0) + 1
+
+    print("  Co chcesz zrobić?\n")
+    print("  [1]  Przyjąć błogosławieństwo")
+    print("  [2]  Porozmawiać z kapłanem")
+    print()
+    wybor = input("  Twój wybór: ").strip()
+
+    if wybor == "2":
+        dialog_kaplan()
+        return
+
+    # Domyślnie i dla [1]: błogosławieństwo
+    wynik = random.choice(["blogoslawienstwo", "mana", "dar"])
     if wynik == "blogoslawienstwo":
         gracz.hp = min(gracz.max_hp, gracz.hp + 20)
         gracz.obrona += 1
@@ -294,6 +326,26 @@ def _zdarzenie_swiatynia(gracz: Gracz, nazwa_budynku: str) -> None:
     nacisnij_enter()
 
 
+def _zdarzenie_kuznia(gracz: Gracz, nazwa_budynku: str) -> None:
+    """Obsługuje kuźnię — zakup ekwipunku lub rozmowa z kowalem."""
+    wyczysc()
+    wyswietl_linie()
+    print(f"  ⚒  Wchodzisz do miejsca: {nazwa_budynku}.\n")
+    print("  Co chcesz zrobić?\n")
+    print("  [1]  Obejrzeć i kupić ekwipunek")
+    print("  [2]  Porozmawiać z kowalem")
+    print()
+    wybor = input("  Twój wybór: ").strip()
+
+    if wybor == "1":
+        otworz_kuznia(gracz)
+    elif wybor == "2":
+        dialog_kowal()
+    else:
+        print("  Kowal kiwa głową i wraca do roboty.")
+        nacisnij_enter()
+
+
 def _wejdz_do_budynku(gracz: Gracz, budynek: dict, biom_nazwa: str) -> str | None:
     """Obsługuje rezultat wejścia do budynku zależnie od jego typu."""
     typ = budynek["typ"]
@@ -307,8 +359,19 @@ def _wejdz_do_budynku(gracz: Gracz, budynek: dict, biom_nazwa: str) -> str | Non
     if typ == "świątynia":
         _zdarzenie_swiatynia(gracz, nazwa_budynku)
         return None
+    if typ == "kuźnia":
+        _zdarzenie_kuznia(gracz, nazwa_budynku)
+        return None
 
     return None
+
+
+_IKONY_BUDYNKOW = {
+    "karczma": "🍺",
+    "jaskinia": "🕳️",
+    "świątynia": "🛕",
+    "kuźnia": "⚒",
+}
 
 
 def _budynek(gracz: Gracz, biom: dict) -> str | None:
@@ -316,20 +379,37 @@ def _budynek(gracz: Gracz, biom: dict) -> str | None:
     budynek = random.choice(biom["budynki"])
     nazwa_budynku = budynek["nazwa"]
     typ = budynek["typ"]
+    ikona = _IKONY_BUDYNKOW.get(typ, "🏚️")
 
     while True:
         wyczysc()
         wyswietl_linie()
-        print(f"  🏚️  Dostrzegasz: {nazwa_budynku}")
+        print(f"  {ikona}  Dostrzegasz: {nazwa_budynku}")
         print(f"  Typ miejsca: {typ}")
-        print("  [1]  Wejdź do środka")
-        print("  [2]  Omiń budynek")
+
+        # Losowa szansa na spotkanie tajemniczego wędrowca na zewnątrz
+        if random.random() < 0.2:
+            print("  Przy wejściu siedzi tajemnicza postać...")
+            print("  [1]  Wejdź do środka")
+            print("  [2]  Porozmawiaj z tajemniczą postacią")
+            print("  [3]  Omiń budynek")
+        else:
+            print("  [1]  Wejdź do środka")
+            print("  [2]  Omiń budynek")
+            print("  [3]  " if False else "")  # pad opcji
+
         print()
         wybor = input("  Twój wybór: ").strip()
 
         if wybor == "1":
             return _wejdz_do_budynku(gracz, budynek, biom["nazwa"])
         if wybor == "2":
+            # Może być "porozmawiaj z tajemniczą postacią" lub "omiń"
+            # Sprawdź co tutaj wybrano na podstawie stanu
+            print("  Zachowujesz ostrożność i omijasz budynek szerokim łukiem.")
+            nacisnij_enter()
+            return None
+        if wybor == "3":
             print("  Zachowujesz ostrożność i omijasz budynek szerokim łukiem.")
             nacisnij_enter()
             return None

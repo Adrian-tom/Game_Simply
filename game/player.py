@@ -58,6 +58,21 @@ class Gracz:
         self._atak_na_poziom = stat["atak_na_poziom"]
         self._obrona_na_poziom = stat["obrona_na_poziom"]
 
+        # Ekwipunek — założona broń i zbroja (klucze z game/items.py)
+        self.wyposazenie: dict[str, str | None] = {"bron": None, "zbroja": None}
+
+        # Questy
+        self.aktywne_questy: set[str] = set()
+        self.ukonczone_questy: set[str] = set()
+
+        # Statystyki na potrzeby questów
+        self.statystyki: dict[str, int] = {
+            "zabite_potwory": 0,
+            "wygrane_walki": 0,
+            "zakupy": 0,
+            "odwiedzone_swiatynie": 0,
+        }
+
         # Umiejętności odblokowane na starcie (poziom 1 dla klasy głównej)
         self.umiejetnosci: list[str] = [
             k for k, v in UMIEJETNOSCI.items()
@@ -162,6 +177,13 @@ class Gracz:
                 )
         return komunikaty
 
+    def rejestruj_walke(self, nazwa_potwora: str) -> None:
+        """Rejestruje wygraną walkę i aktualizuje statystyki dla questów."""
+        self.statystyki["wygrane_walki"] = self.statystyki.get("wygrane_walki", 0) + 1
+        self.statystyki["zabite_potwory"] = self.statystyki.get("zabite_potwory", 0) + 1
+        klucz = f"zabite_{nazwa_potwora.lower()}"
+        self.statystyki[klucz] = self.statystyki.get(klucz, 0) + 1
+
     # ------------------------------------------------------------------ #
     #  Wyświetlanie                                                        #
     # ------------------------------------------------------------------ #
@@ -190,6 +212,20 @@ class Gracz:
             mana_linia = (
                 f"\n  Mana: {self.mana}/{self.max_mana} {self.pasek_many()}"
             )
+
+        # Linie ekwipunku
+        from game.items import EKWIPUNEK  # import lokalny, aby uniknąć cyklu
+        bron_klucz = self.wyposazenie.get("bron")
+        zbroja_klucz = self.wyposazenie.get("zbroja")
+        bron_str = "— brak —"
+        zbroja_str = "— brak —"
+        if bron_klucz and bron_klucz in EKWIPUNEK:
+            it = EKWIPUNEK[bron_klucz]
+            bron_str = f"{it['ikona']} {it['nazwa']} (+{it['bonus_atak']} Atak)"
+        if zbroja_klucz and zbroja_klucz in EKWIPUNEK:
+            it = EKWIPUNEK[zbroja_klucz]
+            zbroja_str = f"{it['ikona']} {it['nazwa']} (+{it['bonus_obrona']} Obrona)"
+
         return (
             f"\n{linia}\n"
             f"  Bohater: {self.imie} [{klasa_str}]  (Poz. {self.poziom})\n"
@@ -197,5 +233,7 @@ class Gracz:
             f"  Atak: {self.atak}   Obrona: {self.obrona}\n"
             f"  EXP: {self.exp}/{self.exp_do_awansu()}   Złoto: {self.zloto} szt.\n"
             f"  Mikstury: {self.mikstury}\n"
+            f"  Broń: {bron_str}\n"
+            f"  Zbroja: {zbroja_str}\n"
             f"{linia}"
         )

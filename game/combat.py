@@ -664,6 +664,7 @@ def _zakonczenie_wygrana(gracz: Gracz, przeciwnik: Przeciwnik) -> None:
     """Przetwarza nagrody po wygranej walce."""
     zloto = przeciwnik.losowe_zloto()
     gracz.zloto += zloto
+    gracz.rejestruj_walke(przeciwnik.nazwa)
     komunikaty = gracz.zdobadz_exp(przeciwnik.exp_nagroda)
     _odnow_mane_po_walce(gracz)
 
