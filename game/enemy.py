@@ -103,12 +103,84 @@ _SZABLONY = [
 ]
 
 
-def losuj_przeciwnika(poziom_gracza: int = 1) -> Przeciwnik:
+_SZABLONY_BIOM = {
+    "równiny": [
+        dict(
+            nazwa="Hiena stepowa",
+            hp=52,
+            atak=12,
+            obrona=3,
+            exp_nagroda=42,
+            zloto_nagroda=(8, 18),
+            opis="Drapieżnik czający się w wysokiej trawie.",
+        ),
+    ],
+    "ruiny": [
+        dict(
+            nazwa="Strażnik ruin",
+            hp=72,
+            atak=15,
+            obrona=7,
+            exp_nagroda=68,
+            zloto_nagroda=(14, 28),
+            opis="Dawny obrońca, który nie zaznał spokoju po śmierci.",
+        ),
+    ],
+    "las": [
+        dict(
+            nazwa="Wilk cienia",
+            hp=60,
+            atak=14,
+            obrona=4,
+            exp_nagroda=55,
+            zloto_nagroda=(10, 20),
+            opis="Bezgłośny drapieżnik stapiający się z cieniem drzew.",
+        ),
+    ],
+    "bagna": [
+        dict(
+            nazwa="Topielec",
+            hp=68,
+            atak=15,
+            obrona=5,
+            exp_nagroda=62,
+            zloto_nagroda=(12, 24),
+            opis="Zgniła istota wynurzająca się z bagiennej toni.",
+        ),
+    ],
+    "wzgórza": [
+        dict(
+            nazwa="Harpii zwiadowca",
+            hp=66,
+            atak=17,
+            obrona=4,
+            exp_nagroda=70,
+            zloto_nagroda=(14, 26),
+            opis="Skrzydlata bestia krążąca nad skalistymi grzbietami.",
+        ),
+    ],
+    "kanion": [
+        dict(
+            nazwa="Skalny skorpion",
+            hp=78,
+            atak=18,
+            obrona=6,
+            exp_nagroda=78,
+            zloto_nagroda=(16, 32),
+            opis="Pancerny drapieżnik polujący między rozgrzanymi skałami.",
+        ),
+    ],
+}
+
+
+def losuj_przeciwnika(poziom_gracza: int = 1, biom: str | None = None) -> Przeciwnik:
     """
     Losuje przeciwnika odpowiedniego dla poziomu gracza,
     skalując jego statystyki.
     """
     dostepne = _SZABLONY[: min(poziom_gracza + 2, len(_SZABLONY))]
+    if biom in _SZABLONY_BIOM:
+        dostepne += _SZABLONY_BIOM[biom]
     szablon = random.choice(dostepne)
     skala = 1 + (poziom_gracza - 1) * 0.15
 
