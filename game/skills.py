@@ -127,24 +127,24 @@ UMIEJETNOSCI: dict[str, dict] = {
         "ikona": "☄",
     },
 
-    # Mag → Nekromanta
-    "wysysanie_zycia": {
-        "nazwa": "Wysysanie życia",
-        "opis": "30–50 obrażeń magicznych, gracz leczy się o tę samą ilość",
+    # Mag → Mroczny mag
+    "mroczna_strzala": {
+        "nazwa": "Mroczna strzała",
+        "opis": "45–70 obrażeń mrocznych (ignoruje obronę wroga)",
         "klasa": "Mag",
-        "podklasa": "Nekromanta",
+        "podklasa": "MrocznyMag",
         "poziom": 6,
         "koszt_many": 20,
-        "ikona": "🩸",
+        "ikona": "🌑",
     },
-    "klatwa_smierci": {
-        "nazwa": "Klątwa śmierci",
-        "opis": "Wróg zadaje 50% mniej obrażeń przez 3 tury",
+    "klatwa_mroku": {
+        "nazwa": "Klątwa mroku",
+        "opis": "Wróg zadaje 50% mniej obrażeń i traci 15 HP/turę przez 3 tury",
         "klasa": "Mag",
-        "podklasa": "Nekromanta",
+        "podklasa": "MrocznyMag",
         "poziom": 9,
-        "koszt_many": 20,
-        "ikona": "💀",
+        "koszt_many": 25,
+        "ikona": "🌑",
     },
 
     # Mag → Arcymag
@@ -246,6 +246,166 @@ UMIEJETNOSCI: dict[str, dict] = {
         "koszt_many": 0,
         "ikona": "🏹",
     },
+
+    # ------------------------------------------------------------------ #
+    #  DRUID – klasa główna                                               #
+    # ------------------------------------------------------------------ #
+    "splot_korzeni": {
+        "nazwa": "Splot korzeni",
+        "opis": "Unieruchamia wroga — pomija następną turę",
+        "klasa": "Druid",
+        "podklasa": None,
+        "poziom": 1,
+        "koszt_many": 10,
+        "ikona": "🌿",
+    },
+    "uzdrowienie": {
+        "nazwa": "Uzdrowienie",
+        "opis": "Leczy 50 HP",
+        "klasa": "Druid",
+        "podklasa": None,
+        "poziom": 3,
+        "koszt_many": 15,
+        "ikona": "💚",
+    },
+    "burza_natury": {
+        "nazwa": "Burza natury",
+        "opis": "40–60 obrażeń żywiołowych (ignoruje obronę wroga)",
+        "klasa": "Druid",
+        "podklasa": None,
+        "poziom": 5,
+        "koszt_many": 20,
+        "ikona": "⛈",
+    },
+    "regeneracja": {
+        "nazwa": "Regeneracja",
+        "opis": "Gracz leczy się o 15 HP na turę przez 4 tury",
+        "klasa": "Druid",
+        "podklasa": None,
+        "poziom": 8,
+        "koszt_many": 20,
+        "ikona": "🌱",
+    },
+
+    # Druid → Szaman
+    "totem_zycia": {
+        "nazwa": "Totem życia",
+        "opis": "Leczy 30 HP na turę przez 3 tury",
+        "klasa": "Druid",
+        "podklasa": "Szaman",
+        "poziom": 6,
+        "koszt_many": 20,
+        "ikona": "🔺",
+    },
+    "piorun_szamana": {
+        "nazwa": "Piorun szamana",
+        "opis": "70–100 obrażeń błyskawicznych + 50% szans na ogłuszenie",
+        "klasa": "Druid",
+        "podklasa": "Szaman",
+        "poziom": 9,
+        "koszt_many": 30,
+        "ikona": "⚡",
+    },
+
+    # Druid → Strażnik Lasu
+    "kolce_natury": {
+        "nazwa": "Kolce natury",
+        "opis": "Wróg traci 20 HP na turę przez 4 tury (trucizna roślinna)",
+        "klasa": "Druid",
+        "podklasa": "StraznikLasu",
+        "poziom": 6,
+        "koszt_many": 15,
+        "ikona": "🌵",
+    },
+    "gniew_puszczy": {
+        "nazwa": "Gniew puszczy",
+        "opis": "50–80 obrażeń × liczba aktywnych efektów na wrogu (min. 1×)",
+        "klasa": "Druid",
+        "podklasa": "StraznikLasu",
+        "poziom": 9,
+        "koszt_many": 25,
+        "ikona": "🌲",
+    },
+
+    # ------------------------------------------------------------------ #
+    #  NEKROMANTA – klasa główna                                          #
+    # ------------------------------------------------------------------ #
+    "wysysanie_zycia": {
+        "nazwa": "Wysysanie życia",
+        "opis": "30–50 obrażeń mrocznych, gracz leczy się o tę samą ilość",
+        "klasa": "Nekromanta",
+        "podklasa": None,
+        "poziom": 1,
+        "koszt_many": 15,
+        "ikona": "🩸",
+    },
+    "klatwa_smierci": {
+        "nazwa": "Klątwa śmierci",
+        "opis": "Wróg zadaje 50% mniej obrażeń przez 3 tury",
+        "klasa": "Nekromanta",
+        "podklasa": None,
+        "poziom": 3,
+        "koszt_many": 15,
+        "ikona": "💀",
+    },
+    "rozpad": {
+        "nazwa": "Rozpad",
+        "opis": "Zmniejsza maksymalne HP wroga o 20% (trwałe na czas walki)",
+        "klasa": "Nekromanta",
+        "podklasa": None,
+        "poziom": 5,
+        "koszt_many": 20,
+        "ikona": "🦴",
+    },
+    "dotyk_smierci": {
+        "nazwa": "Dotyk śmierci",
+        "opis": "Wróg traci 25 HP na turę przez 3 tury (trucizna nekrotyczna)",
+        "klasa": "Nekromanta",
+        "podklasa": None,
+        "poziom": 8,
+        "koszt_many": 20,
+        "ikona": "☠",
+    },
+
+    # Nekromanta → Lich
+    "fala_smierci": {
+        "nazwa": "Fala śmierci",
+        "opis": "60–90 obrażeń mrocznych (ignoruje obronę), gracz leczy się o 30%",
+        "klasa": "Nekromanta",
+        "podklasa": "Lich",
+        "poziom": 6,
+        "koszt_many": 25,
+        "ikona": "💀",
+    },
+    "wiecznie_zywi": {
+        "nazwa": "Wiecznie żywi",
+        "opis": "Aktywuje ochronę — jeśli gracz miałby umrzeć, leczy go o 40 HP (raz na walkę)",
+        "klasa": "Nekromanta",
+        "podklasa": "Lich",
+        "poziom": 9,
+        "koszt_many": 30,
+        "ikona": "💀",
+    },
+
+    # Nekromanta → Kapłan Mroku
+    "pakt_krwi": {
+        "nazwa": "Pakt krwi",
+        "opis": "Gracz traci 20 HP, ale następny atak zadaje 3× obrażenia",
+        "klasa": "Nekromanta",
+        "podklasa": "KaplanMroku",
+        "poziom": 6,
+        "koszt_many": 10,
+        "ikona": "🗡",
+    },
+    "ofiarny_rytual": {
+        "nazwa": "Ofiarny rytuał",
+        "opis": "Gracz traci 30% HP, wróg traci tę samą wartość × 3",
+        "klasa": "Nekromanta",
+        "podklasa": "KaplanMroku",
+        "poziom": 9,
+        "koszt_many": 15,
+        "ikona": "🩸",
+    },
 }
 
 # Podklasy dostępne dla każdej klasy głównej
@@ -264,9 +424,9 @@ PODKLASY: dict[str, list[dict]] = {
     ],
     "Mag": [
         {
-            "klucz": "Nekromanta",
-            "nazwa": "Nekromanta",
-            "opis": "Mag ciemności — wysysa życie i rzuca klątwy osłabiające.",
+            "klucz": "MrocznyMag",
+            "nazwa": "Mroczny mag",
+            "opis": "Mag ciemności — mroczne strzały i klątwy łączące obrażenia z osłabieniem.",
         },
         {
             "klucz": "Arcymag",
@@ -284,6 +444,30 @@ PODKLASY: dict[str, list[dict]] = {
             "klucz": "Zwiadowca",
             "nazwa": "Zwiadowca",
             "opis": "Zwinny łowca — uniki i grad strzał.",
+        },
+    ],
+    "Druid": [
+        {
+            "klucz": "Szaman",
+            "nazwa": "Szaman",
+            "opis": "Uzdrowiciel duchów — totemy leczące i pioruny ogłuszające.",
+        },
+        {
+            "klucz": "StraznikLasu",
+            "nazwa": "Strażnik Lasu",
+            "opis": "Władca przyrody — trwałe trucizny roślinne i gniew natury.",
+        },
+    ],
+    "Nekromanta": [
+        {
+            "klucz": "Lich",
+            "nazwa": "Lich",
+            "opis": "Nieśmiertelny czarnoksiężnik — fale śmierci i ochrona przed zagładą.",
+        },
+        {
+            "klucz": "KaplanMroku",
+            "nazwa": "Kapłan Mroku",
+            "opis": "Rytualistyczny morderca — poświęca własne HP dla potężnych ataków.",
         },
     ],
 }

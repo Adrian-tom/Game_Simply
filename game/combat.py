@@ -37,16 +37,21 @@ def _nowy_stan_walki() -> dict:
         "tarcza_runowa": 0,           # punkty absorpcji tarczy runowej
         "unik_aktywny": False,        # Unik: szansa na ominięcie ataku
         "przyspieszenie": False,      # Arcymag: następny czar darmowy i 2× silniejszy
+        "regeneracja_hp": 0,          # Druid: HP regenerowane na turę gracza
+        "regeneracja_tury": 0,        # ile tur regeneracja trwa
+        "nastepny_atak_mnoznik": 1.0,  # Nekromanta/Pakt krwi: mnożnik następnego ataku
+        "lich_ochrona": False,        # Lich: ochrona przed śmiercią (raz)
         # Debuffs wroga
         "wrog_ogluszone_tury": 0,
         "wrog_trucizna_tury": 0,
         "wrog_trucizna_obrazenia": 10,
         "wrog_oslabienie_tury": 0,    # Klątwa śmierci: 50% mniej obrażeń
+        "wrog_rozpad": False,         # Nekromanta: max_hp wroga zmniejszone o 20%
     }
 
 
-def _koniec_rundy(stan: dict) -> None:
-    """Dekrementuje tury aktywnych buffów ataku gracza po każdej pełnej rundzie."""
+def _koniec_rundy(stan: dict, gracz: Gracz) -> None:
+    """Dekrementuje tury aktywnych buffów gracza po każdej pełnej rundzie."""
     if stan["buff_atak_tury"] > 0:
         stan["buff_atak_tury"] -= 1
         if stan["buff_atak_tury"] == 0:
@@ -54,6 +59,17 @@ def _koniec_rundy(stan: dict) -> None:
             if stan["leczenie_zablokowane"]:
                 stan["leczenie_zablokowane"] = False
                 print("  Szał berserka minął. Możesz znów się leczyć.")
+
+    # Druid: regeneracja HP
+    if stan["regeneracja_tury"] > 0:
+        wyleczone = min(stan["regeneracja_hp"], gracz.max_hp - gracz.hp)
+        gracz.hp += wyleczone
+        stan["regeneracja_tury"] -= 1
+        print(
+            f"  🌱  Regeneracja! Odnawiasz {wyleczone} HP."
+            f" (Pozostało tur: {stan['regeneracja_tury']})"
+        )
+
     stan["tura"] += 1
 
 
@@ -79,12 +95,20 @@ def _wyswietl_stan_walki(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> No
         efekty.append(f"Tarcza runowa ({stan['tarcza_runowa']} HP)")
     if stan["leczenie_zablokowane"]:
         efekty.append("Leczenie zablokowane")
+    if stan["regeneracja_tury"] > 0:
+        efekty.append(f"Regeneracja +{stan['regeneracja_hp']} HP/tur ({stan['regeneracja_tury']} tur)")
+    if stan["lich_ochrona"]:
+        efekty.append("Ochrona Licha (aktywna)")
+    if stan["nastepny_atak_mnoznik"] > 1.0:
+        efekty.append(f"Następny atak ×{stan['nastepny_atak_mnoznik']:.0f}")
     if stan["wrog_trucizna_tury"] > 0:
         efekty.append(f"{przeciwnik.nazwa} zatruty ({stan['wrog_trucizna_tury']} tur)")
     if stan["wrog_ogluszone_tury"] > 0:
         efekty.append(f"{przeciwnik.nazwa} ogłuszony ({stan['wrog_ogluszone_tury']} tur)")
     if stan["wrog_oslabienie_tury"] > 0:
         efekty.append(f"{przeciwnik.nazwa} osłabiony ({stan['wrog_oslabienie_tury']} tur)")
+    if stan["wrog_rozpad"]:
+        efekty.append(f"{przeciwnik.nazwa} w rozpadzie (-20% max HP)")
     if efekty:
         print(f"  Efekty: {', '.join(efekty)}")
 
@@ -156,7 +180,8 @@ def _uzyj_umiejetnosci(
     gracz.mana -= koszt
     print(f"\n  {info['ikona']}  Używasz: {info['nazwa']}!")
 
-    efektywny_atak = max(1, int(gracz.atak * stan["buff_atak_mnoznik"]))
+    efektywny_atak = max(1, int(gracz.atak * stan["buff_atak_mnoznik"] * stan["nastepny_atak_mnoznik"]))
+    stan["nastepny_atak_mnoznik"] = 1.0
 
     # ---- WOJOWNIK – klasa główna ----
 
@@ -348,6 +373,146 @@ def _uzyj_umiejetnosci(
         if not przeciwnik.zyje():
             return "wygrana"
 
+    # ---- MAG – Mroczny mag ----
+
+    elif klucz == "mroczna_strzala":
+        obrazenia = int(random.randint(45, 70) * dmg_wzmocnienie)
+        przeciwnik.hp -= obrazenia
+        print(f"  Mroczna strzała trafia za {obrazenia} obrażeń mrocznych!")
+        if not przeciwnik.zyje():
+            return "wygrana"
+
+    elif klucz == "klatwa_mroku":
+        stan["wrog_oslabienie_tury"] = 3
+        stan["wrog_trucizna_tury"] = 3
+        stan["wrog_trucizna_obrazenia"] = 15
+        print(f"  Klątwa mroku! {przeciwnik.nazwa} zadaje 50% mniej obrażeń i traci 15 HP/turę przez 3 tury.")
+
+    # ---- DRUID – klasa główna ----
+
+    elif klucz == "splot_korzeni":
+        stan["wrog_ogluszone_tury"] = 1
+        print(f"  🌿  Sploty korzeni oplatają {przeciwnik.nazwa}! Pomija następną turę.")
+
+    elif klucz == "uzdrowienie":
+        wyleczone = min(50, gracz.max_hp - gracz.hp)
+        gracz.hp += wyleczone
+        print(f"  💚  Uzdrowienie! Przywróciłeś {wyleczone} HP!")
+
+    elif klucz == "burza_natury":
+        obrazenia = int(random.randint(40, 60) * dmg_wzmocnienie)
+        przeciwnik.hp -= obrazenia
+        print(f"  ⛈  Burza natury uderza za {obrazenia} obrażeń żywiołowych!")
+        if not przeciwnik.zyje():
+            return "wygrana"
+
+    elif klucz == "regeneracja":
+        stan["regeneracja_hp"] = 15
+        stan["regeneracja_tury"] = 4
+        print("  🌱  Regeneracja! Będziesz odnawiać 15 HP na turę przez 4 tury.")
+
+    # ---- DRUID – Szaman ----
+
+    elif klucz == "totem_zycia":
+        stan["regeneracja_hp"] = 30
+        stan["regeneracja_tury"] = 3
+        print("  🔺  Totem życia! Będziesz odnawiać 30 HP na turę przez 3 tury.")
+
+    elif klucz == "piorun_szamana":
+        obrazenia = int(random.randint(70, 100) * dmg_wzmocnienie)
+        przeciwnik.hp -= obrazenia
+        print(f"  ⚡  Piorun szamana uderza za {obrazenia} obrażeń błyskawicznych!")
+        if random.random() < 0.5:
+            stan["wrog_ogluszone_tury"] = 1
+            print(f"  {przeciwnik.nazwa} jest ogłuszony i pomija następną turę!")
+        if not przeciwnik.zyje():
+            return "wygrana"
+
+    # ---- DRUID – Strażnik Lasu ----
+
+    elif klucz == "kolce_natury":
+        stan["wrog_trucizna_tury"] = 4
+        stan["wrog_trucizna_obrazenia"] = 20
+        print(f"  🌵  Kolce natury! {przeciwnik.nazwa} traci 20 HP na turę przez 4 tury.")
+
+    elif klucz == "gniew_puszczy":
+        aktywne = sum([
+            stan["wrog_trucizna_tury"] > 0,
+            stan["wrog_ogluszone_tury"] > 0,
+            stan["wrog_oslabienie_tury"] > 0,
+            stan["wrog_rozpad"],
+        ])
+        mnoznik = max(1, aktywne)
+        obrazenia = int(random.randint(50, 80) * mnoznik * dmg_wzmocnienie)
+        przeciwnik.hp -= obrazenia
+        print(f"  🌲  Gniew puszczy! ×{mnoznik} efektów — zadajesz {obrazenia} obrażeń!")
+        if not przeciwnik.zyje():
+            return "wygrana"
+
+    # ---- NEKROMANTA – klasa główna ----
+
+    elif klucz == "wysysanie_zycia":
+        obrazenia = int(random.randint(30, 50) * dmg_wzmocnienie)
+        przeciwnik.hp -= obrazenia
+        wyleczone = min(obrazenia, gracz.max_hp - gracz.hp)
+        gracz.hp += wyleczone
+        print(f"  🩸  Wysysasz {obrazenia} HP od {przeciwnik.nazwa}!")
+        print(f"  Leczysz się o {wyleczone} HP!")
+        if not przeciwnik.zyje():
+            return "wygrana"
+
+    elif klucz == "klatwa_smierci":
+        stan["wrog_oslabienie_tury"] = 3
+        print(f"  💀  Klątwa śmierci! {przeciwnik.nazwa} zadaje 50% mniej obrażeń przez 3 tury.")
+
+    elif klucz == "rozpad":
+        if not stan["wrog_rozpad"]:
+            stan["wrog_rozpad"] = True
+            utracone = max(1, int(przeciwnik.max_hp * 0.20))
+            przeciwnik.max_hp -= utracone
+            przeciwnik.hp = min(przeciwnik.hp, przeciwnik.max_hp)
+            print(f"  🦴  Rozpad! {przeciwnik.nazwa} traci {utracone} maksymalnego HP (teraz {przeciwnik.max_hp}).")
+        else:
+            print(f"  Rozpad już działa na {przeciwnik.nazwa}.")
+
+    elif klucz == "dotyk_smierci":
+        stan["wrog_trucizna_tury"] = 3
+        stan["wrog_trucizna_obrazenia"] = 25
+        print(f"  ☠  Dotyk śmierci! {przeciwnik.nazwa} traci 25 HP na turę przez 3 tury.")
+
+    # ---- NEKROMANTA – Lich ----
+
+    elif klucz == "fala_smierci":
+        obrazenia = int(random.randint(60, 90) * dmg_wzmocnienie)
+        przeciwnik.hp -= obrazenia
+        wyleczone = min(int(obrazenia * 0.3), gracz.max_hp - gracz.hp)
+        gracz.hp += wyleczone
+        print(f"  💀  Fala śmierci uderza za {obrazenia} obrażeń!")
+        print(f"  Leczysz się o {wyleczone} HP (30% obrażeń).")
+        if not przeciwnik.zyje():
+            return "wygrana"
+
+    elif klucz == "wiecznie_zywi":
+        stan["lich_ochrona"] = True
+        print("  💀  Ochrona Licha aktywna! Jeśli miałbyś umrzeć, zamiast tego odzyskasz 40 HP (raz).")
+
+    # ---- NEKROMANTA – Kapłan Mroku ----
+
+    elif klucz == "pakt_krwi":
+        koszt_hp = 20
+        gracz.hp = max(1, gracz.hp - koszt_hp)
+        stan["nastepny_atak_mnoznik"] = 3.0
+        print(f"  🗡  Pakt krwi! Tracisz {koszt_hp} HP. Następny atak zadaje 3× obrażenia!")
+
+    elif klucz == "ofiarny_rytual":
+        poswiecenie = max(1, int(gracz.hp * 0.30))
+        gracz.hp = max(1, gracz.hp - poswiecenie)
+        obrazenia = poswiecenie * 3
+        przeciwnik.hp -= obrazenia
+        print(f"  🩸  Ofiarny rytuał! Poświęcasz {poswiecenie} HP — {przeciwnik.nazwa} traci {obrazenia} HP!")
+        if not przeciwnik.zyje():
+            return "wygrana"
+
     return None
 
 
@@ -373,7 +538,8 @@ def _tura_gracza(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> str | None
         wybor = input("\n  Twój wybór: ").strip()
 
         if wybor == "1":
-            efektywny_atak = max(1, int(gracz.atak * stan["buff_atak_mnoznik"]))
+            efektywny_atak = max(1, int(gracz.atak * stan["buff_atak_mnoznik"] * stan["nastepny_atak_mnoznik"]))
+            stan["nastepny_atak_mnoznik"] = 1.0
             obrazenia = _oblicz_obrazenia(efektywny_atak, przeciwnik.obrona)
             przeciwnik.hp -= obrazenia
             print(f"\n  ⚔  Atakujesz {przeciwnik.nazwa}! Zadajesz {obrazenia} obrażeń.")
@@ -470,6 +636,14 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
             )
 
     gracz.hp = max(0, gracz.hp - obrazenia)
+
+    # Lich: ochrona przed śmiercią
+    if not gracz.zyje() and stan["lich_ochrona"]:
+        stan["lich_ochrona"] = False
+        gracz.hp = 40
+        print(f"  💀  Ochrona Licha zadziałała! Zamiast umrzeć, odnawiasz 40 HP!")
+        return
+
     if obrazenia > 0:
         print(f"  💀  {przeciwnik.nazwa} atakuje cię! Otrzymujesz {obrazenia} obrażeń.")
     else:
@@ -543,7 +717,7 @@ def przeprowadz_walke(gracz: Gracz) -> str:
             nacisnij_enter()
             return "przegrana"
 
-        _koniec_rundy(stan)
+        _koniec_rundy(stan, gracz)
         nacisnij_enter()
 
     return "wygrana"

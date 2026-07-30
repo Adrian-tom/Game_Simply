@@ -19,6 +19,14 @@ _STATYSTYKI_KLAS: dict[str, dict] = {
         "max_hp": 90, "atak": 14, "obrona": 5, "mikstury": 2, "max_mana": 0,
         "hp_na_poziom": 15, "atak_na_poziom": 5, "obrona_na_poziom": 2,
     },
+    "Druid": {
+        "max_hp": 85, "atak": 11, "obrona": 4, "mikstury": 3, "max_mana": 55,
+        "hp_na_poziom": 12, "atak_na_poziom": 3, "obrona_na_poziom": 2,
+    },
+    "Nekromanta": {
+        "max_hp": 75, "atak": 12, "obrona": 3, "mikstury": 2, "max_mana": 60,
+        "hp_na_poziom": 11, "atak_na_poziom": 4, "obrona_na_poziom": 1,
+    },
 }
 
 

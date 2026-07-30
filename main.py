@@ -34,9 +34,11 @@ def _wybierz_klase() -> str:
     """Prowadzi gracza przez wybór klasy postaci. Zwraca nazwę klasy."""
     wyswietl_linie("─")
     print("  Wybierz klasę postaci:\n")
-    print("  [1]  ⚔  Wojownik   — Wysoki HP i obrona, walka wręcz")
-    print("  [2]  🔮 Mag        — Niski HP, za to potężne zaklęcia (wymaga many)")
-    print("  [3]  🗡  Łotrzyk    — Zwinny oszust z kontrolą i trafieniami krytycznymi")
+    print("  [1]  ⚔  Wojownik    — Wysoki HP i obrona, walka wręcz")
+    print("  [2]  🔮 Mag         — Niski HP, za to potężne zaklęcia (mana)")
+    print("  [3]  🗡  Łotrzyk     — Zwinny oszust z kontrolą i trafieniami krytycznymi")
+    print("  [4]  🌿 Druid       — Uzdrowiciel natury, regeneracja i żywiołowe zaklęcia (mana)")
+    print("  [5]  💀 Nekromanta  — Mistrz mroku, wysysa życie i osłabia wrogów (mana)")
     print()
     while True:
         wybor = input("  Twój wybór: ").strip()
@@ -46,7 +48,11 @@ def _wybierz_klase() -> str:
             return "Mag"
         if wybor == "3":
             return "Lotrzyk"
-        print("  Nieprawidłowy wybór. Wpisz 1, 2 lub 3.")
+        if wybor == "4":
+            return "Druid"
+        if wybor == "5":
+            return "Nekromanta"
+        print("  Nieprawidłowy wybór. Wpisz 1, 2, 3, 4 lub 5.")
 
 
 def stworz_postac() -> Gracz:
