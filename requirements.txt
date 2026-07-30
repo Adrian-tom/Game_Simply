@@ -1,0 +1,2 @@
+# Brak zewnętrznych zależności.
+# Gra używa wyłącznie bibliotek standardowych języka Python 3.
