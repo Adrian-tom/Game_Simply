@@ -6,10 +6,10 @@ Uruchomienie:
 """
 
 from game.player import Gracz
-from game.combat import przeprowadz_walke
 from game.shop import otworz_sklep
 from game.skills import PODKLASY
 from game.utils import wyczysc, wyswietl_linie, nacisnij_enter, baner_tytulowy
+from game.world import wyrusz_w_podroz
 
 
 # ------------------------------------------------------------------ #
@@ -123,7 +123,7 @@ def menu_obozu(gracz: Gracz) -> str:
     wyswietl_linie("═")
     print(gracz)
     print()
-    print("  [1]  Wyrusz na przygodę (walka)")
+    print("  [1]  Wyrusz na przygodę")
     print("  [2]  Sklep")
     print("  [3]  Odpoczynek (+30 HP, koszt: 10 złota)")
     if gracz.podklasa_dostepna:
@@ -164,7 +164,7 @@ def nowa_gra() -> None:
         wybor = menu_obozu(gracz)
 
         if wybor == "1":
-            wynik = przeprowadz_walke(gracz)
+            wynik = wyrusz_w_podroz(gracz)
             if wynik == "przegrana":
                 wyczysc()
                 wyswietl_linie("═")
