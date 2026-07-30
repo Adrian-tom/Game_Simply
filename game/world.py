@@ -25,7 +25,10 @@ _BIOMY = {
                 {"nazwa": "porzucony wóz", "opis": "Wśród skrzyń wciąż coś błyszczy.", "efekt": "zloto"},
                 {"nazwa": "kapliczka przydrożna", "opis": "Czujesz spokój i odzyskujesz siły.", "efekt": "mana"},
             ],
-            "budynki": ["zajazd na rozstaju", "stara strażnica"],
+            "budynki": [
+                {"nazwa": "zajazd na rozstaju", "typ": "karczma"},
+                {"nazwa": "stara strażnica", "typ": "jaskinia"},
+            ],
         },
         {
             "nazwa": "ruiny",
@@ -35,7 +38,10 @@ _BIOMY = {
                 {"nazwa": "zapomniany ołtarz", "opis": "Dawna magia nadal tu pulsuje.", "efekt": "mana"},
                 {"nazwa": "wybita brama", "opis": "Wiatr niesie szept dawno zaginionych strażników.", "efekt": "nic"},
             ],
-            "budynki": ["opuszczona biblioteka", "pęknięta wieża maga"],
+            "budynki": [
+                {"nazwa": "opuszczona biblioteka", "typ": "świątynia"},
+                {"nazwa": "pęknięta wieża maga", "typ": "jaskinia"},
+            ],
         },
     ],
     "2": [
@@ -47,7 +53,10 @@ _BIOMY = {
                 {"nazwa": "myśliwski obóz", "opis": "Ktoś zostawił zapasy i kilka monet.", "efekt": "zloto"},
                 {"nazwa": "druidyczny krąg", "opis": "Naturalna energia wraca do twojego ciała.", "efekt": "mana"},
             ],
-            "budynki": ["drewniana chatka", "myśliwska wieża"],
+            "budynki": [
+                {"nazwa": "drewniana chatka", "typ": "karczma"},
+                {"nazwa": "myśliwska wieża", "typ": "jaskinia"},
+            ],
         },
         {
             "nazwa": "bagna",
@@ -57,7 +66,10 @@ _BIOMY = {
                 {"nazwa": "zatopiony pomost", "opis": "Między deskami tkwi sakiewka.", "efekt": "zloto"},
                 {"nazwa": "cisza bagiennego oczka", "opis": "To miejsce jest niepokojąco spokojne.", "efekt": "nic"},
             ],
-            "budynki": ["zapadła chata zielarki", "pochylona kaplica"],
+            "budynki": [
+                {"nazwa": "zapadła chata zielarki", "typ": "karczma"},
+                {"nazwa": "pochylona kaplica", "typ": "świątynia"},
+            ],
         },
     ],
     "3": [
@@ -69,7 +81,10 @@ _BIOMY = {
                 {"nazwa": "górskie źródełko", "opis": "Krystaliczna woda przywraca ci siły.", "efekt": "leczenie"},
                 {"nazwa": "wietrzny menhir", "opis": "Powietrze trzeszczy od dzikiej magii.", "efekt": "mana"},
             ],
-            "budynki": ["kamienna strażnica", "górski posterunek"],
+            "budynki": [
+                {"nazwa": "kamienna strażnica", "typ": "jaskinia"},
+                {"nazwa": "górski posterunek", "typ": "karczma"},
+            ],
         },
         {
             "nazwa": "kanion",
@@ -79,19 +94,41 @@ _BIOMY = {
                 {"nazwa": "wąska półka skalna", "opis": "Ktoś ukrył tu awaryjny zapas monet.", "efekt": "zloto"},
                 {"nazwa": "echo wąwozu", "opis": "Na chwilę wydaje ci się, że ktoś cię obserwuje.", "efekt": "nic"},
             ],
-            "budynki": ["wykuta brama kopalni", "opuszczony magazyn kupców"],
+            "budynki": [
+                {"nazwa": "wykuta brama kopalni", "typ": "jaskinia"},
+                {"nazwa": "opuszczony magazyn kupców", "typ": "świątynia"},
+            ],
         },
     ],
 }
 
 
-def _menu_kierunku() -> str:
+def _rysuj_mape(gracz: Gracz) -> None:
+    """Wyświetla prostą mapę z aktualną pozycją gracza."""
+    print("  MAPA OKOLICY")
+    for y in range(5):
+        pola = []
+        for x in range(5):
+            if x == gracz.mapa_x and y == gracz.mapa_y:
+                pola.append("P")
+            elif x == 2 and y == 2:
+                pola.append("O")
+            else:
+                pola.append("·")
+        print("   " + " ".join(pola))
+    print(f"\n  P = twoja pozycja   O = okolice startowe")
+    print(f"  Koordynaty: ({gracz.mapa_x}, {gracz.mapa_y})   Ostatni biom: {gracz.aktualny_biom}")
+    print()
+
+
+def _menu_kierunku(gracz: Gracz) -> str:
     """Pyta gracza o kierunek podróży."""
     while True:
         wyczysc()
         wyswietl_linie("═")
         print("  WYBÓR TRASY")
         wyswietl_linie("═")
+        _rysuj_mape(gracz)
         print("  [1]  Idź prosto")
         print("  [2]  Skręć w lewo")
         print("  [3]  Skręć w prawo")
@@ -102,6 +139,18 @@ def _menu_kierunku() -> str:
             return wybor
         print("  Nieprawidłowy wybór.")
         nacisnij_enter()
+
+
+def _przesun_gracza(gracz: Gracz, kierunek: str) -> None:
+    """Aktualizuje pozycję gracza na mapie."""
+    ruchy = {
+        "1": (0, -1),
+        "2": (-1, 0),
+        "3": (1, 0),
+    }
+    dx, dy = ruchy[kierunek]
+    gracz.mapa_x = min(4, max(0, gracz.mapa_x + dx))
+    gracz.mapa_y = min(4, max(0, gracz.mapa_y + dy))
 
 
 def _pokaz_biom(kierunek: str, biom: dict) -> None:
@@ -160,12 +209,40 @@ def _losowa_lokacja(gracz: Gracz, biom: dict) -> None:
     nacisnij_enter()
 
 
-def _wejdz_do_budynku(gracz: Gracz, nazwa_budynku: str) -> str | None:
-    """Obsługuje rezultat wejścia do budynku."""
-    wynik = random.choice(["skarb", "odpoczynek", "kupiec", "zasadzka"])
+def _zdarzenie_karczma(gracz: Gracz, nazwa_budynku: str) -> None:
+    """Obsługuje karczmę z osobnymi zdarzeniami."""
+    wynik = random.choice(["odpoczynek", "kupiec", "plotka"])
     wyczysc()
     wyswietl_linie()
-    print(f"  🚪  Wchodzisz do miejsca: {nazwa_budynku}.")
+    print(f"  🍺  Wchodzisz do miejsca: {nazwa_budynku}.")
+
+    if wynik == "odpoczynek":
+        poprzednie_hp = gracz.hp
+        poprzednia_mana = gracz.mana
+        _odnawianie(gracz, hp=30, mana=15)
+        print("  Karczmarz pozwala ci odpocząć przy ogniu.")
+        print(f"  ❤️  HP +{gracz.hp - poprzednie_hp}")
+        if gracz.max_mana > 0:
+            print(f"  🔮  Mana +{gracz.mana - poprzednia_mana}")
+    elif wynik == "kupiec":
+        print("  Przy stoliku czeka wędrowny handlarz.")
+        nacisnij_enter()
+        otworz_sklep(gracz)
+        return
+    else:
+        print("  Słyszysz plotki o pobliskich skrytkach i dostajesz napiwek od podróżnych.")
+        zloto = random.randint(10, 20)
+        gracz.zloto += zloto
+        print(f"  💰  Zyskujesz {zloto} szt. złota.")
+    nacisnij_enter()
+
+
+def _zdarzenie_jaskinia(gracz: Gracz, nazwa_budynku: str, biom_nazwa: str) -> str | None:
+    """Obsługuje jaskinię lub podobne niebezpieczne miejsce."""
+    wynik = random.choice(["skarb", "mikstura", "zasadzka"])
+    wyczysc()
+    wyswietl_linie()
+    print(f"  🕳️  Wchodzisz do miejsca: {nazwa_budynku}.")
 
     if wynik == "skarb":
         zloto = random.randint(12, 28)
@@ -178,43 +255,80 @@ def _wejdz_do_budynku(gracz: Gracz, nazwa_budynku: str) -> str | None:
         nacisnij_enter()
         return None
 
-    if wynik == "odpoczynek":
-        poprzednie_hp = gracz.hp
-        poprzednia_mana = gracz.mana
-        _odnawianie(gracz, hp=35, mana=20)
-        print(f"  W środku znajdujesz bezpieczny kąt do odpoczynku.")
-        print(f"  ❤️  HP +{gracz.hp - poprzednie_hp}")
-        if gracz.max_mana > 0:
-            print(f"  🔮  Mana +{gracz.mana - poprzednia_mana}")
+    if wynik == "mikstura":
+        gracz.mikstury += 1
+        print("  W niszy skalnej znajdujesz 1 miksturę leczenia.")
         nacisnij_enter()
-        return None
-
-    if wynik == "kupiec":
-        print("  Okazuje się, że w środku działa wędrowny kupiec.")
-        nacisnij_enter()
-        otworz_sklep(gracz)
         return None
 
     print("  To pułapka! Z cienia wyskakuje wróg.")
     nacisnij_enter()
-    return przeprowadz_walke(gracz)
+    return przeprowadz_walke(gracz, biom_nazwa)
+
+
+def _zdarzenie_swiatynia(gracz: Gracz, nazwa_budynku: str) -> None:
+    """Obsługuje świątynię z błogosławieństwem lub darem."""
+    wynik = random.choice(["blogoslawienstwo", "mana", "dar"])
+    wyczysc()
+    wyswietl_linie()
+    print(f"  🛕  Wchodzisz do miejsca: {nazwa_budynku}.")
+
+    if wynik == "blogoslawienstwo":
+        gracz.hp = min(gracz.max_hp, gracz.hp + 20)
+        gracz.obrona += 1
+        print("  Otrzymujesz błogosławieństwo ochrony.")
+        print("  ❤️  HP +20 (do limitu)   🛡️  Obrona +1")
+    elif wynik == "mana":
+        poprzednia_mana = gracz.mana
+        _odnawianie(gracz, mana=30)
+        print("  Starożytne runy wzmacniają twoją energię.")
+        if gracz.max_mana > 0:
+            print(f"  🔮  Mana +{gracz.mana - poprzednia_mana}")
+        else:
+            print("  Czujesz spokój, choć magia cię nie dotyczy.")
+    else:
+        gracz.mikstury += 1
+        zloto = random.randint(8, 16)
+        gracz.zloto += zloto
+        print(f"  Kapłani zostawili po sobie dar: 1 mikstura i {zloto} złota.")
+    nacisnij_enter()
+
+
+def _wejdz_do_budynku(gracz: Gracz, budynek: dict, biom_nazwa: str) -> str | None:
+    """Obsługuje rezultat wejścia do budynku zależnie od jego typu."""
+    typ = budynek["typ"]
+    nazwa_budynku = budynek["nazwa"]
+
+    if typ == "karczma":
+        _zdarzenie_karczma(gracz, nazwa_budynku)
+        return None
+    if typ == "jaskinia":
+        return _zdarzenie_jaskinia(gracz, nazwa_budynku, biom_nazwa)
+    if typ == "świątynia":
+        _zdarzenie_swiatynia(gracz, nazwa_budynku)
+        return None
+
+    return None
 
 
 def _budynek(gracz: Gracz, biom: dict) -> str | None:
     """Obsługuje spotkanie z budynkiem i wybór wejścia lub ominięcia."""
-    nazwa_budynku = random.choice(biom["budynki"])
+    budynek = random.choice(biom["budynki"])
+    nazwa_budynku = budynek["nazwa"]
+    typ = budynek["typ"]
 
     while True:
         wyczysc()
         wyswietl_linie()
         print(f"  🏚️  Dostrzegasz: {nazwa_budynku}")
+        print(f"  Typ miejsca: {typ}")
         print("  [1]  Wejdź do środka")
         print("  [2]  Omiń budynek")
         print()
         wybor = input("  Twój wybór: ").strip()
 
         if wybor == "1":
-            return _wejdz_do_budynku(gracz, nazwa_budynku)
+            return _wejdz_do_budynku(gracz, budynek, biom["nazwa"])
         if wybor == "2":
             print("  Zachowujesz ostrożność i omijasz budynek szerokim łukiem.")
             nacisnij_enter()
@@ -226,13 +340,15 @@ def _budynek(gracz: Gracz, biom: dict) -> str | None:
 
 def wyrusz_w_podroz(gracz: Gracz) -> str:
     """Uruchamia prostą podróż z kierunkami, biomami i zdarzeniami."""
-    kierunek = _menu_kierunku()
+    kierunek = _menu_kierunku(gracz)
     if kierunek == "4":
         print("\n  Zmieniasz zdanie i wracasz do obozu.")
         nacisnij_enter()
         return "powrot"
 
+    _przesun_gracza(gracz, kierunek)
     biom = random.choice(_BIOMY[kierunek])
+    gracz.aktualny_biom = biom["nazwa"]
     _pokaz_biom(kierunek, biom)
 
     liczba_zdarzen = random.randint(2, 3)
@@ -261,7 +377,7 @@ def wyrusz_w_podroz(gracz: Gracz) -> str:
         wyswietl_linie()
         print(f"  ⚔️  W biomie {biom['nazwa']} ktoś zastępuje ci drogę!")
         nacisnij_enter()
-        wynik = przeprowadz_walke(gracz)
+        wynik = przeprowadz_walke(gracz, biom["nazwa"])
         walka_odbyta = True
         if wynik == "przegrana":
             return "przegrana"

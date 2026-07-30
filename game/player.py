@@ -38,6 +38,9 @@ class Gracz:
         self.klasa = klasa
         self.podklasa: str | None = None
         self.podklasa_dostepna: bool = False
+        self.mapa_x = 2
+        self.mapa_y = 2
+        self.aktualny_biom = "Obóz"
 
         stat = _STATYSTYKI_KLAS[klasa]
         self.poziom = 1

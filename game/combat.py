@@ -679,15 +679,17 @@ def _zakonczenie_wygrana(gracz: Gracz, przeciwnik: Przeciwnik) -> None:
 #  Główna pętla walki                                                 #
 # ------------------------------------------------------------------ #
 
-def przeprowadz_walke(gracz: Gracz) -> str:
+def przeprowadz_walke(gracz: Gracz, biom: str | None = None) -> str:
     """
     Główna pętla walki. Zwraca: 'wygrana', 'przegrana' lub 'ucieczka'.
     """
-    przeciwnik = losuj_przeciwnika(gracz.poziom)
+    przeciwnik = losuj_przeciwnika(gracz.poziom, biom)
     stan = _nowy_stan_walki()
 
     wyczysc()
     print(f"\n  *** STARCIE! ***")
+    if biom:
+        print(f"  Biom: {biom.title()}")
     print(f"  {przeciwnik.opis}")
     print(f"  Napotkałeś: {przeciwnik.nazwa}!\n")
     nacisnij_enter()
