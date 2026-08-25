@@ -168,6 +168,25 @@ def liczba_odkrytych(gracz: Gracz) -> int:
     return sum(1 for wiersz in pola for p in wiersz if p.get("odkryte"))
 
 
+def _symbole_odkryte(gracz: Gracz) -> tuple[list[str], list[str]]:
+    """Biomy i lokacje z odkrytych pól — w kolejności katalogu ikon."""
+    biomy: set[str] = set()
+    punkty: set[str] = set()
+    for wiersz in getattr(gracz, "mapa_pola", None) or []:
+        for pole in wiersz:
+            if not pole.get("odkryte"):
+                continue
+            biom = pole.get("biom")
+            if biom:
+                biomy.add(biom)
+            punkt = pole.get("punkt")
+            if punkt:
+                punkty.add(punkt)
+    lista_biomow = [n for n in IKONY_BIOM if n in biomy]
+    lista_punktow = [k for k in IKONY_PUNKT if k in punkty]
+    return lista_biomow, lista_punktow
+
+
 def glif_pola(gracz: Gracz, x: int, y: int) -> str:
     pole = pole_na(gracz, x, y)
     return _glif_ikona(
@@ -197,14 +216,11 @@ def rysuj_mape(gracz: Gracz) -> None:
         print(f"  {y}  {komorki}")
     print()
     print(f"  {GRACZ_MAPA} ty   {MGŁA} nieodkryte")
-    print(
-        "  "
-        + "   ".join(f"{ikona} {nazwa}" for nazwa, ikona in IKONY_BIOM.items())
-    )
-    print(
-        "  "
-        + "   ".join(f"{ikona} {nazwa}" for nazwa, ikona in IKONY_PUNKT.items())
-    )
+    biomy, punkty = _symbole_odkryte(gracz)
+    if biomy:
+        print("  " + "   ".join(etykieta_biomu(n) for n in biomy))
+    if punkty:
+        print("  " + "   ".join(opis_punktu(k) for k in punkty))
     print()
 
 
