@@ -42,6 +42,8 @@ class Gracz:
         self.mapa_y = 2
         self.aktualny_biom = "Obóz"
         self.mapa_gen = 1  # numer "mapy" – rośnie za każdym razem gdy gracz przekroczy krawędź
+        self.punkty_atrybutow = 0  # punkty do rozdziału przy levelupie
+        self.osiagniecia: set[str] = set()  # odblokowane osiągnięcia
 
         stat = _STATYSTYKI_KLAS[klasa]
         self.poziom = 1
@@ -134,6 +136,10 @@ class Gracz:
         if self.max_mana > 0:
             komunikaty.append(f"  Max Mana: {self.max_mana}")
         komunikaty.append("  HP zostało w pełni uzupełnione!")
+        komunikaty.append("  💡  Masz 1 punkt atrybutu do rozdziału — odwiedź obóz!")
+
+        # Daj punkt atrybutu do rozdziału
+        self.punkty_atrybutow = getattr(self, "punkty_atrybutow", 0) + 1
 
         komunikaty.extend(self._odblokuj_umiejetnosci(self.poziom))
 
@@ -184,6 +190,29 @@ class Gracz:
         self.statystyki["zabite_potwory"] = self.statystyki.get("zabite_potwory", 0) + 1
         klucz = f"zabite_{nazwa_potwora.lower()}"
         self.statystyki[klucz] = self.statystyki.get(klucz, 0) + 1
+
+    # Definicje osiągnięć: (klucz, nazwa, warunek_fn)
+    _OSIAGNIECIA = [
+        ("pierwsze_kroki", "🥇 Pierwsze kroki", lambda g: g.statystyki.get("zabite_potwory", 0) >= 1),
+        ("rzeźnik", "🗡 Rzeźnik", lambda g: g.statystyki.get("zabite_potwory", 0) >= 50),
+        ("wojownik_mroku", "⚔ Wojownik Mroku", lambda g: g.statystyki.get("zabite_potwory", 0) >= 100),
+        ("odkrywca", "🗺 Odkrywca", lambda g: g.mapa_gen >= 10),
+        ("podroznik", "🌍 Podróżnik", lambda g: g.mapa_gen >= 5),
+        ("bogacz", "💰 Bogacz", lambda g: g.zloto >= 500),
+        ("kolekcjoner", "🧪 Kolekcjoner", lambda g: g.mikstury >= 10),
+        ("legenda", "👑 Legenda", lambda g: g.poziom >= 10),
+        ("kapitan", "🎖 Kapitan", lambda g: g.poziom >= 5),
+        ("badacz_swiatyn", "🛕 Badacz Świątyń", lambda g: g.statystyki.get("odwiedzone_swiatynie", 0) >= 5),
+    ]
+
+    def sprawdz_osiagniecia(self) -> list[str]:
+        """Sprawdza i odblokowuje nowe osiągnięcia. Zwraca listę nowych."""
+        nowe = []
+        for klucz, nazwa, warunek in self._OSIAGNIECIA:
+            if klucz not in self.osiagniecia and warunek(self):
+                self.osiagniecia.add(klucz)
+                nowe.append(f"  🏆 OSIĄGNIĘCIE: {nazwa}")
+        return nowe
 
     # ------------------------------------------------------------------ #
     #  Wyświetlanie                                                        #
