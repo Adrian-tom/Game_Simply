@@ -1,266 +1,716 @@
-"""Dialogi NPC — gotowe kwestie dla różnych postaci."""
+"""Dialogi NPC — wątki postaci, testy k20 i rekrutacja."""
 
 import random
 
 from game.utils import wyswietl_linie, nacisnij_enter
+from game.atrybuty import SKILLE, przeprowadz_test, trudnosc
 
 
 _DIALOGI: dict[str, dict] = {
     "karczmarz": {
         "imie": "Karczmarz Boldan",
         "ikona": "🍺",
+        "rekrut": "boldan",
         "powitania": [
-            "Hej, podróżniku! Dobrze, że zawitałeś. Czym mogę służyć?",
-            "Siadaj, gościu! Mam świeże piwo i gorącą potrawkę!",
-            "Hola, wędrowcze! Dawno tu nie było takiego wojownika jak ty.",
-            "Ach, nowy gość! Wejdź, ogrzej kości i posłuchaj, co mam do powiedzenia.",
+            "Hej, podróżniku. Kufel jest czysty, ale sen — nie. Siadaj, jeśli umiesz słuchać.",
+            "Dobrze, że zawitałeś. W tej izbie więcej prawdy wylewa się z piwa niż z kazania.",
+            "Hola. Jeśli szukasz tylko strawy, masz. Jeśli szukasz człowieka — to już drożej.",
         ],
         "tematy": [
             ("O okolicy", [
-                "Na wschód od nas ponoć grasują goblińscy zwiadowcy. Bądź ostrożny!",
-                "Mówią, że w starych ruinach za wzgórzami ktoś znowu rozpalił ognie...",
-                "Poprzedni gość wspominał o skarbach ukrytych w bagnach. Ale wróćmy do tematu piwa!",
-                "Drogi w lesie są ostatnio niebezpieczne. Wielu podróżnych nie wróciło.",
+                "Na wschód gobliny liczą wozy, nie trupy. To gorsze — znaczy, że ktoś nimi kieruje.",
+                "Drogi w lesie milkną po zmierzchu. Kto wraca, wraca bez sakiewki albo bez imienia.",
+                "Za wzgórzami ktoś znowu pali ogniska w ruinach. Nie chłopi. Chłopi boją się dymu.",
             ]),
-            ("O potworach", [
-                "Gobliny? Pfa, to małe dranie. Ale trolle pod mostem — to co innego!",
-                "Ostatnio widziałem coś dużego między drzewami. Nie wiem co to było, ale uciekłem.",
-                "Szkielety wychodzą z ruin o północy. Radzę omijać je szerokim łukiem.",
-                "Słyszałem, że w bagnach żyje coś wielkiego i śmierdzącego. Troll bagiennych, pono.",
+            ("O karczmie", [
+                "Ta izba stała, gdy królowie jeszcze mieli zęby. Ja tylko zmywam krew z blatów.",
+                "Goście płacą za ciszę równie chętnie jak za piwo. Czasem drożej.",
+                "Nie lubię rycerzy, co przysięgają na pusty kufel. Przysięga powinna śmierdzieć potem.",
             ]),
-            ("O handlu", [
-                "Kowal Grimbold ma nowe towary. Mówi, że dostał stal od krasnoludzkich górników.",
-                "Wędrowni kupcy bywają tu raz na tydzień. Mają niezłe mikstury.",
-                "Za dodatkową monetę zdradzę ci, gdzie kupiec trzyma swój klucz do skrzynki!",
-                "Niedaleko stąd jest kuźnia. Stary Grimbold robi najlepsze miecze w całej okolicy.",
-            ]),
+        ],
+        "watek": {
+            "tytul": "Córka karczmarza",
+            "etapy": [
+                {
+                    "etykieta": "Zapytaj, czemu nie śpi",
+                    "tekst": (
+                        "Lira. Córka. Tydzień temu wsiadła na wóz kupca Vasca i uśmiechnęła się tak, "
+                        "jakbym ja był już wspomnieniem. Mówiła, że obmywanie kufli to nie życie. "
+                        "Może i ma rację. Ale nocami słyszę skrzypienie tej ławy, na której odrabiała rachunki."
+                    ),
+                },
+                {
+                    "etykieta": "Co wie o karawanie?",
+                    "tekst": (
+                        "Vasco wozi sukno i kłamstwa. Dostałem list — nie jej charakter, ale jej złość. "
+                        "Żyje. Nie wróci. Chce murów, targu, ludzi, co nie pachną słodem. "
+                        "Jeśli kiedyś staniesz w mieście, nie krzywdź jej. I nie mów, że ją „odnalazłem”. "
+                        "Ona nie jest zgubą. Jest wyborem, którego nie potrafię przełknąć."
+                    ),
+                },
+                {
+                    "etykieta": "Zaproponuj inną drogę",
+                    "tekst": (
+                        "Osada. Twoja. Jeśli tam trafią ludzie z imionami, a nie tylko z mieczami… "
+                        "może Lira zrozumie, że palenisko też bywa królestwem. "
+                        "A ja? Ja umiem warzyć, liczyć i milczeć. Jeśli zapłacisz jak za całe życie, "
+                        "albo jeśli twoje słowa ugną we mnie kręgosłup — pójdę. Nie po chwałę. Po sen."
+                    ),
+                    "nagrody": [("karma", 1)],
+                },
+            ],
+        },
+        "testy": [
+            {
+                "etykieta": "Wyciągnij plotkę o skrytce",
+                "skill": "perswazja",
+                "st": 12,
+                "sukces": "Dobrze… za wzgórzem ktoś zakopał sakiewkę. Nie mów, że odemnie.",
+                "porazka": "Plotki kosztują. A ty nie brzmisz jak ktoś, komu ufam.",
+                "nagrody": [("zloto", 18)],
+            },
         ],
     },
     "kupiec": {
         "imie": "Kupiec Aldric",
         "ikona": "💰",
+        "rekrut": "aldric",
         "powitania": [
-            "Witaj, witaj! Mam wszystko, czego potrzebujesz — po odpowiedniej cenie!",
-            "Och, podróżnik! Interesy robię z każdym. Co cię interesuje?",
-            "Dobry dzień, bohaterze. Moje towary są najlepsze w tej części królestwa!",
-            "Ach, klient! Doskonałe wyczucie czasu — właśnie dostałem nową dostawę.",
+            "Witaj, witaj. Uśmiech mam na sprzedaż, resztę — na kredyt, którego nie chcesz.",
+            "Bohaterze. Towar nie kłamie. Ludzie tak. Dlatego wolę towar.",
+            "Dobry dzień. Jeśli masz złoto, jesteś przyjacielem. Jeśli nie — jesteś opowieścią.",
         ],
         "tematy": [
             ("O towarach", [
-                "Mam dzisiaj świeże mikstury i trochę sprzętu. Obejrzysz?",
-                "Mój dostawca przywiózł ostatnio niesamowitą kolczugę. Piękna robota!",
-                "Uważaj na podróbki. Moje towary mają gwarancję autentyczności!",
-                "Sztylet — lekki, zwinny i przystępny cenowo. Polecam dla każdego.",
+                "Gwarancja autentyczności? Owszem. Gwarancja, że przeżyjesz — extra.",
+                "Kolczuga z ostatniej dostawy pamięta poprzedniego właściciela. Nie pytaj jak.",
+                "Sztylet jest tani, bo prawda bywa krótka. Miecz jest drogi, bo kłamstwo trwa.",
             ]),
-            ("O przygodach", [
-                "Widziałem niejednego bohatera. Ci najlepsi zawsze dobrze się ekwipowali przed walką.",
-                "Jeden mój klient kupił sztylet i wrócił z dwoma workami złota. Niezła inwestycja!",
-                "Sprzedaję, bo lubię pomagać bohaterom. No i złoto też lubię, czego tu ukrywać.",
-                "Dobry ekwipunek to różnica między życiem a śmiercią. Naprawdę.",
+            ("O gildii", [
+                "Gildia kocha porządek: twój dług, ich nóż, wspólny uśmiech na rynku.",
+                "Wiatrak cen kręci się w mieście. Tu, na trakcie, jeszcze da się oddychać.",
+                "Kupiec, który nie boi się gildii, albo kłamie, albo już nie żyje i o tym nie wie.",
             ]),
-            ("O questach", [
-                "Słyszałem o tablicy questów w obozie. Ponoć dobrze płacą za gobliny.",
-                "Ktoś szuka śmiałka do oczyszczenia starych ruin. Duże pieniądze!",
-                "Questy to ryzyko, ale też zysk. Zawsze miej miksturę przy sobie.",
-                "Znam pewnego starego rycerza, który płaci za informacje o potworach. Ciekawe?",
-            ]),
+        ],
+        "watek": {
+            "tytul": "Dług, który gryzie palce",
+            "etapy": [
+                {
+                    "etykieta": "Czemu drży ci prawa dłoń?",
+                    "tekst": (
+                        "Czterysta sztuk. Nie towar — kara za to, że sprzedałem zboże poza rejestrem, "
+                        "gdy w mieście dzieci jadły korę. Windykatorzy zaczynają od palców wskazujących. "
+                        "Żebym „wiedział, czym pokazywać ceny”."
+                    ),
+                },
+                {
+                    "etykieta": "Gdzie księga długów?",
+                    "tekst": (
+                        "Zgubiłem ją w zaułku. Albo mi ją wyjęto. Kto ją ma, ma mnie. "
+                        "Gildia nie potrzebuje sądu. Potrzebuje papieru i świadka, który kiwnie głową. "
+                        "Jeśli kiedyś będziesz w mieście — nie czytaj jej głośno. Spal. Albo sprzedaj drożej niż życie."
+                    ),
+                },
+                {
+                    "etykieta": "Osada poza ich ręką",
+                    "tekst": (
+                        "Zaplecze. Targ, którego nie ma na mapie gildii. Jeśli mi je dasz, zerwę z nimi, "
+                        "zanim zerwą mnie. Nie jestem rycerzem. Jestem człowiekiem, który umie liczyć "
+                        "tak, żebyś ty miał zysk, a oni — tylko plotkę. Cena za mnie jest obleśna. "
+                        "Albo twoja charyzma musi być jak pożar na rynku."
+                    ),
+                    "nagrody": [("zloto", 20)],
+                },
+            ],
+        },
+        "testy": [
+            {
+                "etykieta": "Wytarguj napiwek",
+                "skill": "perswazja",
+                "st": 13,
+                "sukces": "Lubię twój styl. Weź to — na znak, że jeszcze umiem być człowiekiem.",
+                "porazka": "Ceny są ceny. Nie jestem przytułkiem.",
+                "nagrody": [("zloto", 15)],
+            },
         ],
     },
     "kowal": {
         "imie": "Kowal Grimbold",
         "ikona": "⚒",
+        "rekrut": "grimbold",
         "powitania": [
-            "Stuk, stuk! Nowy klient? Witam, witam. Co chcesz wykuć?",
-            "Ah, podróżnik! Moje miecze nie mają sobie równych. Przekonaj się!",
-            "Hej! Wejdź, tu nie gryziemy — tylko hartujemy stal!",
-            "Widzę, że szukasz dobrej broni. Trafiłeś w dobre miejsce, przyjacielu.",
+            "Stuk, stuk. Nowy klient? Witam. Jeśli chcesz miecz, powiedz po co. Kłamać i tak usłyszę w stali.",
+            "Wejdź. Tu nie gryziemy. Tylko hartujemy — i pamięć, i żelazo.",
+            "Widzę ręce. Pracowały. To dobrze. Gładkie dłonie zamawiają rzeczy, których potem żałują.",
         ],
         "tematy": [
             ("O broni", [
-                "Miecz to nie tylko żelazo. To precyzja, balans i pasja. Moje są doskonałe.",
-                "Topór wojenny — prosta, brutalna siła. Idealny dla tych, co nie lubią subtelności.",
-                "Łuk elficki? Skąd go mam? Elfy go zostawiły, ja naprawiłem. Teraz jest mój.",
-                "Sztylet to broń tchórzy? Nie! To broń inteligentnych. Szybki cios i po wszystkim.",
-            ]),
-            ("O zbroi", [
-                "Płytowa zbroja to inwestycja na całe życie. Twoje — jeśli przeżyjesz.",
-                "Kolczuga jest lżejsza, ale solidna. Połowa moich klientów ją nosi.",
-                "Skórzana zbroja dla zwinnych — dobry wybór. Lekka i funkcjonalna.",
-                "Szata maga? Trudna w kuciu, ale efekty są niesamowite. Magia spleciona ze stalą.",
+                "Miecz to nie żelazo. To decyzja, którą ktoś podejmie, gdy ciebie już nie będzie przy kowadle.",
+                "Topór nie udaje. Łuk udaje, że przemoc jest z daleka. Oba kłamią inaczej.",
+                "Sztylet to broń ludzi, co myślą. I ludzi, co nie chcą, żeby myślano o nich.",
             ]),
             ("O rzemiośle", [
-                "Trzydzieści lat przy kowadle — tyle zajmuje nauka dobrego kucia.",
-                "Mój mistrz mawiał: lepsza stal, lepszy wojownik. Brałem to dosłownie.",
-                "Wiele mieczy wyszło z tej kuźni. Kilka wróciło — w trochę gorszym stanie.",
-                "Stal krasnoludzka to najlepsza na świecie. I droga. Bardzo droga.",
+                "Trzydzieści lat. Mistrz mawiał: lepsza stal, lepszy wojownik. Nie powiedział, co z gorszym człowiekiem.",
+                "Stal krasnoludzka pamięta górę. Ludzka — kłamstwo zamawiającego.",
+                "Wiele mieczy wróciło. Żaden nie wrócił czysty. To nie wada kucia. To wada świata.",
             ]),
+        ],
+        "watek": {
+            "tytul": "Przeklęte ostrze",
+            "etapy": [
+                {
+                    "etykieta": "Czemu kowadło milczy dłużej niż trzeba?",
+                    "tekst": (
+                        "Wykowałem miecz dla rycerza z czystym herbem. Wykonał nim wieś. "
+                        "Dzieci, studnię, psa. Stal to pamięta. W nocy słyszę hart, którego nie dawałem. "
+                        "Nie jestem magiem. Jestem winny, bo umiałem za dobrze."
+                    ),
+                },
+                {
+                    "etykieta": "Da się to odkuć?",
+                    "tekst": (
+                        "Żeby przekuć klątwę, trzeba rudy, która widziała smoka. Nie metafory — ognia, "
+                        "co nie pyta o herby. Leże. Wiesz, które. Jeśli doniesiesz, może przestanie szeptać. "
+                        "Jeśli nie — będę kłuł pługi do śmierci i udawał, że to wystarczy."
+                    ),
+                },
+                {
+                    "etykieta": "Kuźnia w twoim obozie",
+                    "tekst": (
+                        "Chcę kłuć dla kogoś, kto nie każe mi zabijać niewinnych. "
+                        "Twoja osada. Warsztat. Ludzie, co noszą motyki, nie wyroki. "
+                        "Wezmę za to majątek albo dam się złamać słowem, jakiego nie słyszałem od mistrza."
+                    ),
+                    "nagrody": [("karma", 1)],
+                },
+            ],
+        },
+        "testy": [
+            {
+                "etykieta": "Poproś o radę kowalską",
+                "skill": "perswazja",
+                "st": 12,
+                "sukces": "Lubię ludzi, co słuchają. Weź zapas na ostrzenie. I nie rób ze stali alibi.",
+                "porazka": "Nie mam czasu na gadki. Albo kujesz, albo wychodzisz.",
+                "nagrody": [("zloto", 12)],
+            },
         ],
     },
     "kaplan": {
         "imie": "Kapłan Eremiel",
         "ikona": "🙏",
+        "rekrut": "eremiel",
         "powitania": [
-            "Oby bogowie strzegli twojej ścieżki, podróżniku. Czym mogę ci służyć?",
-            "Pokój niech będzie z tobą. Wejdź i pomodl się za pomyślność wyprawy.",
-            "Przybywasz w odpowiednim czasie. Coś mówi mi, że bogowie cię tu wołali.",
-            "Witaj, wędrowcze. Każdy, kto przekracza te progi, jest tu mile widziany.",
+            "Oby bogowie strzegli twojej ścieżki. Ja strzegę resztek, które im zostawiliśmy.",
+            "Wejdź. Modlitwa nie boli. Milczenie czasem tak.",
+            "Przybywasz w porę. Albo za późno. W świątyni te dwa słowa często znaczą to samo.",
         ],
         "tematy": [
             ("O błogosławieństwach", [
-                "Mogę odmówić modlitwę ochrony. Twoja obrona wzrośnie, lecz tylko raz na wyprawę.",
-                "Bogowie dają siłę tym, którzy w nich wierzą. I tym, którzy dużo walczą.",
-                "Błogosławieństwo nie zastąpi dobrej zbroi. Ale w połączeniu — niemożliwe staje się możliwe.",
-                "Przyjmij znak ochrony. Może uratować ci życie, gdy będziesz tego najbardziej potrzebował.",
+                "Ochrona raz na wyprawę. Bogowie lubią rachunek. Nie lubią, gdy ktoś prosi w kółko o to samo.",
+                "Wiara nie zastąpi zbroi. Zbroja nie zastąpi tego, po co wracasz z pola.",
+                "Znak na czole to nie tarcza. To obietnica, że jeśli padniesz, ktoś powie twoje imię.",
             ]),
             ("O złu", [
-                "Mroczna magia pełza z północy. Czuję to w kościach. Uważaj na nekromantów.",
-                "Gobliny to tylko pionki w grze sił ciemności. Prawdziwy wróg kryje się głębiej.",
-                "Widziałem już armie nieumarłych. Najlepiej nie budzić ich do życia.",
-                "Coś potężnego śpi w starych ruinach. Modlę się, żeby nie zostało przebudzone.",
+                "Gobliny są głośne. Prawdziwy mrok uczy się szeptać liturgią.",
+                "Nieumarli nie nienawidzą. Tęsknią źle. To gorsze.",
+                "W ruinach coś śpi. Modlę się, żeby sen był głębszy niż nasza ciekawość.",
             ]),
-            ("O świątyni", [
-                "Ta świątynia stoi tu od wieków. Przetrwała wojny i kataklizmy. Stoi nadal.",
-                "Ofiary złożone na ołtarzu wracają do potrzebujących. Taki jest porządek świata.",
-                "Każdy wojownik powinien raz odwiedzić świątynię. Dla spokoju ducha.",
-                "Modlitwa nie zaszkodzi. Nawet jeśli nie wierzysz, bogowie słyszą każde słowo.",
-            ]),
+        ],
+        "watek": {
+            "tytul": "Rozłam w zakonie",
+            "etapy": [
+                {
+                    "etykieta": "Czemu kadzidło pachnie strachem?",
+                    "tekst": (
+                        "Relikwiarz skradziono. Bracia oskarżają się jak pijani sędziowie. "
+                        "Każdy chce być czysty. Nikt nie chce być odpowiedzialny. "
+                        "W zakonie to ten sam grzech, tylko w ładniejszym szacie."
+                    ),
+                },
+                {
+                    "etykieta": "Cień z północy",
+                    "tekst": (
+                        "Szeptał imiona. W tym moje. Boję się, że to ja otworzyłem drzwi, "
+                        "modląc się o znak, gdy wiara była cienka jak opłatek. "
+                        "Jeśli znak przyszedł — przyszedł zębami."
+                    ),
+                },
+                {
+                    "etykieta": "Świeckie ramię",
+                    "tekst": (
+                        "Potrzebuję obozu, który nie jest ołtarzem. Miejsca, gdzie herezja "
+                        "nie kończy się stosem, tylko rozmową i pracą. Pójdę z tobą, jeśli "
+                        "zapłacisz jak za odpust króla — albo jeśli twoja charyzma uniesie winę, "
+                        "której ja nie umiem unieść sam."
+                    ),
+                    "nagrody": [("mikstura", 1)],
+                },
+            ],
+        },
+        "testy": [
+            {
+                "etykieta": "Wyznaj zmartwienie (Spostrzegawczość)",
+                "skill": "spostrzegawczosc",
+                "st": 13,
+                "sukces": "Widzę więcej, niż mówisz. Przyjmij dar — przyda się, gdy liturgia zmilknie.",
+                "porazka": "Twoje serce jest zamknięte. Wróć, gdy będziesz gotów.",
+                "nagrody": [("mikstura", 1)],
+            },
         ],
     },
     "stary_rycerz": {
         "imie": "Stary Rycerz Alderon",
         "ikona": "🗡",
+        "rekrut": "alderon",
         "powitania": [
-            "Hm. Młody. Dobre oczy masz, widzę. Przysiadaj, powiem ci coś ważnego.",
-            "Za moich czasów wojownicy chodzili boso i walczyli gołymi rękami. Teraz co? Sklepy! Bah.",
-            "Pamiętam cię — nie, przepraszam, to było sto lat temu. Witaj, nieznajomy.",
-            "Usiądź. Nie lubię gadać z ludźmi, co stoją. To niekulturalne.",
+            "Hm. Młody. Dobre oczy. Siadaj. Stojąc, ludzie kłamią szybciej.",
+            "Za moich czasów przysięga pachniała krwią i sianem. Dziś pachnie pieczęcią.",
+            "Usiądź. Nie lubię gadać z posągami. Posągi nie żałują.",
         ],
         "tematy": [
             ("O walce", [
-                "Siła to nie wszystko. Widziałem mnóstwo silnych facetów w grobach. Liczy się głowa.",
-                "Kiedy wróg atakuje, nie stój jak słup. Poruszaj się, myśl, nie daj się złapać.",
-                "Najlepszą taktyką jest nie dać się trafić. Potem można pomyśleć o ataku.",
-                "Kto ostatni stoi — ten wygrywa. Proste jak mój miecz.",
-            ]),
-            ("O doświadczeniu", [
-                "Pięćdziesiąt lat walczyłem. Rany, głupiec ze mnie był. Ale i doświadczony.",
-                "Każda blizna opowiada historię. Moje ciało to biblioteka klęsk i zwycięstw.",
-                "Mądrość przychodzi z wiekiem — lub z bolesną nauczką. Lepiej wybrać wiek.",
-                "Nie ma lepszego nauczyciela niż przeżyta walka. I lekarza po niej.",
+                "Siła to nagrobek z ładnym napisem. Głowa to to, co zostaje, gdy napis zblednie.",
+                "Nie stój jak słup. Słup jest od tego, żeby go obalili i zrobili z niego stos.",
+                "Kto ostatni stoi, wygrywa. Kto pierwszy myśli — czasem nie musi stać do końca.",
             ]),
             ("O świecie", [
-                "Królowie przychodzą i odchodzą. Smoki pozostają. Zawsze były i będą.",
-                "Za wzgórzami na wschodzie jest stare miasto. Tam, ponoć, czeka coś potężnego.",
-                "Dziś bohaterowie chodzą po sklepach. Za moich czasów chodziliśmy po lodowatych górach!",
-                "Gobliny to irytacja. Orkowie — problem. Smok — to jest problem.",
+                "Królowie gniją w tym samym tempie co chłopi. Smoki mają więcej czasu.",
+                "Za wzgórzami miasto. Tam sprawiedliwość nosi perukę i liczy podatki od głodu.",
+                "Gobliny irytują. Orkowie bolą. Zdrajca, którego karmiłeś — ten zostaje.",
             ]),
+        ],
+        "watek": {
+            "tytul": "Ostatnia przysięga",
+            "etapy": [
+                {
+                    "etykieta": "Jaką przysięgę jeszcze nosisz?",
+                    "tekst": (
+                        "Martwemu królowi obiecałem zdrajcę. Giermek. Jadł z mojej miski, "
+                        "spał pod moim płaszczem, a potem otworzył bramę nocą. "
+                        "Król umarł z pytaniem na ustach. Ja zostałem z odpowiedzią, której nie mam."
+                    ),
+                },
+                {
+                    "etykieta": "Gdzie jest giermek?",
+                    "tekst": (
+                        "W mieście. Poborca. Liczy głowy jak bydło i uśmiecha się do burmistrzyni. "
+                        "Jestem za stary na samosąd w bramie. A za młody na to, by powiedzieć, "
+                        "że przysięga wygasła, bo ja zmęczyłem się jej ciężarem."
+                    ),
+                },
+                {
+                    "etykieta": "Sprawiedliwość, nie rzeź",
+                    "tekst": (
+                        "Pójdę z tobą, jeśli obiecasz, że gdy go znajdziemy, nie zrobisz z tego widowiska. "
+                        "Sąd. Albo wygnanie. Nie stos dla tłumu. Zapłacisz jak za cały regiment — "
+                        "bo regimentem już nie jestem. Albo powiesz to tak, że stary pies znowu uwierzy w rozkaz."
+                    ),
+                    "nagrody": [("karma", 1)],
+                },
+            ],
+        },
+        "testy": [
+            {
+                "etykieta": "Zastrasz, by zdradził słabość wrogów",
+                "skill": "zastraszanie",
+                "st": 14,
+                "sukces": "Hah. Masz jaja. Gobliny padają, gdy celujesz w kolana. Ludzie — gdy w dumę.",
+                "porazka": "Młody, na mnie takie numery nie działają. Widziałem gorszych.",
+                "nagrody": [("zloto", 10)],
+            },
         ],
     },
     "tajemniczy_wedrowiec": {
-        "imie": "Tajemnicza Postać",
+        "imie": "Ashen Wędrowiec",
         "ikona": "🌑",
+        "rekrut": "ashen",
         "powitania": [
-            "Psst. Ty. Tak, ty. Podejdź bliżej... nie, nie tak blisko. Zatrzymaj się.",
-            "Widziałem cię już wcześniej. Nie tutaj — gdzie indziej. W wizji. Zaciekawiające.",
-            "Nie wszystko jest takim, jakim się wydaje. Ani ty, ani ja, ani ta droga.",
-            "Szukasz czegoś. Czuję to. Może ja mam to, czego szukasz. A może nie.",
+            "Psst. Nie tak blisko. Cień lubi dystans. Ja też.",
+            "Widziałem cię w miejscu, którego jeszcze nie ma. Nie dziękuj. To nie komplement.",
+            "Szukasz. Dobrze. Ci, co znaleźli, zwykle żałują, że przestali szukać.",
         ],
         "tematy": [
             ("O przeznaczeniu", [
-                "Każdy krok, który stawiasz, wiedzie ku czemuś. Pytanie — ku czemu?",
-                "Byłem tam, gdzie ty jeszcze nie dotarłeś. I powiem ci: warto tam dojść.",
-                "Przeznaczenie to nie ścieżka — to wybór. Pamiętaj o tym, gdy przyjdzie czas.",
-                "Twoja przyszłość jest jeszcze niezapisana. Dbaj o to.",
-            ]),
-            ("O tajemnicach", [
-                "Słyszałeś o Kamiennym Sercu? Nie? Dobrze. Lepiej nie słyszeć.",
-                "W ruinach za wschodnim lasem coś śpi. Niech dalej śpi. Na razie.",
-                "Trzy prawa i lewo przy rozwidleniu. Zapamiętaj, gdybyś czegoś szukał.",
-                "Mapa, którą nosisz w głowie, jest dokładniejsza niż ta na pergaminie.",
+                "Przeznaczenie to alibi dla tchórzy i marketing dla proroków.",
+                "Byłem tam, gdzie ty dojdziesz. Powiem ci tylko: zabierz wodę. I kogoś, kto umie kłamać.",
+                "Twoja przyszłość jest niezapisana, bo ktoś spalił księgę. Nie pytaj kto.",
             ]),
             ("O niebezpieczeństwie", [
-                "Jesteś śledzony. Nie odwracaj się. Idź wolno. Poczekaj... teraz uciekaj.",
-                "Coś zbiera siły w mrokach. Nie wiem co. Wiem tylko, że gdy przyjdzie — będzie za późno.",
-                "Jeden z twoich wrogów jest bliżej, niż myślisz. Zaufaj instynktom.",
-                "Bezpieczna droga nie zawsze jest dobra. Niebezpieczna bywa lepsza.",
+                "Jesteś śledzony. Nie odwracaj się. Śledzący lubi, gdy się odwracasz — wtedy jesteś grzeczny.",
+                "Coś zbiera siły w mroku. Gdy przyjdzie, będzie miało twoje pytania, nie twoje odpowiedzi.",
+                "Bezpieczna droga kończy się w urzędzie. Niebezpieczna — w prawdzie albo w rowie.",
             ]),
+        ],
+        "watek": {
+            "tytul": "Kamienne Serce",
+            "etapy": [
+                {
+                    "etykieta": "Czemu nie masz cienia w południe?",
+                    "tekst": (
+                        "Bo nie jestem do końca tu. To nie poezja. W południe świat wymaga pełnego kształtu. "
+                        "Ja mam tylko odłamek. Reszta leży pod pieczęcią, którą ludzie nazywają ruinami, "
+                        "żeby nie musieli nazywać jej grobem."
+                    ),
+                },
+                {
+                    "etykieta": "Kamienne Serce",
+                    "tekst": (
+                        "Kto zbierze odłamki, budzi to, co śpi. Ja jestem jednym z nich, który wolał chodzić "
+                        "niż być ołtarzem. Dlatego szeptam, dlatego kłamię, dlatego nie wchodzę do świątyń "
+                        "w południe. Kapłani czują dziurę. Myślą, że to grzech. To geometria."
+                    ),
+                },
+                {
+                    "etykieta": "Schowaj się w obozie",
+                    "tekst": (
+                        "Chcę zniknąć między zwykłymi ludźmi. Palenisko zagłusza sny lepiej niż runy. "
+                        "Weźmiesz mnie za fortunę — albo za słowo, które ugnie nawet pieczęć. "
+                        "Jeśli to drugie, pamiętaj: charyzma to też zaklęcie. Tylko tańsze w krwi."
+                    ),
+                    "nagrody": [("zloto", 25)],
+                },
+            ],
+        },
+        "testy": [
+            {
+                "etykieta": "Blefuj, że znasz jego sekret",
+                "skill": "oszustwo",
+                "st": 15,
+                "sukces": "Więc jednak wiesz. Weź to i znikaj, zanim ktoś nas usłyszy naprawdę.",
+                "porazka": "Nie znasz nic. Odchodź, zanim się zdenerwuję. A ja zdenerwowany nie bywam — bywam.",
+                "nagrody": [("zloto", 25)],
+            },
+        ],
+    },
+    "burmistrz": {
+        "imie": "Burmistrz Mirena",
+        "ikona": "🏛",
+        "rekrut": "mirena",
+        "powitania": [
+            "Mów krótko. Miasto nie ma czasu na eposy, a ja — na ludzi, co je opowiadają zamiast działać.",
+            "Jeśli niesiesz zboże, jesteś sojusznikiem. Jeśli niesiesz radę — stań w kolejce za głodem.",
+            "Witaj za murami. Tu każdy uśmiech ma stawkę podatkową.",
+        ],
+        "tematy": [
+            ("O mieście", [
+                "Mury chronią przed wilkami. Przed radą miasta chroni tylko bezsenność.",
+                "Straż służy temu, kto płaci obiad. Dziś obiad płacą spichlerze, nie ja.",
+                "Na rynku prawda kosztuje więcej niż jedwab, bo jedwab można podrobić ładniej.",
+            ]),
+            ("O prawie", [
+                "Prawo jest mostem. Bogaci idą po nim. Biedni — pod nim, w ścieku, i też dochodzą.",
+                "Mogę wieszać złodziei chleba. Kupców zboża — nie. Siedzą w radzie i głosują moje wyroki.",
+                "Sprawiedliwość bez spichlerza to kazanie na czczo. Słychać je lepiej, działa gorzej.",
+            ]),
+        ],
+        "watek": {
+            "tytul": "Głód za murami",
+            "etapy": [
+                {
+                    "etykieta": "Ile kłamie spichlerz?",
+                    "tekst": (
+                        "Liczymy gęby. Ziarna jest na papierze. W workach — na plotkę. "
+                        "Ktoś przesuwa cyfry w nocy. Nie goblin. Goblin nie umie pisać tak równo."
+                    ),
+                },
+                {
+                    "etykieta": "Kupcy czy zdrajcy?",
+                    "tekst": (
+                        "Trzymają zboże, aż cena będzie jak nóż. Nie mogę ich powiesić. Są radą. "
+                        "Mogę tylko patrzeć, jak miasto uczy się jeść wolniej. To też jest polityka. "
+                        "Najbrzydsza."
+                    ),
+                },
+                {
+                    "etykieta": "Sojusz z twoją osadą",
+                    "tekst": (
+                        "Potrzebuję targu na odludziu. Szlaku, którego nie ma w księgach gildii. "
+                        "Jeśli dasz mi miejsce przy twoim palenisku, zostawię łańcuch burmistrza "
+                        "temu, kto lubi go bardziej niż ludzi. Cena za mnie jest skandaliczna — "
+                        "jak za całą radę. Albo przekonaj mnie tak, że zapomnę, czym jest urząd."
+                    ),
+                    "nagrody": [("karma", 1)],
+                },
+            ],
+        },
+        "testy": [
+            {
+                "etykieta": "Wyjednaj zniżkę celną",
+                "skill": "perswazja",
+                "st": 16,
+                "sukces": "Na jeden wóz. I nie mów radzie, że mam serce. To szkodzi notowaniom.",
+                "porazka": "Cła są kręgosłupem miasta. Nie złamię go dla ładnej mowy.",
+                "nagrody": [("zloto", 30)],
+            },
+        ],
+    },
+    "kupiec_miejski": {
+        "imie": "Kupiec Vasco",
+        "ikona": "🐪",
+        "rekrut": "vasco",
+        "powitania": [
+            "Sukno, sól, milczenie. W tej kolejności. Czwartego nie sprzedaję — to już polityka.",
+            "Witaj na rynku. Jeśli nie kupujesz, i tak słucham. Informacja też ma taryfę.",
+            "Aldric cię przysłał? Nie. Aldric nie przysyła ludzi. Aldric przysyła długi.",
+        ],
+        "tematy": [
+            ("O karawanach", [
+                "Wóz, który jedzie nocą, nie zawsze wiezie sukno. Czasem wiezie decyzje rady.",
+                "Lira? Znam imię. Nie sprzedaję ludzi. Sprzedaję przejazd. Różnica jest cienka i mokra.",
+                "Gildia lubi, gdy ktoś inny brudzi ręce. Ja mam rękawice. Droższe niż twoja zbroja.",
+            ]),
+            ("O zysku", [
+                "Zysk bez ryzyka to podatek. Ryzyko bez zysku to bohaterstwo. Nie handluję drugim.",
+                "Twoja osada na mapie to dziura. Dziury są cenne: nikt nie cłuje dziur.",
+                "Partner milczący żyje dłużej. Partner głośny żyje ciekawiej. Wybieraj żołądkiem.",
+            ]),
+        ],
+        "watek": {
+            "tytul": "Cichy udział",
+            "etapy": [
+                {
+                    "etykieta": "Co naprawdę wieziesz?",
+                    "tekst": (
+                        "Więcej niż sukno. Straż tego nie widzi albo nie chce. "
+                        "Nie pytaj o worki. Pytaj o to, kto płacze, gdy worki dojeżdżają. "
+                        "Czasem nikt. To najlepsze kursy."
+                    ),
+                },
+                {
+                    "etykieta": "Lira Boldanówna",
+                    "tekst": (
+                        "Żyje. Pracuje przy wadze. Nie chcę, żeby ojciec tu wlazł z nożem i kazaniem. "
+                        "Ona wybrała miasto jak ktoś wybiera ogień zamiast dymu. "
+                        "Mogę przekazać list. Nie mogę przekazać jej z powrotem. Nie jest towarem."
+                    ),
+                    "nagrody": [("karma", 1)],
+                },
+                {
+                    "etykieta": "Udział w osadzie",
+                    "tekst": (
+                        "Twoje chaty, mój wóz. Targ, którego gildia nie ma w księgach. "
+                        "Jeśli mnie weźmiesz, uznają cię za konkurencję. To komplement i wyrok w jednym. "
+                        "Zapłacisz jak za karawanę królewską — albo zagadasz mnie tak, że sam uwierzę, "
+                        "iż uczciwość jest opłacalna. To byłby nowy towar na tym rynku."
+                    ),
+                    "nagrody": [("zloto", 18)],
+                },
+            ],
+        },
+        "testy": [
+            {
+                "etykieta": "Wytarguj ciszę o twojej osadzie",
+                "skill": "oszustwo",
+                "st": 15,
+                "sukces": "Nie słyszałem o żadnym obozie. Słyszałem o wilkach. Wilki nie płacą cła.",
+                "porazka": "Za głośno handlujesz tajemnicą. To amatorszczyzna.",
+                "nagrody": [("zloto", 20)],
+            },
         ],
     },
 }
 
 
-# ------------------------------------------------------------------ #
-#  Wyświetlanie dialogów (UI)                                          #
-# ------------------------------------------------------------------ #
+def _nagrody_dialogu(gracz, nagrody: list) -> None:
+    for typ, wartosc in nagrody:
+        if typ == "zloto":
+            gracz.zloto += wartosc
+            print(f"  💰  Zyskujesz {wartosc} złota.")
+        elif typ == "mikstura":
+            gracz.mikstury += wartosc
+            print(f"  🧪  Dostajesz {wartosc} miksturę.")
+        elif typ == "karma":
+            gracz.karma = getattr(gracz, "karma", 0) + wartosc
+            print(f"  ✨  Karma {wartosc:+d}.")
 
-def _pokaz_dialog(postac: dict) -> None:
-    """Wyświetla interaktywny dialog z NPC."""
+
+def _etap_watku(gracz, klucz: str) -> int:
+    if getattr(gracz, "watki_npc", None) is None:
+        gracz.watki_npc = {}
+    return int(gracz.watki_npc.get(klucz, 0))
+
+
+def _ustaw_etap_watku(gracz, klucz: str, etap: int) -> None:
+    if getattr(gracz, "watki_npc", None) is None:
+        gracz.watki_npc = {}
+    gracz.watki_npc[klucz] = etap
+
+
+def _pokaz_watek(postac: dict, klucz: str, gracz) -> None:
+    watek = postac.get("watek") or {}
+    etapy = watek.get("etapy") or []
+    if not etapy:
+        return
+    idx = _etap_watku(gracz, klucz)
+    wyswietl_linie()
+    print(f"  {postac['ikona']}  {postac['imie']}  —  {watek.get('tytul', 'Wątek')}")
+    if idx >= len(etapy):
+        print(
+            f'  „To już opowiedziałem. Reszta dzieje się, gdy nie gadasz, tylko żyjesz.”'
+        )
+        print()
+        nacisnij_enter()
+        return
+    etap = etapy[idx]
+    print(f'  „{etap["tekst"]}"\n')
+    _nagrody_dialogu(gracz, etap.get("nagrody") or [])
+    _ustaw_etap_watku(gracz, klucz, idx + 1)
+    if idx + 1 >= len(etapy):
+        print("  (Wątek tej postaci dobiegł końca — ale decyzje jeszcze nie.)")
+    else:
+        print("  (Wątek posunął się naprzód. Wróć, by usłyszeć więcej.)")
+    print()
+    nacisnij_enter()
+
+
+def _pokaz_dialog(klucz: str, gracz=None) -> None:
+    """Wyświetla interaktywny dialog z NPC (wątek, testy, rekrutacja)."""
+    postac = _DIALOGI[klucz]
     wyswietl_linie()
     powitanie = random.choice(postac["powitania"])
     print(f"  {postac['ikona']}  {postac['imie']}:")
     print(f'  „{powitanie}"\n')
+    testy = list(postac.get("testy") or [])
+    uzyte: set[int] = set()
+    watek = postac.get("watek") or {}
+    etapy = watek.get("etapy") or []
 
     while True:
         print("  O czym porozmawiać?\n")
-        for i, (temat, _) in enumerate(postac["tematy"], 1):
-            print(f"  [{i}] {temat}")
-        print("  [0] Zakończ rozmowę\n")
+        tematy = postac["tematy"]
+        opcje: list[tuple[str, str]] = []
+        for temat, _ in tematy:
+            opcje.append(("temat", temat))
+        if gracz is not None and etapy:
+            idx_w = _etap_watku(gracz, klucz)
+            if idx_w < len(etapy):
+                opcje.append(("watek", f"📜 {etapy[idx_w]['etykieta']}"))
+            else:
+                opcje.append(("watek", f"📜 {watek.get('tytul', 'Wątek')} (zakończony)"))
+        if gracz is not None:
+            for test in testy:
+                opcje.append(("test", test["etykieta"]))
+        if gracz is not None and postac.get("rekrut"):
+            opcje.append(("rekrut", "🤝 Zaproponuj dołączenie do osady"))
+
+        for i, (_, etykieta) in enumerate(opcje, 1):
+            if opcje[i - 1][0] == "test":
+                test_nr = sum(1 for t, _ in opcje[: i - 1] if t == "test")
+                if test_nr in uzyte:
+                    print(f"  [{i}] 🎲 {etykieta}  (już próbowałeś)")
+                    continue
+                test = testy[test_nr]
+                st = trudnosc(gracz, test["st"])
+                nazwa = SKILLE[test["skill"]]["nazwa"]
+                print(f"  [{i}] 🎲 {etykieta}  ({nazwa} ST {st})")
+            else:
+                print(f"  [{i}] {etykieta}")
+        print("  [0] 🚶 Zakończ rozmowę\n")
 
         wybor = input("  Twój wybór: ").strip()
-
         if wybor == "0":
-            print(f"  {postac['imie']}: „Do zobaczenia, wędrowcze!"")
+            print(f"  {postac['imie']}: „Do zobaczenia. Nie wszystko da się dogadać przy stole.”")
             nacisnij_enter()
             return
 
         try:
             idx = int(wybor) - 1
-            if 0 <= idx < len(postac["tematy"]):
-                _, kwestie = postac["tematy"][idx]
-                kwestia = random.choice(kwestie)
-                wyswietl_linie()
-                print(f"  {postac['ikona']}  {postac['imie']}:")
-                print(f'  „{kwestia}"\n')
+        except ValueError:
+            print("  Nieprawidłowy wybór.")
+            nacisnij_enter()
+            continue
+
+        if not 0 <= idx < len(opcje):
+            print("  Nieprawidłowy wybór.")
+            nacisnij_enter()
+            continue
+
+        rodzaj, _ = opcje[idx]
+        if rodzaj == "temat":
+            temat_idx = sum(1 for t, _ in opcje[:idx] if t == "temat")
+            _, kwestie = tematy[temat_idx]
+            kwestia = random.choice(kwestie)
+            wyswietl_linie()
+            print(f"  {postac['ikona']}  {postac['imie']}:")
+            print(f'  „{kwestia}"\n')
+            nacisnij_enter()
+            continue
+
+        if rodzaj == "watek" and gracz is not None:
+            _pokaz_watek(postac, klucz, gracz)
+            continue
+
+        if rodzaj == "test" and gracz is not None:
+            test_idx = sum(1 for t, _ in opcje[:idx] if t == "test")
+            if test_idx in uzyte:
+                print("  Już to próbowałeś w tej rozmowie.")
                 nacisnij_enter()
                 continue
-        except ValueError:
-            pass
+            test = testy[test_idx]
+            uzyte.add(test_idx)
+            st = trudnosc(gracz, test["st"])
+            wynik = przeprowadz_test(gracz, test["skill"], st)
+            wyswietl_linie()
+            print(f"  {postac['ikona']}  {postac['imie']}:")
+            if wynik.sukces:
+                print(f'  „{test["sukces"]}"')
+                _nagrody_dialogu(gracz, test.get("nagrody") or [])
+            else:
+                print(f'  „{test["porazka"]}"')
+            print()
+            nacisnij_enter()
+            continue
+
+        if rodzaj == "rekrut" and gracz is not None:
+            from game.rekruci import proponuj_rekrutacje_npc
+            proponuj_rekrutacje_npc(gracz, postac["rekrut"])
+            continue
 
         print("  Nieprawidłowy wybór.")
         nacisnij_enter()
 
 
-def dialog_karczmarz() -> None:
-    """Dialog z karczmarzem."""
-    _pokaz_dialog(_DIALOGI["karczmarz"])
+def dialog_karczmarz(gracz=None) -> None:
+    _pokaz_dialog("karczmarz", gracz)
 
 
-def dialog_kupiec() -> None:
-    """Dialog z kupcem."""
-    _pokaz_dialog(_DIALOGI["kupiec"])
+def dialog_kupiec(gracz=None) -> None:
+    _pokaz_dialog("kupiec", gracz)
 
 
-def dialog_kowal() -> None:
-    """Dialog z kowalem."""
-    _pokaz_dialog(_DIALOGI["kowal"])
+def dialog_kowal(gracz=None) -> None:
+    _pokaz_dialog("kowal", gracz)
 
 
-def dialog_kaplan() -> None:
-    """Dialog z kapłanem."""
-    _pokaz_dialog(_DIALOGI["kaplan"])
+def dialog_kaplan(gracz=None) -> None:
+    _pokaz_dialog("kaplan", gracz)
 
 
-def dialog_stary_rycerz() -> None:
-    """Dialog ze starym rycerzem."""
-    _pokaz_dialog(_DIALOGI["stary_rycerz"])
+def dialog_stary_rycerz(gracz=None) -> None:
+    _pokaz_dialog("stary_rycerz", gracz)
 
 
-def dialog_tajemniczy() -> None:
-    """Dialog z tajemniczą postacią."""
-    _pokaz_dialog(_DIALOGI["tajemniczy_wedrowiec"])
+def dialog_tajemniczy(gracz=None) -> None:
+    _pokaz_dialog("tajemniczy_wedrowiec", gracz)
 
 
-def losowy_npc() -> None:
-    """Losuje NPC i wyświetla jego dialog."""
-    klucz = random.choice(list(_DIALOGI.keys()))
-    _pokaz_dialog(_DIALOGI[klucz])
+def dialog_burmistrz(gracz=None) -> None:
+    _pokaz_dialog("burmistrz", gracz)
+
+
+def dialog_kupiec_miejski(gracz=None) -> None:
+    _pokaz_dialog("kupiec_miejski", gracz)
+
+
+def losowy_npc(gracz=None) -> None:
+    pula = (
+        "karczmarz",
+        "kupiec",
+        "kowal",
+        "kaplan",
+        "stary_rycerz",
+        "tajemniczy_wedrowiec",
+    )
+    klucz = random.choice(pula)
+    _pokaz_dialog(klucz, gracz)

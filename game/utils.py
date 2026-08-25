@@ -29,6 +29,6 @@ def baner_tytulowy() -> None:
     print("  ██║     ██║  ██║╚██████╔╝    ██║  ██║██║     ╚██████╔╝")
     print("  ╚═╝     ╚═╝  ╚═╝ ╚═════╝     ╚═╝  ╚═╝╚═╝      ╚═════╝ ")
     wyswietl_linie("═")
-    print("         Tekstowa gra RPG fantasy po polsku")
+    print("         ⚔  Tekstowa gra RPG fantasy po polsku  🛡")
     wyswietl_linie("═")
     print()

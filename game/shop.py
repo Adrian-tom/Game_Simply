@@ -1,29 +1,78 @@
 """Moduł obsługujący sklep i kuźnię."""
 
 from game.player import Gracz
-from game.items import EKWIPUNEK, SKLEP_ASORTYMENT, KUZNIA_ASORTYMENT, zaloz, wyswietl_przedmiot
+from game.items import (
+    EKWIPUNEK,
+    SKLEP_ASORTYMENT,
+    KUZNIA_ASORTYMENT,
+    zaloz,
+    wyswietl_przedmiot,
+    dodaj_do_plecaka,
+    menu_sprzedazy,
+)
+from game.quests import sprawdz_questy
+from game.pochodzenie import cena_dla
 from game.utils import wyswietl_linie, nacisnij_enter
 
 
 _MIKSTURY = [
-    {"nazwa": "Mikstura leczenia", "klucz": "mikstura", "cena": 20, "opis": "Leczy 40 HP"},
-    {"nazwa": "Mikstura większa", "klucz": "mikstura_duza", "cena": 45, "opis": "Leczy 80 HP (dodaje 2 mikstury)"},
+    {"nazwa": "Mikstura leczenia", "klucz": "mikstura", "cena": 20, "ikona": "🧪", "opis": "Leczy 40 HP"},
+    {"nazwa": "Mikstura większa", "klucz": "mikstura_duza", "cena": 45, "ikona": "💚", "opis": "Leczy 80 HP od razu"},
+    {"nazwa": "Mikstura many", "klucz": "mana", "cena": 25, "ikona": "🔮", "opis": "Przywraca 30 many"},
+    {"nazwa": "Antidotum", "klucz": "antidotum", "cena": 18, "ikona": "🧴", "opis": "Zdejmuje truciznę i krwawienie"},
 ]
 
 
 def _kup_ekwipunek(gracz: Gracz, klucz: str) -> None:
-    """Obsługuje zakup i zakładanie przedmiotu ekwipunku."""
+    """Obsługuje zakup — przedmiot trafia do plecaka, potem jest zakładany."""
     item = EKWIPUNEK[klucz]
-    if gracz.zloto < item["cena"]:
-        print(f"  Nie masz wystarczająco złota! Potrzebujesz {item['cena']} szt.")
+    cena = cena_dla(gracz, item["cena"])
+    if gracz.zloto < cena:
+        print(f"  Nie masz wystarczająco złota! Potrzebujesz {cena} szt.")
         nacisnij_enter()
         return
 
-    gracz.zloto -= item["cena"]
+    gracz.zloto -= cena
     gracz.statystyki["zakupy"] = gracz.statystyki.get("zakupy", 0) + 1
+    dodaj_do_plecaka(gracz, klucz)
     komunikat = zaloz(gracz, klucz)
-    print(f"  Kupiono i założono: {item['nazwa']}!")
+    print(f"  Kupiono: {item['nazwa']}! Poprzedni ekwipunek wrócił do plecaka.")
     print(komunikat)
+    for msg in sprawdz_questy(gracz):
+        print(msg)
+    nacisnij_enter()
+
+
+def _kup_konsumable(gracz: Gracz, produkt: dict) -> None:
+    """Obsługuje zakup mikstur i antidotum."""
+    cena = cena_dla(gracz, produkt["cena"])
+    if gracz.zloto < cena:
+        print(f"  Nie masz wystarczająco złota! Potrzebujesz {cena} szt.")
+        nacisnij_enter()
+        return
+
+    if produkt["klucz"] == "mana" and gracz.max_mana <= 0:
+        print("  Twoja klasa nie korzysta z many — ten towar nic ci nie da.")
+        nacisnij_enter()
+        return
+
+    gracz.zloto -= cena
+    gracz.statystyki["zakupy"] = gracz.statystyki.get("zakupy", 0) + 1
+    klucz = produkt["klucz"]
+    if klucz == "mikstura":
+        gracz.mikstury += 1
+        print(f"  Kupiono: {produkt['nazwa']}. Mikstury: {gracz.mikstury}")
+    elif klucz == "mikstura_duza":
+        gracz.mikstury_duze = getattr(gracz, "mikstury_duze", 0) + 1
+        print(f"  Kupiono: {produkt['nazwa']}. Większe mikstury: {gracz.mikstury_duze}")
+    elif klucz == "mana":
+        gracz.mikstury_many = getattr(gracz, "mikstury_many", 0) + 1
+        print(f"  Kupiono: {produkt['nazwa']}. Mikstury many: {gracz.mikstury_many}")
+    elif klucz == "antidotum":
+        gracz.antidota = getattr(gracz, "antidota", 0) + 1
+        print(f"  Kupiono: {produkt['nazwa']}. Antidota: {gracz.antidota}")
+    for msg in sprawdz_questy(gracz):
+        print(msg)
     nacisnij_enter()
 
 
@@ -33,16 +82,19 @@ def otworz_sklep(gracz: Gracz) -> None:
         wyswietl_linie()
         print(f"  🏪  SKLEP  |  Twoje złoto: {gracz.zloto} szt.\n")
 
-        print("  ─── Mikstury ───")
+        print("  ─── Mikstury i medykamenty ───")
         for i, produkt in enumerate(_MIKSTURY, 1):
-            print(f"  [{i}] {produkt['nazwa']} — {produkt['cena']} złota  ({produkt['opis']})")
+            cena = cena_dla(gracz, produkt["cena"])
+            znizka = f" (zniżka: {produkt['cena']}→{cena})" if cena < produkt["cena"] else ""
+            print(f"  [{i}] {produkt.get('ikona', '🧪')} {produkt['nazwa']} — {cena} złota{znizka}  ({produkt['opis']})")
 
         print(f"\n  ─── Ekwipunek ───")
         offset = len(_MIKSTURY)
         for j, klucz in enumerate(SKLEP_ASORTYMENT, 1):
             wyswietl_przedmiot(klucz, offset + j, gracz)
 
-        print(f"\n  [0] Wyjdź ze sklepu\n")
+        print(f"\n  [S] 💰 Sprzedaj przedmiot z plecaka")
+        print(f"  [0] 🚶 Wyjdź ze sklepu\n")
 
         wybor = input("  Twój wybór: ").strip()
 
@@ -51,31 +103,20 @@ def otworz_sklep(gracz: Gracz) -> None:
             nacisnij_enter()
             return
 
+        if wybor.lower() == "s":
+            menu_sprzedazy(gracz)
+            continue
+
         try:
             idx = int(wybor) - 1
         except ValueError:
             print("  Wpisz numer produktu.")
             continue
 
-        # Mikstury
         if 0 <= idx < len(_MIKSTURY):
-            produkt = _MIKSTURY[idx]
-            if gracz.zloto < produkt["cena"]:
-                print(f"  Nie masz wystarczająco złota! Potrzebujesz {produkt['cena']} szt.")
-                nacisnij_enter()
-                continue
-            gracz.zloto -= produkt["cena"]
-            gracz.statystyki["zakupy"] = gracz.statystyki.get("zakupy", 0) + 1
-            if produkt["klucz"] == "mikstura":
-                gracz.mikstury += 1
-                print(f"  Kupiono: {produkt['nazwa']}. Mikstury: {gracz.mikstury}")
-            elif produkt["klucz"] == "mikstura_duza":
-                gracz.mikstury += 2
-                print(f"  Kupiono: {produkt['nazwa']}. Mikstury: {gracz.mikstury}")
-            nacisnij_enter()
+            _kup_konsumable(gracz, _MIKSTURY[idx])
             continue
 
-        # Ekwipunek
         eq_idx = idx - len(_MIKSTURY)
         if 0 <= eq_idx < len(SKLEP_ASORTYMENT):
             _kup_ekwipunek(gracz, SKLEP_ASORTYMENT[eq_idx])
@@ -84,15 +125,16 @@ def otworz_sklep(gracz: Gracz) -> None:
         print("  Nieprawidłowy wybór.")
 
 
-def otworz_kuznia(gracz: Gracz) -> None:
+def otworz_kuznia(gracz: Gracz, tytul: str = "KUŹNIA GRIMBOLD'A") -> None:
     """Wyświetla kuźnię (ciężki ekwipunek bojowy) i obsługuje transakcje."""
     while True:
         wyswietl_linie()
-        print(f"  ⚒  KUŹNIA GRIMBOLD'A  |  Twoje złoto: {gracz.zloto} szt.\n")
+        print(f"  ⚒  {tytul}  |  Twoje złoto: {gracz.zloto} szt.\n")
         print("  ─── Broń i zbroja ───")
         for i, klucz in enumerate(KUZNIA_ASORTYMENT, 1):
             wyswietl_przedmiot(klucz, i, gracz)
-        print(f"\n  [0] Wyjdź z kuźni\n")
+        print(f"\n  [S] 💰 Sprzedaj przedmiot z plecaka")
+        print(f"  [0] 🚶 Wyjdź z kuźni\n")
 
         wybor = input("  Twój wybór: ").strip()
 
@@ -100,6 +142,10 @@ def otworz_kuznia(gracz: Gracz) -> None:
             print("  Kowal kiwa głową. Do następnego razu!")
             nacisnij_enter()
             return
+
+        if wybor.lower() == "s":
+            menu_sprzedazy(gracz)
+            continue
 
         try:
             idx = int(wybor) - 1
@@ -112,4 +158,3 @@ def otworz_kuznia(gracz: Gracz) -> None:
             continue
 
         print("  Nieprawidłowy wybór.")
-

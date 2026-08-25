@@ -7,6 +7,7 @@ from game.utils import wyswietl_linie, nacisnij_enter
 QUESTY: dict[str, dict] = {
     "goblin_slayer": {
         "nazwa": "Pogromca Goblinów",
+        "ikona": "👺",
         "opis": "Pokonaj 5 Goblinów terroryzujących okoliczne wioski.",
         "cel_ilosc": 5,
         "stat_klucz": "zabite_goblin",
@@ -16,6 +17,7 @@ QUESTY: dict[str, dict] = {
     },
     "weteran": {
         "nazwa": "Weteran Bojowy",
+        "ikona": "⚔",
         "opis": "Wygraj 10 walk — udowodnij swoją wartość w boju.",
         "cel_ilosc": 10,
         "stat_klucz": "wygrane_walki",
@@ -26,6 +28,7 @@ QUESTY: dict[str, dict] = {
     },
     "handlarz": {
         "nazwa": "Stały Klient",
+        "ikona": "💰",
         "opis": "Dokonaj 3 zakupów w sklepie lub kuźni.",
         "cel_ilosc": 3,
         "stat_klucz": "zakupy",
@@ -36,6 +39,7 @@ QUESTY: dict[str, dict] = {
     },
     "pielgrzym": {
         "nazwa": "Pielgrzym",
+        "ikona": "🛕",
         "opis": "Odwiedź świątynię i przyjmij błogosławieństwo kapłanów.",
         "cel_ilosc": 1,
         "stat_klucz": "odwiedzone_swiatynie",
@@ -46,12 +50,33 @@ QUESTY: dict[str, dict] = {
     },
     "lowca_potworow": {
         "nazwa": "Łowca Potworów",
+        "ikona": "🐉",
         "opis": "Zabij łącznie 15 potworów.",
         "cel_ilosc": 15,
         "stat_klucz": "zabite_potwory",
         "nagroda_zloto": 80,
         "nagroda_exp": 200,
         "nagroda_opis": "80 złota + 200 EXP",
+    },
+    "osadnik": {
+        "nazwa": "Osadnik",
+        "ikona": "🏕",
+        "opis": "Wznieś pierwszy budynek w obozie (sklep, dom, kuźnię albo stajnie).",
+        "cel_ilosc": 1,
+        "stat_klucz": "zbudowane_budynki",
+        "nagroda_zloto": 40,
+        "nagroda_exp": 80,
+        "nagroda_opis": "40 złota + 80 EXP",
+    },
+    "rekruter": {
+        "nazwa": "Rekruter",
+        "ikona": "🤝",
+        "opis": "Zatrudnij towarzysza w karczmie albo przy wędrowcu.",
+        "cel_ilosc": 1,
+        "stat_klucz": "zrekrutowani",
+        "nagroda_zloto": 30,
+        "nagroda_exp": 70,
+        "nagroda_opis": "30 złota + 70 EXP",
     },
 }
 
@@ -132,7 +157,7 @@ def pokaz_tablice_questow(gracz) -> None:
                 quest = QUESTY[klucz]
                 postep = _postep(gracz, quest)
                 cel = quest["cel_ilosc"]
-                print(f"  [{numer}] ⏳ {quest['nazwa']}  ({postep}/{cel})")
+                print(f"  [{numer}] ⏳ {quest.get('ikona', '📜')} {quest['nazwa']}  ({postep}/{cel})")
                 print(f"       {quest['opis']}")
                 print(f"       Nagroda: {quest['nagroda_opis']}")
                 print()
@@ -143,7 +168,7 @@ def pokaz_tablice_questow(gracz) -> None:
             print("  ─── DOSTĘPNE DO PRZYJĘCIA ───")
             for klucz in dostepne:
                 quest = QUESTY[klucz]
-                print(f"  [{numer}] {quest['nazwa']}")
+                print(f"  [{numer}] {quest.get('ikona', '📜')} {quest['nazwa']}")
                 print(f"       {quest['opis']}")
                 print(f"       Nagroda: {quest['nagroda_opis']}")
                 print()

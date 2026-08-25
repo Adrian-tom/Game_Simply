@@ -1,2 +1,17 @@
-# Brak zewnętrznych zależności.
-# Gra używa wyłącznie bibliotek standardowych języka Python 3.
+# Game_Simply — wymagania
+#
+# Brak pakietów z PyPI. Gra korzysta wyłącznie ze standardowej
+# biblioteki Pythona (json, random, pathlib, dataclasses, typing).
+#
+# Wymagane:
+#   Python >= 3.10
+#
+# Instalacja zależności (nic do pobrania):
+#   pip install -r requirements.txt
+#
+# Uruchomienie:
+#   uruchom.bat
+#   python main.py
+#
+# Ten plik jest celowo bez wpisów pakietów.
+# Nie dodawaj tu bibliotek — projekt ma zostać samodzielny (stdlib only).

@@ -1,0 +1,14 @@
+# Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local playthrough — do not publish
+savegame.json
+
+# Virtualenv / IDE
+.venv/
+venv/
+.env
+.idea/
+.vscode/

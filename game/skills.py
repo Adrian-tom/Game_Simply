@@ -259,6 +259,15 @@ UMIEJETNOSCI: dict[str, dict] = {
         "koszt_many": 10,
         "ikona": "🌿",
     },
+    "forma_niedzwiedzia": {
+        "nazwa": "Forma niedźwiedzia",
+        "opis": "Przemiana: obrona i atak w górę, regeneracja HP (kilka tur)",
+        "klasa": "Druid",
+        "podklasa": None,
+        "poziom": 1,
+        "koszt_many": 12,
+        "ikona": "🐻",
+    },
     "uzdrowienie": {
         "nazwa": "Uzdrowienie",
         "opis": "Leczy 50 HP",
@@ -277,6 +286,15 @@ UMIEJETNOSCI: dict[str, dict] = {
         "koszt_many": 20,
         "ikona": "⛈",
     },
+    "forma_wilka": {
+        "nazwa": "Forma wilka",
+        "opis": "Przemiana: duży atak i krytyki, słabsza obrona",
+        "klasa": "Druid",
+        "podklasa": None,
+        "poziom": 5,
+        "koszt_many": 15,
+        "ikona": "🐺",
+    },
     "regeneracja": {
         "nazwa": "Regeneracja",
         "opis": "Gracz leczy się o 15 HP na turę przez 4 tury",
@@ -285,6 +303,15 @@ UMIEJETNOSCI: dict[str, dict] = {
         "poziom": 8,
         "koszt_many": 20,
         "ikona": "🌱",
+    },
+    "forma_kruka": {
+        "nazwa": "Forma kruka",
+        "opis": "Przemiana: wysoka szansa na unik ataków wroga",
+        "klasa": "Druid",
+        "podklasa": None,
+        "poziom": 8,
+        "koszt_many": 15,
+        "ikona": "🐦",
     },
 
     # Druid → Szaman
@@ -296,6 +323,15 @@ UMIEJETNOSCI: dict[str, dict] = {
         "poziom": 6,
         "koszt_many": 20,
         "ikona": "🔺",
+    },
+    "forma_ducha": {
+        "nazwa": "Forma ducha",
+        "opis": "Przemiana: unik i regeneracja many co turę",
+        "klasa": "Druid",
+        "podklasa": "Szaman",
+        "poziom": 6,
+        "koszt_many": 18,
+        "ikona": "👻",
     },
     "piorun_szamana": {
         "nazwa": "Piorun szamana",
@@ -339,6 +375,15 @@ UMIEJETNOSCI: dict[str, dict] = {
         "koszt_many": 15,
         "ikona": "🩸",
     },
+    "przywolaj_szkielet": {
+        "nazwa": "Przywołaj szkielet",
+        "opis": "Przywołuje sługę — atakuje i może przejąć cios wroga",
+        "klasa": "Nekromanta",
+        "podklasa": None,
+        "poziom": 1,
+        "koszt_many": 12,
+        "ikona": "💀",
+    },
     "klatwa_smierci": {
         "nazwa": "Klątwa śmierci",
         "opis": "Wróg zadaje 50% mniej obrażeń przez 3 tury",
@@ -356,6 +401,15 @@ UMIEJETNOSCI: dict[str, dict] = {
         "poziom": 5,
         "koszt_many": 20,
         "ikona": "🦴",
+    },
+    "przywolaj_ghul": {
+        "nazwa": "Przywołaj ghula",
+        "opis": "Wytrzymały sługa — więcej HP, chętniej przejmuje ciosy",
+        "klasa": "Nekromanta",
+        "podklasa": None,
+        "poziom": 5,
+        "koszt_many": 20,
+        "ikona": "🧟",
     },
     "dotyk_smierci": {
         "nazwa": "Dotyk śmierci",
@@ -377,6 +431,15 @@ UMIEJETNOSCI: dict[str, dict] = {
         "koszt_many": 25,
         "ikona": "💀",
     },
+    "przywolaj_widmo": {
+        "nazwa": "Przywołaj widmo",
+        "opis": "Sługa z Otchłani — atak ignoruje połowę obrony wroga",
+        "klasa": "Nekromanta",
+        "podklasa": "Lich",
+        "poziom": 6,
+        "koszt_many": 22,
+        "ikona": "👻",
+    },
     "wiecznie_zywi": {
         "nazwa": "Wiecznie żywi",
         "opis": "Aktywuje ochronę — jeśli gracz miałby umrzeć, leczy go o 40 HP (raz na walkę)",
@@ -396,6 +459,15 @@ UMIEJETNOSCI: dict[str, dict] = {
         "poziom": 6,
         "koszt_many": 10,
         "ikona": "🗡",
+    },
+    "krwawy_sluga": {
+        "nazwa": "Krwawy sługa",
+        "opis": "Poświęcasz HP, by przywołać silnego sługę",
+        "klasa": "Nekromanta",
+        "podklasa": "KaplanMroku",
+        "poziom": 6,
+        "koszt_many": 12,
+        "ikona": "🩸",
     },
     "ofiarny_rytual": {
         "nazwa": "Ofiarny rytuał",
@@ -471,3 +543,186 @@ PODKLASY: dict[str, list[dict]] = {
         },
     ],
 }
+
+MAX_RANGA = 5
+
+# Cooldown w turach gracza (0 = bez CD). Stuny i silne skille mają CD,
+# żeby nie dało się co turę zamrażać wroga.
+_CD = {
+    "potezny_cios": 2,
+    "tarcza_wiary": 2,
+    "okrzyk_bojowy": 3,
+    "szal_berserka": 4,
+    "boskie_swiatlo": 2,
+    "swiety_cios": 2,
+    "wscieklosc": 4,
+    "niszczace_uderzenie": 3,
+    "kula_ognia": 0,
+    "lodowe_wiezy": 2,
+    "tarcza_runowa": 2,
+    "meteor": 2,
+    "mroczna_strzala": 2,
+    "klatwa_mroku": 3,
+    "przyspieszenie_magiczne": 3,
+    "kula_pioruna": 2,
+    "cios_w_plecy": 0,
+    "trucizna": 2,
+    "dymna_bomba": 99,
+    "smiertelne_uderzenie": 2,
+    "cien_smierci": 2,
+    "egzekucja": 2,
+    "unik": 2,
+    "grad_strzal": 2,
+    "splot_korzeni": 2,
+    "forma_niedzwiedzia": 3,
+    "uzdrowienie": 2,
+    "burza_natury": 2,
+    "forma_wilka": 3,
+    "regeneracja": 3,
+    "forma_kruka": 3,
+    "totem_zycia": 3,
+    "forma_ducha": 3,
+    "piorun_szamana": 2,
+    "kolce_natury": 2,
+    "gniew_puszczy": 2,
+    "wysysanie_zycia": 0,
+    "przywolaj_szkielet": 2,
+    "klatwa_smierci": 2,
+    "rozpad": 3,
+    "przywolaj_ghul": 3,
+    "dotyk_smierci": 2,
+    "fala_smierci": 2,
+    "przywolaj_widmo": 3,
+    "wiecznie_zywi": 4,
+    "pakt_krwi": 2,
+    "krwawy_sluga": 3,
+    "ofiarny_rytual": 3,
+}
+
+for _klucz, _cd in _CD.items():
+    if _klucz in UMIEJETNOSCI:
+        UMIEJETNOSCI[_klucz]["cd"] = _cd
+
+
+def ranga_skilla(gracz, klucz: str) -> int:
+    """Aktualna ranga umiejętności (1–5)."""
+    rangi = getattr(gracz, "rangi_umiejetnosci", {}) or {}
+    return max(1, min(MAX_RANGA, int(rangi.get(klucz, 1))))
+
+
+def cd_skilla(klucz: str) -> int:
+    return int(UMIEJETNOSCI.get(klucz, {}).get("cd", 0))
+
+
+def skala_mocy(gracz, klucz: str) -> float:
+    """Mnożnik mocy: poziom postaci + ranga skilla."""
+    ranga = ranga_skilla(gracz, klucz)
+    return (1.0 + 0.05 * (gracz.poziom - 1)) * (1.0 + 0.12 * (ranga - 1))
+
+
+def skaluj_wartosc(gracz, klucz: str, baza: int) -> int:
+    """Skaluje liczbę (obrażenia, leczenie, tarcza)."""
+    return max(1, int(baza * skala_mocy(gracz, klucz)))
+
+
+def czas_trwania(gracz, klucz: str, baza: int) -> int:
+    """Czas trwania buffa/DoT: +1 tura co 2 rangi."""
+    return max(1, baza + (ranga_skilla(gracz, klucz) - 1) // 2)
+
+
+def kwalifikuje_sie(gracz, info: dict) -> bool:
+    """Czy skill należy do klasy/podklasy gracza."""
+    if info["klasa"] != gracz.klasa:
+        return False
+    if info["podklasa"] is not None and info["podklasa"] != gracz.podklasa:
+        return False
+    return True
+
+
+def nastepne_umiejetnosci(gracz, ile: int = 2) -> list[dict]:
+    """Najbliższe jeszcze zablokowane skille."""
+    kandydaci = []
+    odblokowane = set(gracz.umiejetnosci)
+    for klucz, info in UMIEJETNOSCI.items():
+        if klucz in odblokowane or not kwalifikuje_sie(gracz, info):
+            continue
+        if info["poziom"] > gracz.poziom:
+            kandydaci.append({"klucz": klucz, **info})
+    kandydaci.sort(key=lambda i: i["poziom"])
+    return kandydaci[:ile]
+
+
+def ulepsz_umiejetnosc(gracz, klucz: str) -> str:
+    """Wydaje 1 punkt umiejętności na +1 rangę. Zwraca komunikat."""
+    if klucz not in gracz.umiejetnosci:
+        return "  Nie znasz tej umiejętności."
+    rangi = getattr(gracz, "rangi_umiejetnosci", None)
+    if rangi is None:
+        gracz.rangi_umiejetnosci = {k: 1 for k in gracz.umiejetnosci}
+        rangi = gracz.rangi_umiejetnosci
+    aktualna = ranga_skilla(gracz, klucz)
+    if aktualna >= MAX_RANGA:
+        return f"  {UMIEJETNOSCI[klucz]['nazwa']} jest już na maksymalnej randze ({MAX_RANGA})."
+    if getattr(gracz, "punkty_umiejetnosci", 0) <= 0:
+        return "  Brak punktów umiejętności."
+    gracz.punkty_umiejetnosci -= 1
+    rangi[klucz] = aktualna + 1
+    return (
+        f"  {UMIEJETNOSCI[klucz]['ikona']}  {UMIEJETNOSCI[klucz]['nazwa']}"
+        f"  ranga {aktualna} → {aktualna + 1}!"
+    )
+
+
+def otworz_ksiege_umiejetnosci(gracz) -> None:
+    """Obozowa księga: podgląd, rangi i ulepszenia."""
+    from game.utils import wyswietl_linie, nacisnij_enter, wyczysc
+
+    while True:
+        wyczysc()
+        wyswietl_linie("═")
+        print("  📖  KSIĘGA UMIEJĘTNOŚCI")
+        wyswietl_linie("═")
+        pkt = getattr(gracz, "punkty_umiejetnosci", 0)
+        print(f"\n  Punkty do rozdania: {pkt}   (maks. ranga {MAX_RANGA})\n")
+
+        if not gracz.umiejetnosci:
+            print("  Nie znasz jeszcze żadnej umiejętności.")
+        else:
+            print("  ─── Znane ───")
+            for i, klucz in enumerate(gracz.umiejetnosci, 1):
+                info = UMIEJETNOSCI[klucz]
+                ranga = ranga_skilla(gracz, klucz)
+                cd = cd_skilla(klucz)
+                moc = skala_mocy(gracz, klucz)
+                cd_str = f"  CD {cd}" if cd else ""
+                mana_str = f"  {info['koszt_many']} many" if info["koszt_many"] else ""
+                print(
+                    f"  [{i}] {info['ikona']} {info['nazwa']}  "
+                    f"r.{ranga}/{MAX_RANGA}  moc ×{moc:.2f}{mana_str}{cd_str}"
+                )
+                print(f"       {info['opis']}")
+
+        nadchodzace = nastepne_umiejetnosci(gracz)
+        if nadchodzace:
+            print("\n  ─── Wkrótce ───")
+            for info in nadchodzace:
+                print(
+                    f"  · poz. {info['poziom']}: {info['ikona']} {info['nazwa']}"
+                    f"  — {info['opis']}"
+                )
+
+        print("\n  Wpisz numer, aby ulepszyć (1 punkt = +1 ranga).")
+        print("  [0] Wróć\n")
+        wybor = input("  Twój wybór: ").strip()
+        if wybor == "0":
+            return
+        try:
+            idx = int(wybor) - 1
+            if 0 <= idx < len(gracz.umiejetnosci):
+                print(ulepsz_umiejetnosc(gracz, gracz.umiejetnosci[idx]))
+                nacisnij_enter()
+                continue
+        except ValueError:
+            pass
+        print("  Nieprawidłowy wybór.")
+        nacisnij_enter()

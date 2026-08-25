@@ -36,8 +36,9 @@ class Przeciwnik:
         return "[" + "█" * wypelniony + "░" * (szerokosc - wypelniony) + "]"
 
     def __str__(self) -> str:
+        from game.ikony import wrog
         return (
-            f"{self.nazwa}  HP: {self.hp}/{self.max_hp} {self.pasek_hp()}"
+            f"{wrog(self.nazwa)} {self.nazwa}  ❤️ {self.hp}/{self.max_hp} {self.pasek_hp()}"
         )
 
 
@@ -222,11 +223,77 @@ _BOSSOWIE = [
 ]
 
 
-def losuj_bossa(poziom_gracza: int = 1, mapa_gen: int = 1) -> Przeciwnik:
-    """Losuje bossa skalowanego z poziomem gracza i numerem mapy."""
+_MITYCZNI = {
+    "portal": dict(
+        nazwa="Strażnik Otchłani",
+        hp=240,
+        atak=36,
+        obrona=14,
+        exp_nagroda=420,
+        zloto_nagroda=(70, 120),
+        opis="Istota ze szczeliny między światami. Powietrze wokół niej pęka.",
+    ),
+    "leze_smoka": dict(
+        nazwa="Stary smok Ashkaryx",
+        hp=320,
+        atak=42,
+        obrona=22,
+        exp_nagroda=580,
+        zloto_nagroda=(110, 190),
+        opis="Pradawny smok w swoim leżu. Skarbiec lśni pod jego brzuchem.",
+    ),
+    "latajaca_wyspa": dict(
+        nazwa="Gryf Niebios",
+        hp=250,
+        atak=38,
+        obrona=16,
+        exp_nagroda=460,
+        zloto_nagroda=(80, 140),
+        opis="Skrzydlaty strażnik unoszącej się wyspy. Wiatr tnie jak ostrza.",
+    ),
+}
+
+
+def _mnoznik_trudnosci(tryb: str) -> float:
+    """Mnożnik statystyk wrogów zależny od trybu trudności."""
+    if tryb == "hardcore":
+        return 1.25
+    if tryb == "latwy":
+        return 0.85
+    return 1.0
+
+
+def losuj_bossa(
+    poziom_gracza: int = 1, mapa_gen: int = 1, tryb: str = "normalny"
+) -> Przeciwnik:
+    """Losuje bossa skalowanego z poziomem gracza, numerem mapy i trudnością."""
     szablon = random.choice(_BOSSOWIE)
     # Bossowie skalują się szybciej niż zwykli wrogowie
-    skala = 1 + (poziom_gracza - 1) * 0.20 + (mapa_gen - 1) * 0.15
+    skala = (
+        1 + (poziom_gracza - 1) * 0.20 + (mapa_gen - 1) * 0.15
+    ) * _mnoznik_trudnosci(tryb)
+    return Przeciwnik(
+        nazwa=szablon["nazwa"],
+        hp=int(szablon["hp"] * skala),
+        atak=int(szablon["atak"] * skala),
+        obrona=int(szablon["obrona"] * skala),
+        exp_nagroda=int(szablon["exp_nagroda"] * skala),
+        zloto_nagroda=(
+            int(szablon["zloto_nagroda"][0] * skala),
+            int(szablon["zloto_nagroda"][1] * skala),
+        ),
+        opis=szablon["opis"],
+    )
+
+
+def losuj_mitycznego(
+    typ: str, poziom_gracza: int = 1, mapa_gen: int = 1, tryb: str = "normalny"
+) -> Przeciwnik:
+    """Unikalny wróg mitycznej lokacji — nieco twardszy niż zwykły boss regionu."""
+    szablon = _MITYCZNI.get(typ, _MITYCZNI["portal"])
+    skala = (
+        1 + (poziom_gracza - 1) * 0.22 + (mapa_gen - 1) * 0.16
+    ) * _mnoznik_trudnosci(tryb)
     return Przeciwnik(
         nazwa=szablon["nazwa"],
         hp=int(szablon["hp"] * skala),
@@ -245,6 +312,7 @@ def losuj_przeciwnika(
     poziom_gracza: int = 1,
     biom: str | None = None,
     mapa_gen: int = 1,
+    tryb: str = "normalny",
 ) -> Przeciwnik:
     """
     Losuje przeciwnika odpowiedniego dla poziomu gracza,
@@ -254,8 +322,10 @@ def losuj_przeciwnika(
     if biom in _SZABLONY_BIOM:
         dostepne += _SZABLONY_BIOM[biom]
     szablon = random.choice(dostepne)
-    # Skalowanie: poziom gracza + bonus za numer mapy
-    skala = 1 + (poziom_gracza - 1) * 0.15 + (mapa_gen - 1) * 0.08
+    # Skalowanie: poziom gracza + bonus za numer mapy + tryb trudności
+    skala = (
+        1 + (poziom_gracza - 1) * 0.15 + (mapa_gen - 1) * 0.08
+    ) * _mnoznik_trudnosci(tryb)
 
     return Przeciwnik(
         nazwa=szablon["nazwa"],
