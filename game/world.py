@@ -111,18 +111,18 @@ _BIOMY = {
 
 def _rysuj_mape(gracz: Gracz) -> None:
     """Wyświetla prostą mapę z aktualną pozycją gracza."""
-    print("  MAPA OKOLICY")
+    print(f"  MAPA OKOLICY  [Mapa #{gracz.mapa_gen}]")
     for y in range(5):
         pola = []
         for x in range(5):
             if x == gracz.mapa_x and y == gracz.mapa_y:
                 pola.append("P")
-            elif x == 2 and y == 2:
+            elif x == 2 and y == 2 and gracz.mapa_gen == 1:
                 pola.append("O")
             else:
                 pola.append("·")
         print("   " + " ".join(pola))
-    print(f"\n  P = twoja pozycja   O = okolice startowe")
+    print(f"\n  P = twoja pozycja")
     print(f"  Koordynaty: ({gracz.mapa_x}, {gracz.mapa_y})   Ostatni biom: {gracz.aktualny_biom}")
     print()
 
@@ -147,16 +147,47 @@ def _menu_kierunku(gracz: Gracz) -> str:
         nacisnij_enter()
 
 
-def _przesun_gracza(gracz: Gracz, kierunek: str) -> None:
-    """Aktualizuje pozycję gracza na mapie."""
+_NOWE_SRODOWISKA = [
+    ("Wkraczasz na nowe ziemie...", "Horyzont odsłania przed tobą zupełnie nowy kraj."),
+    ("Krajobraz się zmienia.", "Czujesz, że te tereny różnią się od wszystkiego, co widziałeś wcześniej."),
+    ("Przekraczasz niewidzialną granicę.", "Powietrze staje się inne — to nowy region."),
+    ("Świat zdaje się rozszerzać.", "Za horyzontem kryje się jeszcze więcej przygód."),
+    ("Nowe środowisko, nowe wyzwania.", "Teren zmienia się gwałtownie — ruszasz dalej w nieznane."),
+]
+
+
+def _przesun_gracza(gracz: Gracz, kierunek: str) -> bool:
+    """Aktualizuje pozycję gracza na mapie. Zwraca True jeśli przekroczono krawędź."""
     ruchy = {
         "1": (0, -1),
         "2": (-1, 0),
         "3": (1, 0),
     }
     dx, dy = ruchy[kierunek]
-    gracz.mapa_x = min(4, max(0, gracz.mapa_x + dx))
-    gracz.mapa_y = min(4, max(0, gracz.mapa_y + dy))
+    nowy_x = gracz.mapa_x + dx
+    nowy_y = gracz.mapa_y + dy
+
+    przekroczono = nowy_x < 0 or nowy_x > 4 or nowy_y < 0 or nowy_y > 4
+
+    gracz.mapa_x = nowy_x % 5
+    gracz.mapa_y = nowy_y % 5
+    if przekroczono:
+        gracz.mapa_gen += 1
+    return przekroczono
+
+
+def _pokaz_nowe_srodowisko(gracz: Gracz) -> None:
+    """Wyświetla efektowny komunikat o przejściu na nową mapę."""
+    wyczysc()
+    wyswietl_linie("═")
+    print(f"  ✨  NOWA MAPA #{gracz.mapa_gen}  ✨")
+    wyswietl_linie("═")
+    tytul, opis = random.choice(_NOWE_SRODOWISKA)
+    print(f"\n  {tytul}")
+    print(f"  {opis}")
+    print(f"\n  Dotarłeś do krańca poprzednich ziem i zaczynasz eksplorację od nowa.")
+    print(f"  Nowe niebezpieczeństwa i skarby czekają w głębi nieznanych terytoriów.\n")
+    nacisnij_enter()
 
 
 def _pokaz_biom(kierunek: str, biom: dict) -> None:
@@ -426,10 +457,14 @@ def wyrusz_w_podroz(gracz: Gracz) -> str:
         nacisnij_enter()
         return "powrot"
 
-    _przesun_gracza(gracz, kierunek)
+    nowa_mapa = _przesun_gracza(gracz, kierunek)
     biom = random.choice(_BIOMY[kierunek])
     gracz.aktualny_biom = biom["nazwa"]
-    _pokaz_biom(kierunek, biom)
+    if nowa_mapa:
+        _pokaz_nowe_srodowisko(gracz)
+        _pokaz_biom(kierunek, biom)
+    else:
+        _pokaz_biom(kierunek, biom)
 
     liczba_zdarzen = random.randint(2, 3)
     walka_odbyta = False

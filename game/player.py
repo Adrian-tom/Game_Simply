@@ -41,6 +41,7 @@ class Gracz:
         self.mapa_x = 2
         self.mapa_y = 2
         self.aktualny_biom = "Obóz"
+        self.mapa_gen = 1  # numer "mapy" – rośnie za każdym razem gdy gracz przekroczy krawędź
 
         stat = _STATYSTYKI_KLAS[klasa]
         self.poziom = 1
