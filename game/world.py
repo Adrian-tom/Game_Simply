@@ -12,6 +12,9 @@ from game.dialogues import (
 from game.utils import wyczysc, wyswietl_linie, nacisnij_enter
 
 
+_BOSS_CO_ILE_MAP = 3  # boss co N map
+
+
 _KIERUNKI = {
     "1": {"nazwa": "prosto", "opis": "podążasz głównym traktem"},
     "2": {"nazwa": "w lewo", "opis": "skręcasz na zarośnięty szlak"},
@@ -111,18 +114,18 @@ _BIOMY = {
 
 def _rysuj_mape(gracz: Gracz) -> None:
     """Wyświetla prostą mapę z aktualną pozycją gracza."""
-    print("  MAPA OKOLICY")
+    print(f"  MAPA OKOLICY  [Mapa #{gracz.mapa_gen}]")
     for y in range(5):
         pola = []
         for x in range(5):
             if x == gracz.mapa_x and y == gracz.mapa_y:
                 pola.append("P")
-            elif x == 2 and y == 2:
+            elif x == 2 and y == 2 and gracz.mapa_gen == 1:
                 pola.append("O")
             else:
                 pola.append("·")
         print("   " + " ".join(pola))
-    print(f"\n  P = twoja pozycja   O = okolice startowe")
+    print(f"\n  P = twoja pozycja")
     print(f"  Koordynaty: ({gracz.mapa_x}, {gracz.mapa_y})   Ostatni biom: {gracz.aktualny_biom}")
     print()
 
@@ -147,16 +150,47 @@ def _menu_kierunku(gracz: Gracz) -> str:
         nacisnij_enter()
 
 
-def _przesun_gracza(gracz: Gracz, kierunek: str) -> None:
-    """Aktualizuje pozycję gracza na mapie."""
+_NOWE_SRODOWISKA = [
+    ("Wkraczasz na nowe ziemie...", "Horyzont odsłania przed tobą zupełnie nowy kraj."),
+    ("Krajobraz się zmienia.", "Czujesz, że te tereny różnią się od wszystkiego, co widziałeś wcześniej."),
+    ("Przekraczasz niewidzialną granicę.", "Powietrze staje się inne — to nowy region."),
+    ("Świat zdaje się rozszerzać.", "Za horyzontem kryje się jeszcze więcej przygód."),
+    ("Nowe środowisko, nowe wyzwania.", "Teren zmienia się gwałtownie — ruszasz dalej w nieznane."),
+]
+
+
+def _przesun_gracza(gracz: Gracz, kierunek: str) -> bool:
+    """Aktualizuje pozycję gracza na mapie. Zwraca True jeśli przekroczono krawędź."""
     ruchy = {
         "1": (0, -1),
         "2": (-1, 0),
         "3": (1, 0),
     }
     dx, dy = ruchy[kierunek]
-    gracz.mapa_x = min(4, max(0, gracz.mapa_x + dx))
-    gracz.mapa_y = min(4, max(0, gracz.mapa_y + dy))
+    nowy_x = gracz.mapa_x + dx
+    nowy_y = gracz.mapa_y + dy
+
+    przekroczono = nowy_x < 0 or nowy_x > 4 or nowy_y < 0 or nowy_y > 4
+
+    gracz.mapa_x = nowy_x % 5
+    gracz.mapa_y = nowy_y % 5
+    if przekroczono:
+        gracz.mapa_gen += 1
+    return przekroczono
+
+
+def _pokaz_nowe_srodowisko(gracz: Gracz) -> None:
+    """Wyświetla efektowny komunikat o przejściu na nową mapę."""
+    wyczysc()
+    wyswietl_linie("═")
+    print(f"  ✨  NOWA MAPA #{gracz.mapa_gen}  ✨")
+    wyswietl_linie("═")
+    tytul, opis = random.choice(_NOWE_SRODOWISKA)
+    print(f"\n  {tytul}")
+    print(f"  {opis}")
+    print(f"\n  Dotarłeś do krańca poprzednich ziem i zaczynasz eksplorację od nowa.")
+    print(f"  Nowe niebezpieczeństwa i skarby czekają w głębi nieznanych terytoriów.\n")
+    nacisnij_enter()
 
 
 def _pokaz_biom(kierunek: str, biom: dict) -> None:
@@ -418,6 +452,190 @@ def _budynek(gracz: Gracz, biom: dict) -> str | None:
         nacisnij_enter()
 
 
+# ------------------------------------------------------------------ #
+#  Zdarzenia narracyjne                                               #
+# ------------------------------------------------------------------ #
+
+_ZDARZENIA_NARRACYJNE = [
+    {
+        "tytul": "Samotny kupiec",
+        "opis": "Przy drodze siedzi wyczerpany kupiec. Prosi o pomoc — ktoś go okradł.",
+        "opcje": [
+            ("Pomóż mu i daj 10 złota", "pomoc"),
+            ("Okradnij go — jest bezbronny", "okradnij"),
+            ("Idź dalej, nie twój problem", "ignoruj"),
+        ],
+        "efekty": {
+            "pomoc": ("zloto", -10, "  Kupiec dziękuje serdecznie. Karma się opłaci.", "hp", 20),
+            "okradnij": ("zloto", 25, "  Grabisz nieszczęśnika. Ciężki ciężar na sumieniu.", "hp", 0),
+            "ignoruj": ("brak", 0, "  Mijasz go bez słowa.", "brak", 0),
+        },
+    },
+    {
+        "tytul": "Ranny żołnierz",
+        "opis": "Na poboczu leży ranny żołnierz z zatrutą strzałą w ramieniu.",
+        "opcje": [
+            ("Użyj mikstury leczenia aby mu pomóc", "mikstura"),
+            ("Zostaw go — sam się wykaraska", "zostaw"),
+            ("Ograbisz go z jego ekwipunku", "okradnij"),
+        ],
+        "efekty": {
+            "mikstura": ("mikstura", -1, "  Żołnierz odżywa. W podziękowaniu daje ci garść złota.", "zloto", 30),
+            "zostaw": ("brak", 0, "  Żołnierz patrzy za tobą ze smutkiem.", "brak", 0),
+            "okradnij": ("zloto", 15, "  Okradasz rannego. Obrzydliwy uczynek.", "hp", -15),
+        },
+    },
+    {
+        "tytul": "Tajemnicza skrzynka",
+        "opis": "Na środku drogi stoi zamknięta skrzynka. Może być pułapka... lub skarb.",
+        "opcje": [
+            ("Otwórz skrzynkę", "otworz"),
+            ("Zniszcz ją z bezpiecznej odległości", "zniszcz"),
+            ("Omij szerokim łukiem", "omiń"),
+        ],
+        "efekty": {
+            "otworz": ("losowe", 0, "  Skrzynka się otwiera...", "brak", 0),
+            "zniszcz": ("brak", 0, "  Skrzynka wybucha — byłeś bezpieczny.", "brak", 0),
+            "omiń": ("brak", 0, "  Ostrożność przede wszystkim.", "brak", 0),
+        },
+    },
+    {
+        "tytul": "Głodny wieśniak",
+        "opis": "Wieśniak z wychudzonym dzieckiem prosi o wsparcie.",
+        "opcje": [
+            ("Daj im 15 złota", "daj"),
+            ("Odejdź — nie twoja sprawa", "odejdź"),
+        ],
+        "efekty": {
+            "daj": ("zloto", -15, "  Wieśniak błogosławi cię. Twoje serce jest lżejsze.", "mana", 20),
+            "odejdź": ("brak", 0, "  Odchodzisz. Ich spojrzenia prześladują cię przez chwilę.", "brak", 0),
+        },
+    },
+]
+
+
+def _zdarzenie_narracyjne(gracz: Gracz) -> None:
+    """Losuje i obsługuje zdarzenie narracyjne z wyborem moralnym."""
+    zdarzenie = random.choice(_ZDARZENIA_NARRACYJNE)
+    wyczysc()
+    wyswietl_linie("─")
+    print(f"  📜  {zdarzenie['tytul'].upper()}")
+    wyswietl_linie("─")
+    print(f"\n  {zdarzenie['opis']}\n")
+
+    for i, (tekst, _) in enumerate(zdarzenie["opcje"], 1):
+        print(f"  [{i}]  {tekst}")
+    print()
+
+    while True:
+        wybor = input("  Twój wybór: ").strip()
+        try:
+            idx = int(wybor) - 1
+            if 0 <= idx < len(zdarzenie["opcje"]):
+                _, klucz = zdarzenie["opcje"][idx]
+                break
+        except ValueError:
+            pass
+        print("  Nieprawidłowy wybór.")
+
+    efekt = zdarzenie["efekty"][klucz]
+    typ1, wartosc1, opis, typ2, wartosc2 = efekt
+
+    print()
+    # Obsługa losowej skrzynki
+    if typ1 == "losowe":
+        wynik = random.choice(["skarb", "pulapka", "nic"])
+        if wynik == "skarb":
+            zloto = random.randint(20, 50)
+            gracz.zloto += zloto
+            gracz.mikstury += 1
+            print(f"  {opis}")
+            print(f"  💰  W środku: {zloto} złota i mikstura leczenia!")
+        elif wynik == "pulapka":
+            dmg = random.randint(10, 25)
+            gracz.hp = max(1, gracz.hp - dmg)
+            print(f"  {opis}")
+            print(f"  ⚠  Pułapka! Tracisz {dmg} HP.")
+        else:
+            print(f"  {opis}")
+            print("  Skrzynka jest pusta.")
+    else:
+        print(f"  {opis}")
+        # Efekt 1
+        if typ1 == "zloto":
+            gracz.zloto = max(0, gracz.zloto + wartosc1)
+            if wartosc1 < 0:
+                print(f"  💸  Wydajesz {abs(wartosc1)} złota.")
+            elif wartosc1 > 0:
+                print(f"  💰  Zyskujesz {wartosc1} złota.")
+        elif typ1 == "mikstura" and wartosc1 < 0:
+            if gracz.mikstury > 0:
+                gracz.mikstury += wartosc1
+                print(f"  🧪  Zużywasz {abs(wartosc1)} miksturę.")
+            else:
+                print("  🧪  Nie masz mikstury, ale starasz się jak możesz.")
+        elif typ1 == "hp" and wartosc1 < 0:
+            gracz.hp = max(1, gracz.hp + wartosc1)
+            print(f"  ❤  Tracisz {abs(wartosc1)} HP.")
+        # Efekt 2
+        if typ2 == "hp" and wartosc2 > 0:
+            gain = min(wartosc2, gracz.max_hp - gracz.hp)
+            gracz.hp += gain
+            print(f"  ❤  Odzyskujesz {gain} HP.")
+        elif typ2 == "zloto" and wartosc2 > 0:
+            gracz.zloto += wartosc2
+            print(f"  💰  Zyskujesz {wartosc2} złota.")
+        elif typ2 == "mana" and wartosc2 > 0 and gracz.max_mana > 0:
+            gain = min(wartosc2, gracz.max_mana - gracz.mana)
+            gracz.mana += gain
+            print(f"  🔮  Odzyskujesz {gain} many.")
+
+    nacisnij_enter()
+
+
+# ------------------------------------------------------------------ #
+#  Ukryte lokacje                                                      #
+# ------------------------------------------------------------------ #
+
+def _sprawdz_ukryta_lokacje(gracz: Gracz) -> None:
+    """Mała szansa na znalezienie ukrytej jaskini ze skarbem."""
+    if random.random() > 0.12:
+        return
+    wyczysc()
+    wyswietl_linie("─")
+    print("  🔍  UKRYTA LOKACJA!")
+    wyswietl_linie("─")
+    print("\n  Twoje oko wychwytuje coś nieoczekiwanego —")
+    print("  za gęstymi krzakami kryje się ukryte wejście do jaskini.\n")
+    print("  [1]  Wejdź do środka")
+    print("  [2]  Zignoruj i idź dalej")
+    print()
+    wybor = input("  Twój wybór: ").strip()
+    if wybor != "1":
+        print("  Mijasz ukrytą jaskinię. Może następnym razem.")
+        nacisnij_enter()
+        return
+
+    wynik = random.choices(["skarb", "mikstura", "walka"], weights=[40, 35, 25], k=1)[0]
+    if wynik == "skarb":
+        zloto = random.randint(30, 70)
+        gracz.zloto += zloto
+        gracz.mikstury += 1
+        print(f"\n  Wewnątrz odkrywasz zapomniane repozytorium!")
+        print(f"  💰  {zloto} złota i 1 mikstura — idealne znalezisko.")
+    elif wynik == "mikstura":
+        gracz.mikstury += 2
+        print(f"\n  Na półce skalnej leżą dwie nienaruszone mikstury leczenia.")
+        print(f"  🧪  Zdobywasz 2 mikstury.")
+    else:
+        print(f"\n  Z mroku jaskini wyłania się strażnik!")
+        nacisnij_enter()
+        wynik_w = przeprowadz_walke(gracz, gracz.aktualny_biom)
+        if wynik_w == "przegrana":
+            return
+    nacisnij_enter()
+
+
 def wyrusz_w_podroz(gracz: Gracz) -> str:
     """Uruchamia prostą podróż z kierunkami, biomami i zdarzeniami."""
     kierunek = _menu_kierunku(gracz)
@@ -426,15 +644,45 @@ def wyrusz_w_podroz(gracz: Gracz) -> str:
         nacisnij_enter()
         return "powrot"
 
-    _przesun_gracza(gracz, kierunek)
+    nowa_mapa = _przesun_gracza(gracz, kierunek)
     biom = random.choice(_BIOMY[kierunek])
     gracz.aktualny_biom = biom["nazwa"]
-    _pokaz_biom(kierunek, biom)
+    if nowa_mapa:
+        _pokaz_nowe_srodowisko(gracz)
+        _pokaz_biom(kierunek, biom)
+    else:
+        _pokaz_biom(kierunek, biom)
+
+    # Boss co N map
+    if gracz.mapa_gen > 1 and gracz.mapa_gen % _BOSS_CO_ILE_MAP == 0:
+        wyczysc()
+        wyswietl_linie("═")
+        print(f"  ⚠  LEGENDARNY BOSS CZEKA NA MAPIE #{gracz.mapa_gen}!")
+        wyswietl_linie("═")
+        print("\n  Wyczuwasz potężną obecność na horyzoncie...")
+        nacisnij_enter()
+        wynik = przeprowadz_walke(gracz, biom["nazwa"], jest_boss=True)
+        if wynik == "przegrana":
+            return "przegrana"
+        # Po bossie — krótka wyprawa
+        _sprawdz_ukryta_lokacje(gracz)
+        wyczysc()
+        wyswietl_linie("═")
+        print("  KONIEC WYPRAWY")
+        wyswietl_linie("═")
+        print(f"  Wracasz do obozu — zwycięzca nad bossem mapy #{gracz.mapa_gen}!")
+        nacisnij_enter()
+        return "powrot"
 
     liczba_zdarzen = random.randint(2, 3)
     walka_odbyta = False
 
-    for _ in range(liczba_zdarzen):
+    for i in range(liczba_zdarzen):
+        # Szansa na zdarzenie narracyjne (raz na wyprawę, przed ostatnim zdarzeniem)
+        if i == 1 and random.random() < 0.35:
+            _zdarzenie_narracyjne(gracz)
+            continue
+
         typ = random.choices(
             ["lokacja", "budynek", "walka"],
             weights=[50, 25, 25] if not walka_odbyta else [70, 30, 0],
@@ -461,6 +709,9 @@ def wyrusz_w_podroz(gracz: Gracz) -> str:
         walka_odbyta = True
         if wynik == "przegrana":
             return "przegrana"
+
+    # Szansa na ukrytą lokację na końcu wyprawy
+    _sprawdz_ukryta_lokacje(gracz)
 
     wyczysc()
     wyswietl_linie("═")

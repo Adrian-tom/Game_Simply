@@ -3,7 +3,7 @@
 import random
 
 from game.player import Gracz
-from game.enemy import Przeciwnik, losuj_przeciwnika
+from game.enemy import Przeciwnik, losuj_przeciwnika, losuj_bossa
 from game.skills import UMIEJETNOSCI
 from game.utils import wyczysc, nacisnij_enter, wyswietl_linie
 
@@ -19,6 +19,33 @@ def _oblicz_obrazenia(atak: int, obrona: int) -> int:
     return random.randint(max(1, bazowe - wariancja), bazowe + wariancja)
 
 
+# Szanse na krytyczne trafienie per klasa
+_SZANSA_KRYT: dict[str, float] = {
+    "Wojownik": 0.10,
+    "Mag": 0.08,
+    "Lotrzyk": 0.22,
+    "Druid": 0.06,
+    "Nekromanta": 0.12,
+}
+
+
+def _atak_z_krytem(
+    atak: int, obrona: int, klasa: str, stan: dict
+) -> tuple[int, bool]:
+    """
+    Oblicza obrażenia z szansą na krytyczne trafienie.
+    Zwraca (obrazenia, czy_krit).
+    """
+    bazowe = _oblicz_obrazenia(atak, obrona)
+    szansa = _SZANSA_KRYT.get(klasa, 0.10)
+    # Lotrzyk dostaje +10% szansy na krit gdy buff ataku aktywny
+    if klasa == "Lotrzyk" and stan["buff_atak_tury"] > 0:
+        szansa += 0.10
+    if random.random() < szansa:
+        return int(bazowe * 2), True
+    return bazowe, False
+
+
 # ------------------------------------------------------------------ #
 #  Stan walki (buffy, debuffs, efekty)                                #
 # ------------------------------------------------------------------ #
@@ -28,25 +55,33 @@ def _nowy_stan_walki() -> dict:
     return {
         "tura": 1,
         # Buffs gracza
-        "buff_atak_mnoznik": 1.0,     # mnożnik ataku (>1 = buff, <1 = debuff)
-        "buff_atak_tury": 0,          # ile tur buff ataku trwa
-        "buff_obrona_mnoznik": 1.0,   # mnożnik obrony na turę wroga
-        "buff_obrona_tury": 0,        # ile tur buff obrony trwa
-        "brak_obrony_tura": False,    # Potężny cios: gracz traci obronę przy odwecie
-        "leczenie_zablokowane": False,  # Szał berserka: brak leczenia
-        "tarcza_runowa": 0,           # punkty absorpcji tarczy runowej
-        "unik_aktywny": False,        # Unik: szansa na ominięcie ataku
-        "przyspieszenie": False,      # Arcymag: następny czar darmowy i 2× silniejszy
-        "regeneracja_hp": 0,          # Druid: HP regenerowane na turę gracza
-        "regeneracja_tury": 0,        # ile tur regeneracja trwa
-        "nastepny_atak_mnoznik": 1.0,  # Nekromanta/Pakt krwi: mnożnik następnego ataku
-        "lich_ochrona": False,        # Lich: ochrona przed śmiercią (raz)
+        "buff_atak_mnoznik": 1.0,
+        "buff_atak_tury": 0,
+        "buff_obrona_mnoznik": 1.0,
+        "buff_obrona_tury": 0,
+        "brak_obrony_tura": False,
+        "leczenie_zablokowane": False,
+        "tarcza_runowa": 0,
+        "unik_aktywny": False,
+        "przyspieszenie": False,
+        "regeneracja_hp": 0,
+        "regeneracja_tury": 0,
+        "nastepny_atak_mnoznik": 1.0,
+        "lich_ochrona": False,
         # Debuffs wroga
         "wrog_ogluszone_tury": 0,
         "wrog_trucizna_tury": 0,
         "wrog_trucizna_obrazenia": 10,
-        "wrog_oslabienie_tury": 0,    # Klątwa śmierci: 50% mniej obrażeń
-        "wrog_rozpad": False,         # Nekromanta: max_hp wroga zmniejszone o 20%
+        "wrog_oslabienie_tury": 0,
+        "wrog_rozpad": False,
+        # Statusy gracza
+        "gracz_trucizna_tury": 0,
+        "gracz_trucizna_obrazenia": 8,
+        "gracz_krwawienie_tury": 0,
+        "gracz_krwawienie_obrazenia": 6,
+        "gracz_ogluszone_tury": 0,
+        # Flaga bosса
+        "jest_boss": False,
     }
 
 
@@ -68,6 +103,26 @@ def _koniec_rundy(stan: dict, gracz: Gracz) -> None:
         print(
             f"  🌱  Regeneracja! Odnawiasz {wyleczone} HP."
             f" (Pozostało tur: {stan['regeneracja_tury']})"
+        )
+
+    # Trucizna gracza
+    if stan["gracz_trucizna_tury"] > 0:
+        dam = stan["gracz_trucizna_obrazenia"]
+        gracz.hp = max(0, gracz.hp - dam)
+        stan["gracz_trucizna_tury"] -= 1
+        print(
+            f"  ⚗  Trucizna działa! Tracisz {dam} HP."
+            f" (Pozostało tur: {stan['gracz_trucizna_tury']})"
+        )
+
+    # Krwawienie gracza
+    if stan["gracz_krwawienie_tury"] > 0:
+        dam = stan["gracz_krwawienie_obrazenia"]
+        gracz.hp = max(0, gracz.hp - dam)
+        stan["gracz_krwawienie_tury"] -= 1
+        print(
+            f"  🩸  Krwawisz! Tracisz {dam} HP."
+            f" (Pozostało tur: {stan['gracz_krwawienie_tury']})"
         )
 
     stan["tura"] += 1
@@ -101,6 +156,13 @@ def _wyswietl_stan_walki(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> No
         efekty.append("Ochrona Licha (aktywna)")
     if stan["nastepny_atak_mnoznik"] > 1.0:
         efekty.append(f"Następny atak ×{stan['nastepny_atak_mnoznik']:.0f}")
+    # Statusy gracza
+    if stan["gracz_trucizna_tury"] > 0:
+        efekty.append(f"⚗ Zatruty ({stan['gracz_trucizna_tury']} tur, -{stan['gracz_trucizna_obrazenia']} HP)")
+    if stan["gracz_krwawienie_tury"] > 0:
+        efekty.append(f"🩸 Krwawienie ({stan['gracz_krwawienie_tury']} tur, -{stan['gracz_krwawienie_obrazenia']} HP)")
+    if stan["gracz_ogluszone_tury"] > 0:
+        efekty.append(f"❄ Ogłuszony ({stan['gracz_ogluszone_tury']} tur)")
     if stan["wrog_trucizna_tury"] > 0:
         efekty.append(f"{przeciwnik.nazwa} zatruty ({stan['wrog_trucizna_tury']} tur)")
     if stan["wrog_ogluszone_tury"] > 0:
@@ -109,6 +171,8 @@ def _wyswietl_stan_walki(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> No
         efekty.append(f"{przeciwnik.nazwa} osłabiony ({stan['wrog_oslabienie_tury']} tur)")
     if stan["wrog_rozpad"]:
         efekty.append(f"{przeciwnik.nazwa} w rozpadzie (-20% max HP)")
+    if stan["jest_boss"]:
+        efekty.append("⚠ BOSS!")
     if efekty:
         print(f"  Efekty: {', '.join(efekty)}")
 
@@ -540,9 +604,12 @@ def _tura_gracza(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> str | None
         if wybor == "1":
             efektywny_atak = max(1, int(gracz.atak * stan["buff_atak_mnoznik"] * stan["nastepny_atak_mnoznik"]))
             stan["nastepny_atak_mnoznik"] = 1.0
-            obrazenia = _oblicz_obrazenia(efektywny_atak, przeciwnik.obrona)
+            obrazenia, krit = _atak_z_krytem(efektywny_atak, przeciwnik.obrona, gracz.klasa, stan)
             przeciwnik.hp -= obrazenia
-            print(f"\n  ⚔  Atakujesz {przeciwnik.nazwa}! Zadajesz {obrazenia} obrażeń.")
+            if krit:
+                print(f"\n  ⚡ KRYTYCZNE TRAFIENIE! Atakujesz {przeciwnik.nazwa}! Zadajesz {obrazenia} obrażeń!")
+            else:
+                print(f"\n  ⚔  Atakujesz {przeciwnik.nazwa}! Zadajesz {obrazenia} obrażeń.")
             if not przeciwnik.zyje():
                 return "wygrana"
             return None
@@ -591,11 +658,18 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
         if not przeciwnik.zyje():
             return
 
-    # Ogłuszenie
+    # Ogłuszenie wroga
     if stan["wrog_ogluszone_tury"] > 0:
         stan["wrog_ogluszone_tury"] -= 1
         print(f"  ❄  {przeciwnik.nazwa} jest ogłuszony i pomija turę!")
         return
+
+    # Ogłuszenie gracza
+    if stan["gracz_ogluszone_tury"] > 0:
+        stan["gracz_ogluszone_tury"] -= 1
+        print(f"  ❄  Jesteś ogłuszony — nie możesz działać w tej turze!")
+        # Wróg atakuje ogłuszonego gracza normalnie, ale gracz nie wykonuje akcji
+        # (to wywoływane jest już po turze gracza, więc tu tylko efekty)
 
     # Efektywna obrona gracza
     if stan["brak_obrony_tura"]:
@@ -649,6 +723,22 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
     else:
         print(f"  🔮  Tarcza runowa całkowicie zablokowała atak {przeciwnik.nazwa}!")
 
+    # Szansa wroga na nałożenie statusu gracza (bossowie 2× szansa)
+    szansa_status = 0.20 if stan["jest_boss"] else 0.10
+    if gracz.zyje() and random.random() < szansa_status:
+        status = random.choice(["trucizna", "krwawienie", "ogluszone"])
+        if status == "trucizna" and stan["gracz_trucizna_tury"] == 0:
+            stan["gracz_trucizna_tury"] = 3
+            stan["gracz_trucizna_obrazenia"] = 8 if not stan["jest_boss"] else 14
+            print(f"  ⚗  {przeciwnik.nazwa} cię zatruł! Tracisz {stan['gracz_trucizna_obrazenia']} HP na turę przez 3 tury.")
+        elif status == "krwawienie" and stan["gracz_krwawienie_tury"] == 0:
+            stan["gracz_krwawienie_tury"] = 3
+            stan["gracz_krwawienie_obrazenia"] = 6 if not stan["jest_boss"] else 12
+            print(f"  🩸  {przeciwnik.nazwa} spowodował krwawienie! Tracisz {stan['gracz_krwawienie_obrazenia']} HP na turę przez 3 tury.")
+        elif status == "ogluszone" and stan["gracz_ogluszone_tury"] == 0:
+            stan["gracz_ogluszone_tury"] = 1
+            print(f"  ❄  {przeciwnik.nazwa} ogłuszył cię! Pomijasz następną turę!")
+
 
 # ------------------------------------------------------------------ #
 #  Nagrody i mana po walce                                           #
@@ -660,17 +750,26 @@ def _odnow_mane_po_walce(gracz: Gracz) -> None:
         gracz.mana = min(gracz.mana + 20, gracz.max_mana)
 
 
-def _zakonczenie_wygrana(gracz: Gracz, przeciwnik: Przeciwnik) -> None:
+def _zakonczenie_wygrana(gracz: Gracz, przeciwnik: Przeciwnik, jest_boss: bool = False) -> None:
     """Przetwarza nagrody po wygranej walce."""
     zloto = przeciwnik.losowe_zloto()
+    if jest_boss:
+        # Bossowie dają bonus mikstury
+        gracz.mikstury += 1
     gracz.zloto += zloto
     gracz.rejestruj_walke(przeciwnik.nazwa)
     komunikaty = gracz.zdobadz_exp(przeciwnik.exp_nagroda)
     _odnow_mane_po_walce(gracz)
 
     wyswietl_linie()
-    print(f"\n  🏆  Pokonałeś {przeciwnik.nazwa}!")
-    print(f"  💰  Zdobyłeś {zloto} złota!")
+    if jest_boss:
+        print(f"\n  🏆🏆  BOSS POKONANY: {przeciwnik.nazwa}!")
+        print(f"  Legendarny łup:")
+        print(f"  💰  Zdobyłeś {zloto} złota!")
+        print(f"  🧪  Bonus: 1 mikstura leczenia!")
+    else:
+        print(f"\n  🏆  Pokonałeś {przeciwnik.nazwa}!")
+        print(f"  💰  Zdobyłeś {zloto} złota!")
     for msg in komunikaty:
         print(f"  {msg}")
     nacisnij_enter()
@@ -680,27 +779,46 @@ def _zakonczenie_wygrana(gracz: Gracz, przeciwnik: Przeciwnik) -> None:
 #  Główna pętla walki                                                 #
 # ------------------------------------------------------------------ #
 
-def przeprowadz_walke(gracz: Gracz, biom: str | None = None) -> str:
+def przeprowadz_walke(
+    gracz: Gracz, biom: str | None = None, jest_boss: bool = False
+) -> str:
     """
     Główna pętla walki. Zwraca: 'wygrana', 'przegrana' lub 'ucieczka'.
     """
-    przeciwnik = losuj_przeciwnika(gracz.poziom, biom)
+    mapa_gen = getattr(gracz, "mapa_gen", 1)
+    if jest_boss:
+        przeciwnik = losuj_bossa(gracz.poziom, mapa_gen)
+    else:
+        przeciwnik = losuj_przeciwnika(gracz.poziom, biom, mapa_gen)
     stan = _nowy_stan_walki()
+    stan["jest_boss"] = jest_boss
 
     wyczysc()
-    print(f"\n  *** STARCIE! ***")
-    if biom:
-        print(f"  Biom: {biom.title()}")
-    print(f"  {przeciwnik.opis}")
-    print(f"  Napotkałeś: {przeciwnik.nazwa}!\n")
+    if jest_boss:
+        print(f"\n  *** ⚠ BOSS! *** ")
+        print(f"  {przeciwnik.opis}")
+        print(f"  Stoisz przed: {przeciwnik.nazwa}!\n")
+    else:
+        print(f"\n  *** STARCIE! ***")
+        if biom:
+            print(f"  Biom: {biom.title()}")
+        print(f"  {przeciwnik.opis}")
+        print(f"  Napotkałeś: {przeciwnik.nazwa}!\n")
     nacisnij_enter()
 
     while gracz.zyje() and przeciwnik.zyje():
         _wyswietl_stan_walki(gracz, przeciwnik, stan)
-        wynik = _tura_gracza(gracz, przeciwnik, stan)
+
+        # Ogłuszenie gracza — pomija jego turę
+        if stan["gracz_ogluszone_tury"] > 0:
+            stan["gracz_ogluszone_tury"] -= 1
+            print(f"  ❄  Jesteś ogłuszony! Pomijasz turę.")
+            wynik = None
+        else:
+            wynik = _tura_gracza(gracz, przeciwnik, stan)
 
         if wynik == "wygrana":
-            _zakonczenie_wygrana(gracz, przeciwnik)
+            _zakonczenie_wygrana(gracz, przeciwnik, jest_boss)
             return "wygrana"
         if wynik == "ucieczka":
             _odnow_mane_po_walce(gracz)
@@ -712,7 +830,7 @@ def przeprowadz_walke(gracz: Gracz, biom: str | None = None) -> str:
 
         # Wróg mógł umrzeć od trucizny w turze przeciwnika
         if not przeciwnik.zyje():
-            _zakonczenie_wygrana(gracz, przeciwnik)
+            _zakonczenie_wygrana(gracz, przeciwnik, jest_boss)
             return "wygrana"
 
         if not gracz.zyje():
@@ -721,6 +839,13 @@ def przeprowadz_walke(gracz: Gracz, biom: str | None = None) -> str:
             return "przegrana"
 
         _koniec_rundy(stan, gracz)
+
+        # Sprawdź czy gracz żyje po statusach końca rundy
+        if not gracz.zyje():
+            print(f"\n  💀  Padłeś od zatrucia lub krwawienia...")
+            nacisnij_enter()
+            return "przegrana"
+
         nacisnij_enter()
 
     return "wygrana"

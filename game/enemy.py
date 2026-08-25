@@ -173,16 +173,89 @@ _SZABLONY_BIOM = {
 }
 
 
-def losuj_przeciwnika(poziom_gracza: int = 1, biom: str | None = None) -> Przeciwnik:
+_BOSSOWIE = [
+    dict(
+        nazwa="Smok Cienia",
+        hp=300,
+        atak=45,
+        obrona=20,
+        exp_nagroda=500,
+        zloto_nagroda=(80, 150),
+        opis="Starożytny smok opatulony mrokiem, władca tych ziem.",
+    ),
+    dict(
+        nazwa="Licz Prawieczny",
+        hp=260,
+        atak=40,
+        obrona=15,
+        exp_nagroda=480,
+        zloto_nagroda=(70, 130),
+        opis="Nieumarły czarownik gromadzący dusze poległych przez wieki.",
+    ),
+    dict(
+        nazwa="Król Trolli",
+        hp=350,
+        atak=38,
+        obrona=25,
+        exp_nagroda=520,
+        zloto_nagroda=(90, 160),
+        opis="Potworny władca trolli, którego ryk rozrysa góry.",
+    ),
+    dict(
+        nazwa="Arcydemon Khaor",
+        hp=280,
+        atak=50,
+        obrona=18,
+        exp_nagroda=560,
+        zloto_nagroda=(100, 180),
+        opis="Demon przyzwany z głębin otchłani, żądny zniszczenia.",
+    ),
+    dict(
+        nazwa="Strażniczka Wieczności",
+        hp=320,
+        atak=42,
+        obrona=22,
+        exp_nagroda=540,
+        zloto_nagroda=(85, 165),
+        opis="Pradawna istota pilnująca przejścia między światami.",
+    ),
+]
+
+
+def losuj_bossa(poziom_gracza: int = 1, mapa_gen: int = 1) -> Przeciwnik:
+    """Losuje bossa skalowanego z poziomem gracza i numerem mapy."""
+    szablon = random.choice(_BOSSOWIE)
+    # Bossowie skalują się szybciej niż zwykli wrogowie
+    skala = 1 + (poziom_gracza - 1) * 0.20 + (mapa_gen - 1) * 0.15
+    return Przeciwnik(
+        nazwa=szablon["nazwa"],
+        hp=int(szablon["hp"] * skala),
+        atak=int(szablon["atak"] * skala),
+        obrona=int(szablon["obrona"] * skala),
+        exp_nagroda=int(szablon["exp_nagroda"] * skala),
+        zloto_nagroda=(
+            int(szablon["zloto_nagroda"][0] * skala),
+            int(szablon["zloto_nagroda"][1] * skala),
+        ),
+        opis=szablon["opis"],
+    )
+
+
+def losuj_przeciwnika(
+    poziom_gracza: int = 1,
+    biom: str | None = None,
+    mapa_gen: int = 1,
+) -> Przeciwnik:
     """
     Losuje przeciwnika odpowiedniego dla poziomu gracza,
-    skalując jego statystyki.
+    skalując jego statystyki. mapa_gen zwiększa trudność z każdą mapą.
     """
     dostepne = _SZABLONY[: min(poziom_gracza + 2, len(_SZABLONY))]
     if biom in _SZABLONY_BIOM:
         dostepne += _SZABLONY_BIOM[biom]
     szablon = random.choice(dostepne)
-    skala = 1 + (poziom_gracza - 1) * 0.15
+    # Skalowanie: poziom gracza + bonus za numer mapy
+    skala = 1 + (poziom_gracza - 1) * 0.15 + (mapa_gen - 1) * 0.08
 
     return Przeciwnik(
         nazwa=szablon["nazwa"],
