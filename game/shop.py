@@ -12,6 +12,7 @@ from game.items import (
 )
 from game.quests import sprawdz_questy
 from game.pochodzenie import cena_dla
+from game.karma import opis_cen
 from game.utils import wyswietl_linie, nacisnij_enter
 
 
@@ -80,7 +81,11 @@ def otworz_sklep(gracz: Gracz) -> None:
     """Wyświetla sklep ogólny (mikstury + lekki ekwipunek) i obsługuje transakcje."""
     while True:
         wyswietl_linie()
-        print(f"  🏪  SKLEP  |  Twoje złoto: {gracz.zloto} szt.\n")
+        print(f"  🏪  SKLEP  |  Twoje złoto: {gracz.zloto} szt.")
+        opis = opis_cen(gracz)
+        if opis:
+            print(opis)
+        print()
 
         print("  ─── Mikstury i medykamenty ───")
         for i, produkt in enumerate(_MIKSTURY, 1):
@@ -129,7 +134,11 @@ def otworz_kuznia(gracz: Gracz, tytul: str = "KUŹNIA GRIMBOLD'A") -> None:
     """Wyświetla kuźnię (ciężki ekwipunek bojowy) i obsługuje transakcje."""
     while True:
         wyswietl_linie()
-        print(f"  ⚒  {tytul}  |  Twoje złoto: {gracz.zloto} szt.\n")
+        print(f"  ⚒  {tytul}  |  Twoje złoto: {gracz.zloto} szt.")
+        opis = opis_cen(gracz)
+        if opis:
+            print(opis)
+        print()
         print("  ─── Broń i zbroja ───")
         for i, klucz in enumerate(KUZNIA_ASORTYMENT, 1):
             wyswietl_przedmiot(klucz, i, gracz)

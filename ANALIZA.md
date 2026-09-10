@@ -64,17 +64,23 @@ Ikony nie zmieniają mechaniki — skracają odczyt menu i mapy.
 
 ## 5. Systemy mechaniczne
 
-**Walka.** Tura: atak / przedmioty / umiejętności / ucieczka. Krytyki z Zręczności, uniki, statusy (trucizna, krwawienie). Jeden towarzysz walki. Nekromanta: przyzwanie; Druid: forma na kilka tur.
+**Walka.** Tura: atak / przedmioty / umiejętności / ucieczka. Efekt każdej umiejętności to
+osobna funkcja `_sk_*(k: Kontekst)` w rejestrze `HANDLERY_UMIEJETNOSCI`. Krytyki z Zręczności, uniki, statusy (trucizna, krwawienie). Jeden towarzysz walki. Nekromanta: przyzwanie; Druid: forma na kilka tur.
 
 **Atrybuty.** SIL/ZRĘ/KON/INT/MDR/CHA, test k20 vs ST (rośnie lekko z numerem regionu). Nat 20 / nat 1.
 
 **Ekonomia obozu.** Surowce z mapy i zbieraczy → budynki. Chaty (do 6) = miejsca dla osadników (zbiory / handel / rzemiosło). Targ: złoto ∝ dni × (3 + 4×handlarze). Warsztat: mikstury ze ziół podczas nieobecności.
 
+**Karma.** `game/karma.py` czyta wartość zbieraną przez zdarzenia i wątki: ceny ±15%,
+modyfikator ST rekrutacji (−3…+3) i lustrzany dla zastraszania, siła daru świątyni.
+
 **Rekrutacja.** Najemnicy karczmy: złoto. Nazwane NPC: 180–280 zł **albo** CHA 18+ (bez rzutu) / CHA 16+ i perswazja ST 18–20. Zajęcia: walka, zbiory, handel, rzemiosło. Limit miejsc 8–10 (dom daje extra).
 
 **Miasto.** Osobna mapa 3×3, start przy bramie. Rynek = sklep, kuźnia = ciężki ekwipunek, gildia = najem osadnika (wymaga wolnej chaty), ratusz = Mirena, zaułek = test złodziejski.
 
-**Zapis.** `savegame.json`: pozycja, mapa, atrybuty, budynki, rekruci, `czas`, `chaty`, `osadnicy`, `watki_npc`. Hardcore kasuje plik po śmierci.
+**Zapis.** `savegame.json` obok pliku gry: pozycja, `seed`, `regiony`, atrybuty, budynki,
+rekruci, `czas`, `chaty`, `osadnicy`, `watki_npc`, `questy_start`. Zapis atomowy
+(tmp + `os.replace`). Hardcore kasuje plik po śmierci.
 
 ---
 
@@ -86,48 +92,85 @@ Osiem postaci z trzystopniowym wątkiem (`gracz.watki_npc`): Boldan (córka), Al
 
 ## 7. Skalowanie trudności
 
-Wrogowie skalują się z poziomem gracza, numerem regionu i trybem (łatwy / normalny / hardcore). Boss co 3. region. ST testów: baza + `(mapa_gen-1)//2`, cap 20.
+Wrogowie skalują się z poziomem gracza, poziomem regionu (`1 + odległość od obozu`) i trybem
+(łatwy / normalny / hardcore). Boss w około co trzecim regionie poza startowym. ST testów: baza + `(mapa_gen-1)//2`, cap 20.
 
 ---
 
 ## 8. Mocne strony i ograniczenia
 
-**Działa.** Jedna pętla hub–mapa bez gubienia pozycji. Osada wiąże czas wyprawy ze złotem. Ikony czynią CLI czytelnym. Stdlib only. Questy, plecak, miasto, 8 wątków NPC i rekrutacja CHA już są w grze.
+**Działa.** Jedna pętla hub–mapa bez gubienia pozycji. Świat jest trwały — regiony leżą na
+siatce wokół obozu `[0, 0]` i można do nich wracać. Osada wiąże czas wyprawy ze złotem.
+Karma ma realne skutki. Ikony czynią CLI czytelnym. Stdlib only, także w testach.
 
-**Słabe.** Brak grafiki poza emoji (szerokość znaków bywa nierówna w starym `cmd.exe`). Walka jest tekstowa i powtarzalna przy długim grindzie. Wątki NPC nie blokują się wzajemnie (Lira/Vasco to lore, nie flaga questa). Miasto nie zapisuje pozycji — każde wejście zaczyna przy bramie. Karma jest liczona, ale prawie nic z niej nie wynika. Jeden slot zapisu, brak zakończenia kampanii, warsztat ma 3 przepisy.
-
----
-
-## 9. Do zrobienia
-
-Niedokończone dopięcie (nie nowe systemy):
-
-1. **Pozycja w mieście** — serializować `miasto_x/y` albo nie resetować do bramy przy każdym wejściu.
-2. **Wątki → questy** — etapy `watki_npc` jako flagi tablicy (Lira/Vasco, dług Aldrica, Kamienne Serce).
-3. **Karma w mechanice** — ceny, wydarzenia w mieście, dialogi.
-4. **Warsztat** — więcej niż 3 przepisy.
-5. **Kod** — handlery skilli zamiast `if/elif` w `combat.py`; testy; ewentualnie 3 sloty zapisu.
-6. **Terminal** — wyrównanie komórek mapy albo tryb ASCII dla starego `cmd.exe`.
+**Słabe.** Brak grafiki poza emoji (szerokość znaków bywa nierówna w starym `cmd.exe`).
+Walka jest tekstowa i powtarzalna przy długim grindzie. Wątki NPC nie blokują się wzajemnie.
+Miasto nie zapisuje pozycji — każde wejście zaczyna przy bramie. Jeden slot zapisu.
+**Brak zakończenia kampanii — gra jest świadomie sandboksem** (patrz sekcja 10).
 
 ---
 
-## 10. Co można dodać
+## 9. Zrobione
 
-- Kampania 8–12 wypraw, 3 akty, finalny boss i ekran końcowy (teraz regiony się powtarzają).
-- Wydarzenia w mieście i ewentualnie więcej dzielnic (nie od razu 5×5 miasta).
-- Drugi towarzysz walki albo pierścień/amulet — bez szóstej klasy.
-- Opcjonalny kolor w terminalu (Colorama/Rich) z fallbackiem; stdlib only zostaje plusem.
+Naprawy i systemy domknięte w gałęzi `feat/sandbox-swiat-i-naprawy`:
+
+1. **Trwały świat** — `gracz.regiony` trzyma każdy odwiedzony region pod kluczem `"rx,ry"`.
+   Wyjście za krawędź i powrót wraca w to samo miejsce, z zachowanymi odkryciami i zbiorami.
+   Trudność (`mapa_gen`) = `1 + odległość Chebysheva od (0, 0)`, więc powrót bliżej obozu
+   realnie osłabia wrogów.
+2. **Seed postaci** — `gracz.seed` losowany przy tworzeniu i zapisywany; region generuje się
+   z `(seed, rx, ry)`. Każda nowa gra to inny świat, ale ten sam region po powrocie jest
+   identyczny.
+3. **Questy nie zaliczają się wstecz** — `gracz.questy_start` zamraża statystykę przy
+   przyjęciu; postęp to różnica od tej chwili.
+4. **Zapis atomowy** — plik tymczasowy + `os.replace()` + `fsync`. Ścieżka liczona od pliku
+   gry (`Path(__file__)`), nie od katalogu roboczego. Uszkodzony zapis podnosi
+   `ZapisUszkodzony` zamiast cicho udawać brak pliku.
+5. **Odpoczynek kosztuje dzień** — `dodaj_czas(gracz, 1)` plus rozliczenie targu i osadników.
+   Wcześniej pełne HP i mana kosztowały 5 złota w nieskończoność.
+6. **Karma ma skutki** — `game/karma.py`: ceny u kupców ±15%, modyfikator ST rekrutacji
+   (i lustrzany dla zastraszania), siła daru świątyni. Reputacja widoczna w obozie i sklepie.
+7. **Czyste wyjście** — `KeyboardInterrupt`/`EOFError` łapane w `__main__`, bez tracebacku.
+8. **Handlery zamiast łańcucha `if/elif`** — `HANDLERY_UMIEJETNOSCI` mapuje klucz na funkcję
+   `_sk_*(k: Kontekst)`. 48 umiejętności, 48 handlerów, zero gałęzi. Refaktor zweryfikowany
+   testem różnicowym (432 przypadki: stary łańcuch vs nowy rejestr, identyczny wynik).
+9. **Testy i CI** — 43 testy `unittest`, workflow na Pythonie 3.10 i 3.13.
+10. **Higiena repo** — `__pycache__` wypisany z gita (`.gitignore` sam tego nie robi).
+
+---
+
+## 10. Co dalej
+
+**Kampania (świadomie odłożona).** Gra jest teraz sandboksem: regiony ciągną się w cztery
+strony bez końca i bez finału. Zakończenie — akty, finalny boss, epilog zależny od karmy
+i osady — to następny krok, celowo zostawiony na osobną iterację.
+
+Poza kampanią:
+
+- Pozycja w mieście (`miasto_x/y` do zapisu) zamiast resetu do bramy.
+- Etapy `watki_npc` jako flagi na tablicy questów.
+- Więcej przepisów w warsztacie niż 3.
+- Mapa świata: podgląd siatki regionów, nie tylko bieżącego.
+- Trzy sloty zapisu.
+- Wyrównanie komórek mapy albo tryb ASCII dla starego `cmd.exe`.
 
 **Nie teraz:** GUI, nowa klasa, zależności pip wymagane do odpalenia `uruchom.bat`.
-
-Szczegóły i priorytety: canvas Analiza gry obok czatu.
 
 ---
 
 ## 11. Jak testować po zmianach
 
-- `python -c "import main"` z katalogu repo (nie stub Windows Store — `uruchom.bat` albo `python3.14`).
-- Nowa gra → obóz: ikony w menu `[1]`–`[16]`.
-- Wyprawa: mapa 9×9 (81 pól) z 🌾/🌲/👤, licznik odkryte N/81, kierunki ze strzałkami.
-- Region 2+: pole 🏙 → mapa miasta.
-- Powrót z wyprawy przy zbudowanym targu: komunikat o złocie za dni.
+Automatycznie:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Ręcznie, po większej zmianie:
+
+- `python -c "import main"` z katalogu repo.
+- Nowa gra → obóz: ikony w menu `[1]`–`[16]`, linia „Reputacja".
+- Wyprawa: nagłówek `REGION [0, 0] · poziom 1`, siatka 9×9, licznik odkryte N/81.
+- Dojdź do krawędzi i wróć — musi pokazać `ZNANY REGION` i te same odkryte pola.
+- Odpoczynek `[3]`: „Minął dzień" i rozliczenie targu, jeśli stoi.
+- Przyjmij questa mając już dorobek — nie może zaliczyć się od razu.

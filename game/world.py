@@ -19,6 +19,10 @@ from game.mapa import (
     etykieta_kierunku,
     kierunki,
     opis_punktu,
+    opis_regionu,
+    liczba_regionow,
+    liczba_odkrytych,
+    liczba_pol,
     PUNKTY_MITYCZNE,
 )
 from game.oboz import zbierz_na_polu, pozostale_zbiory, linia_surowcow
@@ -160,17 +164,30 @@ _NOWE_SRODOWISKA = [
 ]
 
 
-def _pokaz_nowe_srodowisko(gracz: Gracz) -> None:
-    """Wyświetla efektowny komunikat o przejściu na nową mapę."""
+def _pokaz_zmiane_regionu(gracz: Gracz, pierwszy_raz: bool) -> None:
+    """Komunikat o przekroczeniu granicy regionu.
+
+    Świat jest trwały, więc powrót do znanego regionu musi brzmieć inaczej niż
+    wejście w ziemie, których nikt jeszcze nie zmapował.
+    """
     wyczysc()
     wyswietl_linie("═")
-    print(f"  ✨  NOWY REGION #{gracz.mapa_gen}  ✨")
+    if pierwszy_raz:
+        print(f"  ✨  NOWY REGION [{gracz.region_x}, {gracz.region_y}]  ·  poziom {gracz.mapa_gen}  ✨")
+    else:
+        print(f"  🧭  ZNANY REGION [{gracz.region_x}, {gracz.region_y}]  ·  poziom {gracz.mapa_gen}")
     wyswietl_linie("═")
-    tytul, opis = random.choice(_NOWE_SRODOWISKA)
-    print(f"\n  {tytul}")
-    print(f"  {opis}")
-    print(f"\n  Stoisz na skraju nieznanych ziem. Odkryte pola poprzedniego regionu")
-    print(f"  zostają za tobą — tu wszystko trzeba poznać od nowa.\n")
+
+    if pierwszy_raz:
+        tytul, opis = random.choice(_NOWE_SRODOWISKA)
+        print(f"\n  {tytul}")
+        print(f"  {opis}")
+        print("\n  Stoisz na skraju nieznanych ziem — tu wszystko trzeba poznać od nowa.")
+    else:
+        print(f"\n  Wracasz w znajome strony: {opis_regionu(gracz)}.")
+        print(f"  Odkryte pola i ślady po tobie zostały tam, gdzie je zostawiłeś.")
+        print(f"  Odkryte: {liczba_odkrytych(gracz)}/{liczba_pol()} pól tego regionu.")
+    print()
     nacisnij_enter()
 
 
@@ -343,13 +360,22 @@ def _zdarzenie_swiatynia(gracz: Gracz, nazwa_budynku: str) -> None:
         nacisnij_enter()
         return
 
+    from game.karma import bonus_swiatyni, etykieta as etykieta_karmy
+
     wynik = random.choice(["blogoslawienstwo", "mana", "dar"])
     gracz.blogoslawienstwo_wyprawy = True
     if wynik == "blogoslawienstwo":
-        gracz.hp = min(gracz.max_hp, gracz.hp + 20)
+        # Kapłani czytają w człowieku — reputacja waży na sile daru.
+        bonus = bonus_swiatyni(gracz)
+        lecz = max(5, 20 + bonus)
+        gracz.hp = min(gracz.max_hp, gracz.hp + lecz)
         gracz.obrona += 1
         print("  Otrzymujesz błogosławieństwo ochrony. (raz na wyprawę)")
-        print("  ❤️  HP +20 (do limitu)   🛡️  Obrona +1")
+        print(f"  ❤️  HP +{lecz} (do limitu)   🛡️  Obrona +1")
+        if bonus > 0:
+            print(f"  🕊  Kapłan zna twoje czyny — dar jest hojniejszy. ({etykieta_karmy(gracz)})")
+        elif bonus < 0:
+            print(f"  🌑  Kapłan waha się nad twoją głową — dar jest skąpy. ({etykieta_karmy(gracz)})")
     elif wynik == "mana":
         poprzednia_mana = gracz.mana
         _odnawianie(gracz, mana=30)
@@ -1046,10 +1072,13 @@ def wyrusz_w_podroz(gracz: Gracz) -> str:
 
         if wybor in kierunki():
             nazwa, dx, dy = kierunki()[wybor]
-            nowy_region = przesun_gracza(gracz, dx, dy)
+            # Licznik regionów rośnie tylko wtedy, gdy świat wygenerował nowy —
+            # to odróżnia odkrycie od powrotu w znane strony.
+            regionow_przed = liczba_regionow(gracz)
+            zmiana_regionu = przesun_gracza(gracz, dx, dy)
             dodaj_czas(gracz, 1)
-            if nowy_region:
-                _pokaz_nowe_srodowisko(gracz)
+            if zmiana_regionu:
+                _pokaz_zmiane_regionu(gracz, liczba_regionow(gracz) > regionow_przed)
             _pokaz_wejscie_na_pole(gracz, nazwa)
             wynik = _po_wejsciu_na_pole(gracz)
             if wynik == "przegrana":

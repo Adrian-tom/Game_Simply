@@ -309,9 +309,12 @@ def proponuj_rekrutacje_npc(gracz: Gracz, klucz: str) -> None:
 
     from game.atrybuty import wartosc, przeprowadz_test, trudnosc
 
+    from game.karma import modyfikator_rekrutacji, etykieta as etykieta_karmy
+
     cha = wartosc(gracz, "charyzma")
     st_baza = int(info.get("rekrut_st", 18))
-    st = trudnosc(gracz, st_baza)
+    mod_karmy = modyfikator_rekrutacji(gracz)
+    st = max(5, trudnosc(gracz, st_baza) + mod_karmy)
 
     wyczysc()
     wyswietl_linie("═")
@@ -321,6 +324,13 @@ def proponuj_rekrutacje_npc(gracz: Gracz, klucz: str) -> None:
     print(f"  {info['opis']}")
     print(f"  Cena wykupu życia: {info['cena']} złota   (masz {gracz.zloto})")
     print(f"  Twoja charyzma: {cha}   (próg próby {CHA_MINIMUM}, ekstremum {CHA_EKSTREMALNA})")
+    print(f"  Twoja reputacja: {etykieta_karmy(gracz)}", end="")
+    if mod_karmy < 0:
+        print(f"   — ludzie ci ufają (ST {mod_karmy})")
+    elif mod_karmy > 0:
+        print(f"   — twoja sława idzie przed tobą (ST +{mod_karmy})")
+    else:
+        print()
     print(f"  Miejsca w obozie: {len(_lista(gracz))}/{_limit(gracz)}\n")
     print("  Ta osoba nie jest najemnikiem z ogłoszenia. Albo płacisz fortunę,")
     print("  albo łamiesz jej opór słowem — i to słowem, które boli.\n")

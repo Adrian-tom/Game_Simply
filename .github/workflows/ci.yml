@@ -1,0 +1,31 @@
+name: Testy
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  testy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.10 to minimum deklarowane w README, 3.13 to wersja robocza.
+        python-version: ["3.10", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ustaw Pythona ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Gra i testy korzystają wyłącznie ze stdlib — nie ma czego instalować.
+      - name: Sprawdź, że wszystkie moduły się importują
+        run: python -c "import main"
+
+      - name: Uruchom testy
+        run: python -m unittest discover -s tests -v

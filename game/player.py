@@ -1,8 +1,10 @@
 """Moduł zawierający klasę gracza."""
 
+import random
+
 from game.skills import UMIEJETNOSCI, nastepne_umiejetnosci
 from game.atrybuty import startowe_atrybuty, biegle_skille_klasy, linia_atrybutow
-from game.mapa import SRODEK, liczba_odkrytych, liczba_pol
+from game.mapa import SRODEK, liczba_odkrytych, liczba_pol, liczba_regionow
 
 # Progi EXP potrzebne do awansu na kolejny poziom (łączny EXP)
 EXP_PROGI = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000]
@@ -50,8 +52,13 @@ class Gracz:
         self.mapa_x = SRODEK
         self.mapa_y = SRODEK
         self.aktualny_biom = "równiny"
-        self.mapa_gen = 1  # numer regionu — rośnie po przekroczeniu krawędzi
-        self.mapa_pola = None  # siatka regionu (generowana leniwie)
+        # Trwały świat: seed postaci + siatka regionów wokół obozu (0, 0).
+        self.seed = random.randrange(1, 2 ** 31)
+        self.region_x = 0
+        self.region_y = 0
+        self.regiony: dict[str, list] = {}
+        self.mapa_gen = 1  # poziom trudności regionu = 1 + odległość od obozu
+        self.mapa_pola = None  # siatka bieżącego regionu (widok na self.regiony)
         self.punkty_atrybutow = 2  # start jak w BG3 — kilka punktów do rozdania
         self.osiagniecia: set[str] = set()  # odblokowane osiągnięcia
         self.tryb_trudnosci = "normalny"
@@ -81,9 +88,11 @@ class Gracz:
         self.wyposazenie: dict[str, str | None] = {"bron": None, "zbroja": None}
         self.plecak: list[str] = []
 
-        # Questy
+        # Questy — questy_start trzyma statystykę z chwili przyjęcia,
+        # żeby postęp liczył się od przyjęcia, a nie od początku gry.
         self.aktywne_questy: set[str] = set()
         self.ukonczone_questy: set[str] = set()
+        self.questy_start: dict[str, int] = {}
 
         # Statystyki na potrzeby questów
         self.statystyki: dict[str, int] = {
@@ -301,8 +310,8 @@ class Gracz:
         ("pierwsze_kroki", "🥇 Pierwsze kroki", lambda g: g.statystyki.get("zabite_potwory", 0) >= 1),
         ("rzeźnik", "🗡 Rzeźnik", lambda g: g.statystyki.get("zabite_potwory", 0) >= 50),
         ("wojownik_mroku", "⚔ Wojownik Mroku", lambda g: g.statystyki.get("zabite_potwory", 0) >= 100),
-        ("odkrywca", "🗺 Odkrywca", lambda g: g.mapa_gen >= 10),
-        ("podroznik", "🌍 Podróżnik", lambda g: g.mapa_gen >= 5),
+        ("odkrywca", "🗺 Odkrywca", lambda g: liczba_regionow(g) >= 10),
+        ("podroznik", "🌍 Podróżnik", lambda g: liczba_regionow(g) >= 5),
         ("kartograf", "🗺 Kartograf", lambda g: liczba_odkrytych(g) >= liczba_pol()),
         ("bogacz", "💰 Bogacz", lambda g: g.zloto >= 500),
         ("kolekcjoner", "🧪 Kolekcjoner", lambda g: g.mikstury >= 10),

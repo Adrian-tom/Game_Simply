@@ -43,13 +43,16 @@ Konsola z UTF-8 (Windows Terminal / nowy PowerShell) pokazuje ikony poprawnie.
 | **Przeciwnicy** | Potwory ogólne i biomowe; trolle regenerują, wiedźma klnie, smok zieje ogniem |
 | **Bossowie** | Co 3. region, na konkretnym polu ☠ |
 | **Mapa** | Region 9×9 (81 pól) z ikonami biomów i budynków, mgłą wojny ❔ |
+| **Trwały świat** | Regiony leżą na siatce wokół obozu `[0, 0]`. Wyjście za krawędź i powrót wraca **w to samo miejsce** — odkryte pola i zużyte zbiory zostają |
+| **Seed postaci** | Każda nowa gra losuje własny świat; ten sam region po powrocie wygląda tak samo |
 | **Ikony** | Biomy, punkty, kierunki, menu obozu, walka, sklep, questy — katalog `game/ikony.py` |
 | **Ekwipunek** | Broń i zbroja, plecak, sprzedaż za 50% ceny — stary przedmiot nie znika |
 | **Sklep i kuźnia** | Mikstury (leczenie, większa, mana), antidotum, ekwipunek |
-| **Questy** | Tablica w obozie — zabójstwa, zakupy, świątynie |
+| **Questy** | Tablica w obozie — zabójstwa, zakupy, świątynie. Postęp liczy się **od przyjęcia**, nie od początku gry |
 | **Osiągnięcia** | Odblokowywane przy powrocie do obozu (m.in. Kartograf: odkryj cały region) |
-| **Zapis** | Autosave po wyprawie i po każdym ruchu na mapie; Hardcore kasuje zapis po śmierci |
-| **Świat** | Biomy, karczmy, świątynie, kuźnie, zdarzenia moralne (karma) |
+| **Zapis** | Autosave po wyprawie i po każdym ruchu; zapis **atomowy** (przerwanie nie niszczy poprzedniego); Hardcore kasuje zapis po śmierci |
+| **Świat** | Biomy, karczmy, świątynie, kuźnie, zdarzenia moralne |
+| **Karma** | Reputacja z realnymi skutkami: ceny u kupców ±15%, łatwiejsza/trudniejsza rekrutacja, hojniejszy lub skąpy dar świątyni |
 | **Obóz** | Rozbudowa: sklep, dom, kuźnia, stajnie, targ, warsztat, chaty osadników |
 | **Zbieractwo** | Na wyprawie `[6]` zbierasz surowce (2 razy na pole); biomy dają różne materiały |
 | **Drużyna** | Rekrutacja: max 1 w walce; reszta: zbiory, handel albo rzemiosło. Postacie z dialogów — fortuna albo CHA 18+ / perswazja |
@@ -93,7 +96,8 @@ Game_Simply/
     ├── enemy.py     # Przeciwnicy, bossowie, skalowanie
     ├── combat.py    # Walka turowa i umiejętności
     ├── world.py     # Podróż, budynki, zdarzenia
-    ├── mapa.py      # Region 9×9, biomy, mgła wojny
+    ├── mapa.py      # Trwały świat: siatka regionów 9×9, biomy, mgła wojny
+    ├── karma.py     # Reputacja i jej skutki (ceny, rekrutacja, świątynie)
     ├── items.py     # Ekwipunek, plecak, sprzedaż
     ├── shop.py      # Sklep i kuźnia
     ├── skills.py    # Umiejętności, rangi, księga, podklasy
@@ -128,7 +132,8 @@ Game_Simply/
    - `[14]` 🤝 Drużyna — najemnicy i zrekrutowane postacie
    - `[15]` 🪓 Praca w obozie (złoto i surowce, mija czas)
    - `[16]` 🛖 Osada — osadnicy, warsztat, sprzedaż surowców na targu
-4. Na wyprawie: ⬆ północ / ⬅ zachód / ➡ wschód / ⬇ południe. Krawędź mapy to nowy region.
+4. Na wyprawie: ⬆ północ / ⬅ zachód / ➡ wschód / ⬇ południe. Krawędź mapy prowadzi do sąsiedniego regionu —
+   świat jest trwały, więc możesz wrócić tą samą drogą. Im dalej od obozu `[0, 0]`, tym trudniejsi wrogowie.
    Zbadaj pole (`[5]`), żeby wejść do karczmy, kuźni, świątyni, jaskini, **miasta** albo mitycznego miejsca.
    Na pustym polu mogą pojawić się testy (wspinaczka, zamki, bandyci, tropy).
    Od regionu 2 na mapie mogą pojawić się 🌀 portal, 🐉 leże smoka, ☁ latająca wyspa i **🏙 miasto**.
@@ -140,6 +145,21 @@ Game_Simply/
    Nekromanta przywołuje sługę (jeden na raz); Druid zmienia formę na kilka tur.
 6. Po walce: EXP, złoto, czasem łup do plecaka.
 7. Na poziomie 5 wybierz podklasę w obozie. Punkty atrybutów wydajesz na karcie `[7]`, punkty umiejętności w księdze.
+
+---
+
+## Testy
+
+Testy korzystają wyłącznie ze standardowej biblioteki (`unittest`) — nie trzeba nic instalować.
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Pokrywają trwały świat (powroty przez krawędź, seed, migrację starych zapisów),
+zapis (round-trip, atomowość, uszkodzony plik), questy (postęp od przyjęcia),
+karmę (ceny, rekrutacja, świątynie) oraz rejestr umiejętności (każdy skill ma handler
+i da się go wywołać). To samo uruchamia CI na Pythonie 3.10 i 3.13.
 
 ---
 

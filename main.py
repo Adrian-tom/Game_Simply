@@ -10,7 +10,15 @@ from game.shop import otworz_sklep, otworz_kuznia
 from game.skills import PODKLASY, otworz_ksiege_umiejetnosci
 from game.utils import wyczysc, wyswietl_linie, nacisnij_enter, baner_tytulowy
 from game.world import wyrusz_w_podroz, przegladaj_mape
-from game.savegame import zapisz_gre, wczytaj_gre, zapis_istnieje, usun_zapis
+from game.mapa import liczba_regionow
+from game.karma import etykieta as etykieta_karmy
+from game.savegame import (
+    zapisz_gre,
+    wczytaj_gre,
+    zapis_istnieje,
+    usun_zapis,
+    ZapisUszkodzony,
+)
 from game.quests import pokaz_tablice_questow, sprawdz_questy
 from game.items import otworz_ekwipunek
 from game.oboz import (
@@ -21,7 +29,7 @@ from game.oboz import (
     opis_obozu,
 )
 from game.rekruci import menu_druzyny, etykieta_towarzysza
-from game.osada import menu_pracy, menu_osady
+from game.osada import menu_pracy, menu_osady, dodaj_czas, rozlicz_powrot_do_obozu
 from game.atrybuty import (
     ATRYBUTY,
     KOLEJNOSC_ATRYBUTOW,
@@ -290,7 +298,8 @@ def _pokaz_statystyki_konca(gracz: Gracz) -> None:
     print(f"\n  Bohater: {gracz.imie} [{gracz.klasa}]")
     print(f"  Osiągnięty poziom: {gracz.poziom}")
     print(f"  Zdobyte EXP: {gracz.exp}")
-    print(f"  Odwiedzone mapy: {gracz.mapa_gen}")
+    print(f"  Odwiedzone regiony: {liczba_regionow(gracz)}")
+    print(f"  Najdalszy region: poziom {gracz.mapa_gen}")
     print(f"  Złoto przy śmierci: {gracz.zloto} szt.")
     print(f"  Karma: {getattr(gracz, 'karma', 0)}")
     print(f"  Zabite potwory: {gracz.statystyki.get('zabite_potwory', 0)}")
@@ -317,6 +326,7 @@ def menu_obozu(gracz: Gracz) -> str:
     print(f"  OBÓZ  —  {gracz.imie}  (Poz. {gracz.poziom}){tryb_str}")
     wyswietl_linie("═")
     print(gracz)
+    print(f"  Reputacja: {etykieta_karmy(gracz)}")
     print(f"  Obóz: {opis_obozu(gracz)}")
     print(f"  {linia_surowcow(gracz)}")
     towar = etykieta_towarzysza(gracz)
@@ -360,22 +370,33 @@ def menu_obozu(gracz: Gracz) -> str:
 
 
 def odpoczynek(gracz: Gracz) -> None:
-    """Gracz odpoczywa. Dom w obozie leczy mocniej i taniej."""
+    """Gracz odpoczywa. Dom w obozie leczy mocniej i taniej.
+
+    Odpoczynek zabiera dzień — bez tego pełne HP i mana kosztowałyby 5 złota
+    w nieskończoność i cała ekonomia mikstur byłaby dekoracją.
+    """
     w_domu = ma_budynek(gracz, "dom")
     koszt = 5 if w_domu else 10
     lecz = 80 if w_domu else 30
     if gracz.zloto < koszt:
         print(f"\n  Nie masz wystarczająco złota (potrzebujesz {koszt} szt.).")
-    else:
-        poprzednie = gracz.hp
-        gracz.zloto -= koszt
-        gracz.hp = min(gracz.hp + lecz, gracz.max_hp)
-        faktyczne = gracz.hp - poprzednie
-        miejsce = "w domu" if w_domu else "przy palenisku"
-        print(f"\n  😴  Odpocząłeś {miejsce} i odzyskałeś {faktyczne} HP. (-{koszt} złota)")
-        if gracz.max_mana > 0:
-            gracz.mana = gracz.max_mana
-            print(f"  🔮  Mana uzupełniona do {gracz.max_mana}!")
+        nacisnij_enter()
+        return
+
+    poprzednie = gracz.hp
+    gracz.zloto -= koszt
+    gracz.hp = min(gracz.hp + lecz, gracz.max_hp)
+    faktyczne = gracz.hp - poprzednie
+    miejsce = "w domu" if w_domu else "przy palenisku"
+    print(f"\n  😴  Odpocząłeś {miejsce} i odzyskałeś {faktyczne} HP. (-{koszt} złota)")
+    if gracz.max_mana > 0:
+        gracz.mana = gracz.max_mana
+        print(f"  🔮  Mana uzupełniona do {gracz.max_mana}!")
+
+    dodaj_czas(gracz, 1)
+    print("  🌙  Minął dzień.")
+    for msg in rozlicz_powrot_do_obozu(gracz):
+        print(msg)
     nacisnij_enter()
 
 
@@ -501,10 +522,18 @@ def main() -> None:
             nowa_gra()
 
         elif wybor == "2":
-            gracz = wczytaj_gre()
+            try:
+                gracz = wczytaj_gre()
+            except ZapisUszkodzony as blad:
+                wyczysc()
+                print("\n  ⚠  Zapis gry jest uszkodzony i nie da się go wczytać.")
+                print(f"  Szczegóły: {blad}")
+                print("  Plik savegame.json leży w katalogu gry — możesz go usunąć ręcznie.")
+                nacisnij_enter()
+                continue
             if gracz is None:
                 wyczysc()
-                print("\n  Brak zapisu gry lub zapis jest uszkodzony.")
+                print("\n  Brak zapisu gry.")
                 print("  Wybierz 'Nowa gra', aby rozpocząć przygodę!")
                 nacisnij_enter()
             else:
@@ -527,5 +556,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (KeyboardInterrupt, EOFError):
+        # Ctrl+C, Ctrl+Z albo koniec strumienia wejścia — wychodzimy po ludzku,
+        # bez wysypywania tracebacku na gracza.
+        print("\n\n  Przerwano. Do zobaczenia w następnej przygodzie!\n")
 

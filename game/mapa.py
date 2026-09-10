@@ -1,4 +1,10 @@
-"""Trwała mapa regionu: biomy, punkty orientacyjne, mgła wojny."""
+"""Trwały świat: siatka regionów, biomy, punkty orientacyjne, mgła wojny.
+
+Region jest identyfikowany parą współrzędnych ``(region_x, region_y)``.
+Raz wygenerowany region zostaje w ``gracz.regiony`` — można do niego wrócić
+i zastać te same pola, odkrycia i zużyte miejsca zbierania.
+Trudność (``mapa_gen``) wynika z odległości od regionu startowego (0, 0).
+"""
 
 from __future__ import annotations
 
@@ -20,7 +26,9 @@ if TYPE_CHECKING:
 
 ROZMIAR = 9
 SRODEK = ROZMIAR // 2
-_BOSS_CO_ILE_MAP = 3
+
+# Szansa, że region poza startowym ma legowisko bossa (ok. co trzeci region).
+_SZANSA_BOSSA = 0.34
 
 BIOMY_NAZWY: tuple[str, ...] = (
     "równiny",
@@ -75,26 +83,39 @@ def liczba_pol() -> int:
     return ROZMIAR * ROZMIAR
 
 
-def generuj_mape(mapa_gen: int) -> list[list[dict]]:
-    """Tworzy nowy region ROZMIAR×ROZMIAR. Układ zależy od numeru mapy (powtarzalny)."""
-    rng = random.Random(4242 + mapa_gen * 17)
+def poziom_regionu(rx: int, ry: int) -> int:
+    """Trudność regionu = 1 + odległość (Chebyshev) od regionu startowego."""
+    return 1 + max(abs(int(rx)), abs(int(ry)))
+
+
+def _ziarno_regionu(seed: int, rx: int, ry: int) -> int:
+    """Powtarzalne ziarno dla regionu — ten sam świat po powrocie i po wczytaniu."""
+    return (int(seed) * 1_000_003 + int(rx) * 73_856_093 + int(ry) * 19_349_663) & 0x7FFF_FFFF
+
+
+def generuj_mape(mapa_gen: int = 1, seed: int = 0, rx: int = 0, ry: int = 0) -> list[list[dict]]:
+    """Tworzy region ROZMIAR×ROZMIAR.
+
+    Układ zależy od ``seed`` postaci i współrzędnych regionu, więc jest
+    powtarzalny przy powrocie, ale inny w każdej nowej rozgrywce.
+    """
+    rng = random.Random(_ziarno_regionu(seed, rx, ry))
     biomy = _siatka_biomow(rng)
+    startowy = (rx == 0 and ry == 0)
     pola: list[list[dict]] = []
     for y in range(ROZMIAR):
         wiersz = []
         for x in range(ROZMIAR):
             punkt = None
-            if mapa_gen == 1 and x == SRODEK and y == SRODEK:
+            if startowy and x == SRODEK and y == SRODEK:
                 punkt = "obóz"
             elif rng.random() < 0.13:
                 punkt = rng.choice(_PUNKTY_LOSOWE)
             wiersz.append(_puste_pole(biomy[y][x], punkt))
         pola.append(wiersz)
 
-    if mapa_gen > 1 and mapa_gen % _BOSS_CO_ILE_MAP == 0:
+    if not startowy and rng.random() < _SZANSA_BOSSA:
         bx, by = rng.randint(0, ROZMIAR - 1), rng.randint(0, ROZMIAR - 1)
-        if pola[by][bx]["punkt"] == "obóz":
-            bx = (bx + 2) % ROZMIAR
         pola[by][bx]["punkt"] = "boss"
 
     if mapa_gen >= 2:
@@ -127,17 +148,75 @@ def generuj_mape(mapa_gen: int) -> list[list[dict]]:
     return pola
 
 
-def zapewnij_mape(gracz: Gracz) -> None:
-    """Gwarantuje, że gracz ma wygenerowany region (stare zapisy też)."""
-    pola = getattr(gracz, "mapa_pola", None)
-    inny_rozmiar = bool(
-        pola and (len(pola) != ROZMIAR or not pola[0] or len(pola[0]) != ROZMIAR)
+# ------------------------------------------------------------------ #
+#  Trwały świat — słownik regionów                                     #
+# ------------------------------------------------------------------ #
+
+def klucz_regionu(rx: int, ry: int) -> str:
+    """Klucz regionu w słowniku (string, bo zapis idzie do JSON)."""
+    return f"{int(rx)},{int(ry)}"
+
+
+def _regiony(gracz: Gracz) -> dict[str, list[list[dict]]]:
+    mapy = getattr(gracz, "regiony", None)
+    if not isinstance(mapy, dict):
+        mapy = {}
+        gracz.regiony = mapy
+    return mapy
+
+
+def region_pola(gracz: Gracz, rx: int, ry: int) -> list[list[dict]]:
+    """Zwraca siatkę regionu — generuje ją tylko przy pierwszej wizycie."""
+    mapy = _regiony(gracz)
+    klucz = klucz_regionu(rx, ry)
+    pola = mapy.get(klucz)
+    if not _siatka_poprawna(pola):
+        pola = generuj_mape(poziom_regionu(rx, ry), getattr(gracz, "seed", 0), rx, ry)
+        mapy[klucz] = pola
+    return pola
+
+
+def liczba_regionow(gracz: Gracz) -> int:
+    """Ile regionów gracz odwiedził (rozmiar trwałego świata)."""
+    return len(_regiony(gracz))
+
+
+def _siatka_poprawna(pola) -> bool:
+    return bool(
+        pola
+        and len(pola) == ROZMIAR
+        and pola[0]
+        and len(pola[0]) == ROZMIAR
     )
-    if not pola or inny_rozmiar:
-        gracz.mapa_pola = generuj_mape(getattr(gracz, "mapa_gen", 1))
-        if inny_rozmiar:
-            gracz.mapa_x = SRODEK
-            gracz.mapa_y = SRODEK
+
+
+def zapewnij_mape(gracz: Gracz) -> None:
+    """Gwarantuje spójny stan świata: seed, współrzędne regionu i bieżąca siatka.
+
+    Obsługuje też stare zapisy sprzed trwałego świata — ich jedyna mapa ląduje
+    w słowniku regionów na pozycji odpowiadającej dawnemu ``mapa_gen``.
+    """
+    if not getattr(gracz, "seed", 0):
+        gracz.seed = random.randrange(1, 2 ** 31)
+
+    mapy = _regiony(gracz)
+    ma_wspolrzedne = hasattr(gracz, "region_x") and hasattr(gracz, "region_y")
+
+    if not mapy and not ma_wspolrzedne:
+        # Migracja starego zapisu: jedna mapa, tylko numer regionu.
+        stary_gen = max(1, int(getattr(gracz, "mapa_gen", 1) or 1))
+        gracz.region_x, gracz.region_y = stary_gen - 1, 0
+        stara_siatka = getattr(gracz, "mapa_pola", None)
+        if _siatka_poprawna(stara_siatka):
+            mapy[klucz_regionu(gracz.region_x, gracz.region_y)] = stara_siatka
+        else:
+            gracz.mapa_x, gracz.mapa_y = SRODEK, SRODEK
+
+    gracz.region_x = int(getattr(gracz, "region_x", 0) or 0)
+    gracz.region_y = int(getattr(gracz, "region_y", 0) or 0)
+    gracz.mapa_gen = poziom_regionu(gracz.region_x, gracz.region_y)
+    gracz.mapa_pola = region_pola(gracz, gracz.region_x, gracz.region_y)
+
     _przytnij_pozycje(gracz)
     odkryj_pole(gracz)
 
@@ -204,9 +283,11 @@ def rysuj_mape(gracz: Gracz) -> None:
     punkt = pole.get("punkt")
     miejsce = f"  ·  {opis_punktu(punkt)}" if punkt else ""
     print(
-        f"  🗺  MAPA #{gracz.mapa_gen}   pole ({gracz.mapa_x}, {gracz.mapa_y})"
+        f"  🗺  REGION [{gracz.region_x}, {gracz.region_y}]  ·  poziom {gracz.mapa_gen}"
+        f"   pole ({gracz.mapa_x}, {gracz.mapa_y})"
         f"   odkryte {liczba_odkrytych(gracz)}/{liczba_pol()}"
     )
+    print(f"  📍  {opis_regionu(gracz)}")
     print(f"  Biom: {etykieta_biomu(pole['biom'])}{miejsce}")
     print()
     naglowek = "     " + " ".join(f"{x:>2}" for x in range(ROZMIAR))
@@ -246,7 +327,11 @@ def etykieta_kierunku(gracz: Gracz, dx: int, dy: int) -> str:
     """Co widać w danym kierunku (biom, jeśli pole odkryte)."""
     nx, ny = gracz.mapa_x + dx, gracz.mapa_y + dy
     if nx < 0 or ny < 0 or nx >= ROZMIAR or ny >= ROZMIAR:
-        return "🌄 nowy region"
+        rx = int(getattr(gracz, "region_x", 0)) + nx // ROZMIAR
+        ry = int(getattr(gracz, "region_y", 0)) + ny // ROZMIAR
+        if czy_region_znany(gracz, rx, ry):
+            return f"🧭 znany region [{rx}, {ry}]"
+        return f"🌄 nowy region [{rx}, {ry}]"
     pole = pole_na(gracz, nx, ny)
     if not pole.get("odkryte"):
         return f"{MGŁA} ???"
@@ -264,21 +349,50 @@ def kierunki() -> dict[str, tuple[str, int, int]]:
 
 
 def przesun_gracza(gracz: Gracz, dx: int, dy: int) -> bool:
-    """
-    Przesuwa gracza. Zwraca True, gdy przekroczono krawędź i wylosowano nowy region.
+    """Przesuwa gracza. Zwraca True, gdy przekroczono krawędź i zmieniono region.
+
+    Region po drugiej stronie krawędzi jest trwały: wyjście na wschód i powrót
+    na zachód wraca dokładnie tam, skąd się wyszło.
     """
     zapewnij_mape(gracz)
     nx = gracz.mapa_x + dx
     ny = gracz.mapa_y + dy
     nowa = False
+
     if nx < 0 or ny < 0 or nx >= ROZMIAR or ny >= ROZMIAR:
-        gracz.mapa_gen += 1
+        # Krawędź: przechodzimy do sąsiedniego regionu, wchodząc od strony przeciwnej.
+        gracz.region_x += nx // ROZMIAR
+        gracz.region_y += ny // ROZMIAR
         gracz.mapa_x = nx % ROZMIAR
         gracz.mapa_y = ny % ROZMIAR
-        gracz.mapa_pola = generuj_mape(gracz.mapa_gen)
+        gracz.mapa_gen = poziom_regionu(gracz.region_x, gracz.region_y)
+        gracz.mapa_pola = region_pola(gracz, gracz.region_x, gracz.region_y)
         nowa = True
     else:
         gracz.mapa_x = nx
         gracz.mapa_y = ny
+
     odkryj_pole(gracz)
     return nowa
+
+
+def czy_region_znany(gracz: Gracz, rx: int, ry: int) -> bool:
+    """Czy gracz był już w tym regionie (jest w słowniku świata)."""
+    return klucz_regionu(rx, ry) in _regiony(gracz)
+
+
+def opis_regionu(gracz: Gracz) -> str:
+    """Krótki opis położenia regionu względem obozu — dla nagłówka mapy."""
+    rx, ry = int(getattr(gracz, "region_x", 0)), int(getattr(gracz, "region_y", 0))
+    if rx == 0 and ry == 0:
+        return "region startowy (obóz)"
+    czesci = []
+    if ry < 0:
+        czesci.append(f"{abs(ry)}× na północ")
+    elif ry > 0:
+        czesci.append(f"{ry}× na południe")
+    if rx < 0:
+        czesci.append(f"{abs(rx)}× na zachód")
+    elif rx > 0:
+        czesci.append(f"{rx}× na wschód")
+    return " i ".join(czesci) + " od obozu"

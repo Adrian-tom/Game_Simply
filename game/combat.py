@@ -1,6 +1,8 @@
 """Moduł obsługujący system walki turowej."""
 
 import random
+from dataclasses import dataclass
+from typing import Callable
 
 from game.player import Gracz
 from game.enemy import Przeciwnik, losuj_przeciwnika, losuj_bossa
@@ -424,6 +426,718 @@ def _menu_umiejetnosci(gracz: Gracz, stan: dict) -> str | None:
 #  Obsługa umiejętności                                               #
 # ------------------------------------------------------------------ #
 
+@dataclass
+class Kontekst:
+    """Wszystko, czego handler umiejętności potrzebuje do wykonania efektu.
+
+    Skalowanie (S/T/mag) zależy od rangi i poziomu, więc jest przygotowane raz
+    w _uzyj_umiejetnosci i przekazane dalej, zamiast liczone w każdym handlerze.
+    """
+
+    gracz: Gracz
+    przeciwnik: Przeciwnik
+    stan: dict
+    ranga: int
+    efektywny_atak: int
+    _klucz: str
+    _wzmocnienie: float = 1.0
+
+    def S(self, baza: int) -> int:
+        """Skaluje wartość efektu rangą i poziomem postaci."""
+        return skaluj_wartosc(self.gracz, self._klucz, baza)
+
+    def T(self, baza: int) -> int:
+        """Skaluje czas trwania efektu."""
+        return czas_trwania(self.gracz, self._klucz, baza)
+
+    def mag(self, lo: int, hi: int) -> int:
+        """Losowe obrażenia magiczne z przedziału, po skalowaniu i wzmocnieniu."""
+        a, b = self.S(lo), self.S(hi)
+        return int(random.randint(min(a, b), max(a, b)) * self._wzmocnienie)
+
+
+# ------------------------------------------------------------------ #
+#  Handlery umiejętności — jeden efekt = jedna funkcja                 #
+# ------------------------------------------------------------------ #
+
+# ---- WOJOWNIK – klasa główna ----
+
+
+def _sk_potezny_cios(k: Kontekst) -> str | None:
+    mnoznik = 2.0 + 0.15 * (k.ranga - 1)
+    obrazenia = int(_oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona) * mnoznik)
+    k.przeciwnik.hp -= obrazenia
+    k.stan["brak_obrony_tura"] = True
+    print(f"  Zadajesz {obrazenia} obrażeń! (Tracisz obronę przy odwecie)")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+def _sk_tarcza_wiary(k: Kontekst) -> str | None:
+    k.stan["buff_obrona_mnoznik"] = 2.0
+    k.stan["buff_obrona_tury"] = k.T(1)
+    print(f"  Twoja obrona jest podwojona przez {k.stan['buff_obrona_tury']} tur(y) wroga!")
+    return None
+
+
+def _sk_okrzyk_bojowy(k: Kontekst) -> str | None:
+    bonus = 0.30 + 0.05 * (k.ranga - 1)
+    k.stan["buff_atak_mnoznik"] = 1.0 + bonus
+    k.stan["buff_atak_tury"] = k.T(2)
+    print(
+        f"  Okrzyk bojowy! Atak +{int(bonus * 100)}%"
+        f" przez {k.stan['buff_atak_tury']} tury!"
+    )
+    return None
+
+
+def _sk_szal_berserka(k: Kontekst) -> str | None:
+    bonus = 0.50 + 0.05 * (k.ranga - 1)
+    k.stan["buff_atak_mnoznik"] = 1.0 + bonus
+    k.stan["buff_atak_tury"] = k.T(3)
+    k.stan["leczenie_zablokowane"] = True
+    print(
+        f"  Szał berserka! Atak +{int(bonus * 100)}%"
+        f" przez {k.stan['buff_atak_tury']} tury — leczenie zablokowane!"
+    )
+    return None
+
+
+# ---- WOJOWNIK – Paladyn ----
+
+
+def _sk_boskie_swiatlo(k: Kontekst) -> str | None:
+    lecz = k.S(50)
+    wyleczone = min(lecz, k.gracz.max_hp - k.gracz.hp)
+    k.gracz.hp += wyleczone
+    print(f"  Boskie światło! Przywróciłeś {wyleczone} HP!")
+    return None
+
+
+def _sk_swiety_cios(k: Kontekst) -> str | None:
+    mnoznik = 2.5 + 0.10 * (k.ranga - 1)
+    bazowe = int(_oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona) * mnoznik)
+    swiete = k.S(20)
+    obrazenia = bazowe + swiete
+    k.przeciwnik.hp -= obrazenia
+    print(
+        f"  Zadajesz {obrazenia} obrażeń"
+        f" ({bazowe} fizycznych + {swiete} świętych)!"
+    )
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- WOJOWNIK – Barbarzyńca ----
+
+
+def _sk_wscieklosc(k: Kontekst) -> str | None:
+    bonus = 0.80 + 0.05 * (k.ranga - 1)
+    tury = k.T(4)
+    k.stan["buff_atak_mnoznik"] = 1.0 + bonus
+    k.stan["buff_atak_tury"] = tury
+    k.stan["buff_obrona_mnoznik"] = 0.5
+    k.stan["buff_obrona_tury"] = tury
+    print(
+        f"  Wściekłość! Atak +{int(bonus * 100)}% przez {tury} tury"
+        f" — obrona -50%!"
+    )
+    return None
+
+
+def _sk_niszczace_uderzenie(k: Kontekst) -> str | None:
+    pct = 0.30 + 0.04 * (k.ranga - 1)
+    obrazenia = max(1, int(k.przeciwnik.hp * pct))
+    k.przeciwnik.hp -= obrazenia
+    print(
+        f"  Niszczące uderzenie! Zadajesz {obrazenia} obrażeń"
+        f" ({int(pct * 100)}% HP wroga)!"
+    )
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- MAG – klasa główna ----
+
+
+def _sk_kula_ognia(k: Kontekst) -> str | None:
+    obrazenia = k.mag(35, 55)
+    k.przeciwnik.hp -= obrazenia
+    print(f"  Kula ognia trafia za {obrazenia} obrażeń magicznych!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+def _sk_lodowe_wiezy(k: Kontekst) -> str | None:
+    k.stan["wrog_ogluszone_tury"] = 1 + (1 if k.ranga >= 4 else 0)
+    print(
+        f"  {k.przeciwnik.nazwa} jest zamrożony i pomija"
+        f" {k.stan['wrog_ogluszone_tury']} tur(y)!"
+    )
+    return None
+
+
+def _sk_tarcza_runowa(k: Kontekst) -> str | None:
+    k.stan["tarcza_runowa"] = k.S(40)
+    print(f"  Tarcza runowa aktywna! Absorbuje do {k.stan['tarcza_runowa']} obrażeń.")
+    return None
+
+
+def _sk_meteor(k: Kontekst) -> str | None:
+    obrazenia = k.mag(80, 120)
+    k.przeciwnik.hp -= obrazenia
+    print(f"  Meteor uderza za {obrazenia} obrażeń magicznych!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- MAG – Arcymag ----
+
+
+def _sk_przyspieszenie_magiczne(k: Kontekst) -> str | None:
+    k.stan["przyspieszenie"] = True
+    print("  Przyspieszenie magiczne! Następny czar będzie darmowy i ×2 silniejszy.")
+    return None
+
+
+def _sk_kula_pioruna(k: Kontekst) -> str | None:
+    obrazenia = k.mag(100, 150)
+    k.przeciwnik.hp -= obrazenia
+    print(f"  Kula pioruna uderza za {obrazenia} obrażeń magicznych!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- ŁOTRZYK – klasa główna ----
+
+
+def _sk_cios_w_plecy(k: Kontekst) -> str | None:
+    bazowe = _oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona)
+    szansa = 0.40 + 0.05 * (k.ranga - 1)
+    aktywuje = k.stan["tura"] == 1 or random.random() < szansa
+    if aktywuje:
+        obrazenia = bazowe * 2
+        print(f"  Cios w plecy! Zadajesz {obrazenia} obrażeń (podwójne)!")
+    else:
+        obrazenia = bazowe
+        print(f"  Zadajesz {obrazenia} obrażeń.")
+    k.przeciwnik.hp -= obrazenia
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+def _sk_trucizna(k: Kontekst) -> str | None:
+    tury = k.T(3)
+    dps = k.S(10)
+    k.stan["wrog_trucizna_tury"] = tury
+    k.stan["wrog_trucizna_obrazenia"] = dps
+    print(
+        f"  {k.przeciwnik.nazwa} jest zatruty!"
+        f" Traci {dps} HP na turę przez {tury} tury."
+    )
+    return None
+
+
+def _sk_dymna_bomba(k: Kontekst) -> str | None:
+    print("  Rzucasz bombę dymną! Znikasz w chmurze dymu...")
+    return "ucieczka"
+    return None
+
+
+def _sk_smiertelne_uderzenie(k: Kontekst) -> str | None:
+    prog = 0.25 + 0.02 * (k.ranga - 1)
+    if k.przeciwnik.hp < k.przeciwnik.max_hp * prog:
+        mnoznik = 3.0 + 0.2 * (k.ranga - 1)
+        obrazenia = int(_oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona) * mnoznik)
+        print(f"  Śmiertelne uderzenie! Zadajesz {obrazenia} obrażeń!")
+    else:
+        obrazenia = _oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona)
+        print(f"  Zadajesz {obrazenia} obrażeń (wróg zbyt silny na egzekucję).")
+    k.przeciwnik.hp -= obrazenia
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- ŁOTRZYK – Zabójca ----
+
+
+def _sk_cien_smierci(k: Kontekst) -> str | None:
+    bazowe = _oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona)
+    szansa = min(0.90, 0.60 + 0.05 * (k.ranga - 1))
+    if random.random() < szansa:
+        obrazenia = bazowe * 4
+        print(f"  KRYTYCZNE TRAFIENIE! Cień śmierci zadaje {obrazenia} obrażeń!")
+    else:
+        obrazenia = bazowe
+        print(f"  Cios chybił — zadajesz {obrazenia} obrażeń.")
+    k.przeciwnik.hp -= obrazenia
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+def _sk_egzekucja(k: Kontekst) -> str | None:
+    prog = 0.15 + 0.02 * (k.ranga - 1)
+    if k.przeciwnik.hp < k.przeciwnik.max_hp * prog:
+        print(f"  Egzekucja! Kończysz {k.przeciwnik.nazwa} jednym ciosem!")
+        k.przeciwnik.hp = 0
+        return "wygrana"
+    obrazenia = _oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona)
+    k.przeciwnik.hp -= obrazenia
+    print(f"  Zadajesz {obrazenia} obrażeń (wróg zbyt silny na egzekucję).")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- ŁOTRZYK – Zwiadowca ----
+
+
+def _sk_unik(k: Kontekst) -> str | None:
+    szansa = min(0.95, 0.75 + 0.05 * (k.ranga - 1))
+    k.stan["unik_aktywny"] = True
+    k.stan["unik_szansa"] = szansa
+    print(
+        f"  Przygotowujesz się do uniku!"
+        f" ({int(szansa * 100)}% szans na ominięcie ataku wroga)"
+    )
+    return None
+
+
+def _sk_grad_strzal(k: Kontekst) -> str | None:
+    strzaly = 3 + (k.ranga - 1) // 2
+    total = 0
+    trafienia = 0
+    for _ in range(strzaly):
+        if not k.przeciwnik.zyje():
+            break
+        dam = _oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona)
+        k.przeciwnik.hp = max(0, k.przeciwnik.hp - dam)
+        total += dam
+        trafienia += 1
+    print(f"  Grad strzał: {trafienia} trafień za łącznie {total} obrażeń!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- MAG – Mroczny mag ----
+
+
+def _sk_mroczna_strzala(k: Kontekst) -> str | None:
+    obrazenia = k.mag(45, 70)
+    k.przeciwnik.hp -= obrazenia
+    print(f"  Mroczna strzała trafia za {obrazenia} obrażeń mrocznych!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+def _sk_klatwa_mroku(k: Kontekst) -> str | None:
+    tury = k.T(3)
+    dps = k.S(15)
+    k.stan["wrog_oslabienie_tury"] = tury
+    k.stan["wrog_trucizna_tury"] = tury
+    k.stan["wrog_trucizna_obrazenia"] = dps
+    print(
+        f"  Klątwa mroku! {k.przeciwnik.nazwa} zadaje 50% mniej obrażeń"
+        f" i traci {dps} HP/turę przez {tury} tury."
+    )
+    return None
+
+
+# ---- DRUID – klasa główna ----
+
+
+def _sk_splot_korzeni(k: Kontekst) -> str | None:
+    k.stan["wrog_ogluszone_tury"] = 1 + (1 if k.ranga >= 4 else 0)
+    print(
+        f"  🌿  Sploty korzeni oplatają {k.przeciwnik.nazwa}!"
+        f" Pomija {k.stan['wrog_ogluszone_tury']} tur(y)."
+    )
+    return None
+
+
+def _sk_forma_niedzwiedzia(k: Kontekst) -> str | None:
+    tury = k.T(4)
+    _ustaw_forme(
+        k.stan,
+        "niedźwiedź",
+        tury,
+        forma_atak=1.20 + 0.04 * (k.ranga - 1),
+        forma_obrona=1.40 + 0.06 * (k.ranga - 1),
+        forma_regen=k.S(8),
+    )
+    print(
+        f"  🐻  Przemieniasz się w niedźwiedzia na {tury} tury!"
+        f" Atak ×{k.stan['forma_atak']:.2f}, obrona ×{k.stan['forma_obrona']:.2f},"
+        f" +{k.stan['forma_regen']} HP/turę."
+    )
+    return None
+
+
+def _sk_uzdrowienie(k: Kontekst) -> str | None:
+    lecz = k.S(50)
+    wyleczone = min(lecz, k.gracz.max_hp - k.gracz.hp)
+    k.gracz.hp += wyleczone
+    print(f"  💚  Uzdrowienie! Przywróciłeś {wyleczone} HP!")
+    return None
+
+
+def _sk_burza_natury(k: Kontekst) -> str | None:
+    obrazenia = k.mag(40, 60)
+    k.przeciwnik.hp -= obrazenia
+    print(f"  ⛈  Burza natury uderza za {obrazenia} obrażeń żywiołowych!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+def _sk_forma_wilka(k: Kontekst) -> str | None:
+    tury = k.T(4)
+    _ustaw_forme(
+        k.stan,
+        "wilk",
+        tury,
+        forma_atak=1.45 + 0.06 * (k.ranga - 1),
+        forma_obrona=0.75,
+        forma_kryt=0.15 + 0.03 * (k.ranga - 1),
+    )
+    print(
+        f"  🐺  Przemieniasz się w wilka na {tury} tury!"
+        f" Atak ×{k.stan['forma_atak']:.2f}, słabsza obrona,"
+        f" +{int(k.stan['forma_kryt'] * 100)}% szansy na krytyk."
+    )
+    return None
+
+
+def _sk_regeneracja(k: Kontekst) -> str | None:
+    k.stan["regeneracja_hp"] = k.S(15)
+    k.stan["regeneracja_tury"] = k.T(4)
+    print(
+        f"  🌱  Regeneracja! Będziesz odnawiać {k.stan['regeneracja_hp']} HP"
+        f" na turę przez {k.stan['regeneracja_tury']} tury."
+    )
+    return None
+
+
+def _sk_forma_kruka(k: Kontekst) -> str | None:
+    tury = k.T(4)
+    _ustaw_forme(
+        k.stan,
+        "kruk",
+        tury,
+        forma_atak=1.05,
+        forma_unik=min(0.70, 0.40 + 0.05 * (k.ranga - 1)),
+    )
+    print(
+        f"  🐦  Przemieniasz się w kruka na {tury} tury!"
+        f" {int(k.stan['forma_unik'] * 100)}% szansy na unik ciosów."
+    )
+    return None
+
+
+# ---- DRUID – Szaman ----
+
+
+def _sk_totem_zycia(k: Kontekst) -> str | None:
+    k.stan["regeneracja_hp"] = k.S(30)
+    k.stan["regeneracja_tury"] = k.T(3)
+    print(
+        f"  🔺  Totem życia! Będziesz odnawiać {k.stan['regeneracja_hp']} HP"
+        f" na turę przez {k.stan['regeneracja_tury']} tury."
+    )
+    return None
+
+
+def _sk_forma_ducha(k: Kontekst) -> str | None:
+    tury = k.T(4)
+    _ustaw_forme(
+        k.stan,
+        "duch",
+        tury,
+        forma_unik=min(0.60, 0.30 + 0.04 * (k.ranga - 1)),
+        forma_mana=k.S(8),
+    )
+    print(
+        f"  👻  Przemieniasz się w ducha na {tury} tury!"
+        f" {int(k.stan['forma_unik'] * 100)}% uniku,"
+        f" +{k.stan['forma_mana']} many na turę."
+    )
+    return None
+
+
+def _sk_piorun_szamana(k: Kontekst) -> str | None:
+    obrazenia = k.mag(70, 100)
+    k.przeciwnik.hp -= obrazenia
+    print(f"  ⚡  Piorun szamana uderza za {obrazenia} obrażeń błyskawicznych!")
+    szansa_stun = min(0.90, 0.50 + 0.08 * (k.ranga - 1))
+    if random.random() < szansa_stun:
+        k.stan["wrog_ogluszone_tury"] = 1
+        print(f"  {k.przeciwnik.nazwa} jest ogłuszony i pomija następną turę!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- DRUID – Strażnik Lasu ----
+
+
+def _sk_kolce_natury(k: Kontekst) -> str | None:
+    tury = k.T(4)
+    dps = k.S(20)
+    k.stan["wrog_trucizna_tury"] = tury
+    k.stan["wrog_trucizna_obrazenia"] = dps
+    print(
+        f"  🌵  Kolce natury! {k.przeciwnik.nazwa} traci {dps} HP"
+        f" na turę przez {tury} tury."
+    )
+    return None
+
+
+def _sk_gniew_puszczy(k: Kontekst) -> str | None:
+    aktywne = sum([
+        k.stan["wrog_trucizna_tury"] > 0,
+        k.stan["wrog_ogluszone_tury"] > 0,
+        k.stan["wrog_oslabienie_tury"] > 0,
+        k.stan["wrog_rozpad"],
+    ])
+    mnoznik = max(1, aktywne)
+    lo, hi = k.S(50), k.S(80)
+    obrazenia = int(random.randint(min(lo, hi), max(lo, hi)) * mnoznik * k._wzmocnienie)
+    k.przeciwnik.hp -= obrazenia
+    print(f"  🌲  Gniew puszczy! ×{mnoznik} efektów — zadajesz {obrazenia} obrażeń!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# ---- NEKROMANTA – klasa główna ----
+
+
+def _sk_wysysanie_zycia(k: Kontekst) -> str | None:
+    obrazenia = k.mag(30, 50)
+    k.przeciwnik.hp -= obrazenia
+    wyleczone = min(obrazenia, k.gracz.max_hp - k.gracz.hp)
+    k.gracz.hp += wyleczone
+    print(f"  🩸  Wysysasz {obrazenia} HP od {k.przeciwnik.nazwa}!")
+    print(f"  Leczysz się o {wyleczone} HP!")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+def _sk_przywolaj_szkielet(k: Kontekst) -> str | None:
+    hp = k.S(28)
+    atak = k.S(10)
+    _ustaw_przyzwanie(k.stan, "Szkielet", "💀", hp, atak, przejecie=0.45)
+    print(
+        f"  💀  Przywołujesz szkielet! HP {hp}, atak {atak}."
+        f" Może przejąć ciosy wroga."
+    )
+    return None
+
+
+def _sk_klatwa_smierci(k: Kontekst) -> str | None:
+    tury = k.T(3)
+    k.stan["wrog_oslabienie_tury"] = tury
+    print(
+        f"  💀  Klątwa śmierci! {k.przeciwnik.nazwa} zadaje 50% mniej obrażeń"
+        f" przez {tury} tury."
+    )
+    return None
+
+
+def _sk_rozpad(k: Kontekst) -> str | None:
+    if not k.stan["wrog_rozpad"]:
+        k.stan["wrog_rozpad"] = True
+        pct = 0.20 + 0.03 * (k.ranga - 1)
+        utracone = max(1, int(k.przeciwnik.max_hp * pct))
+        k.przeciwnik.max_hp -= utracone
+        k.przeciwnik.hp = min(k.przeciwnik.hp, k.przeciwnik.max_hp)
+        print(
+            f"  🦴  Rozpad! {k.przeciwnik.nazwa} traci {utracone}"
+            f" maksymalnego HP ({int(pct * 100)}% — teraz {k.przeciwnik.max_hp})."
+        )
+    else:
+        print(f"  Rozpad już działa na {k.przeciwnik.nazwa}.")
+    return None
+
+
+def _sk_przywolaj_ghul(k: Kontekst) -> str | None:
+    hp = k.S(50)
+    atak = k.S(12)
+    _ustaw_przyzwanie(k.stan, "Ghul", "🧟", hp, atak, przejecie=0.70)
+    print(
+        f"  🧟  Przywołujesz ghula! HP {hp}, atak {atak}."
+        f" Chętnie przejmuje ciosy."
+    )
+    return None
+
+
+def _sk_dotyk_smierci(k: Kontekst) -> str | None:
+    tury = k.T(3)
+    dps = k.S(25)
+    k.stan["wrog_trucizna_tury"] = tury
+    k.stan["wrog_trucizna_obrazenia"] = dps
+    print(
+        f"  ☠  Dotyk śmierci! {k.przeciwnik.nazwa} traci {dps} HP"
+        f" na turę przez {tury} tury."
+    )
+    return None
+
+
+# ---- NEKROMANTA – Lich ----
+
+
+def _sk_fala_smierci(k: Kontekst) -> str | None:
+    obrazenia = k.mag(60, 90)
+    k.przeciwnik.hp -= obrazenia
+    pct_lecz = 0.30 + 0.05 * (k.ranga - 1)
+    wyleczone = min(int(obrazenia * pct_lecz), k.gracz.max_hp - k.gracz.hp)
+    k.gracz.hp += wyleczone
+    print(f"  💀  Fala śmierci uderza za {obrazenia} obrażeń!")
+    print(f"  Leczysz się o {wyleczone} HP ({int(pct_lecz * 100)}% obrażeń).")
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+def _sk_przywolaj_widmo(k: Kontekst) -> str | None:
+    hp = k.S(32)
+    atak = k.S(16)
+    _ustaw_przyzwanie(
+        k.stan, "Widmo", "👻", hp, atak, przejecie=0.40, przebicie=0.5
+    )
+    print(
+        f"  👻  Przywołujesz widmo z Otchłani! HP {hp}, atak {atak}."
+        f" Ataki ignorują połowę obrony wroga."
+    )
+    return None
+
+
+def _sk_wiecznie_zywi(k: Kontekst) -> str | None:
+    hp = k.S(40)
+    k.stan["lich_ochrona"] = True
+    k.stan["lich_ochrona_hp"] = hp
+    print(
+        f"  💀  Ochrona Licha aktywna! Jeśli miałbyś umrzeć,"
+        f" zamiast tego odzyskasz {hp} HP (raz)."
+    )
+    return None
+
+
+# ---- NEKROMANTA – Kapłan Mroku ----
+
+
+def _sk_pakt_krwi(k: Kontekst) -> str | None:
+    koszt_hp = max(8, 20 - 2 * (k.ranga - 1))
+    k.gracz.hp = max(1, k.gracz.hp - koszt_hp)
+    mnoznik = 3.0 + 0.25 * (k.ranga - 1)
+    k.stan["nastepny_atak_mnoznik"] = mnoznik
+    print(
+        f"  🗡  Pakt krwi! Tracisz {koszt_hp} HP."
+        f" Następny atak zadaje ×{mnoznik:.2f} obrażeń!"
+    )
+    return None
+
+
+def _sk_krwawy_sluga(k: Kontekst) -> str | None:
+    koszt_hp = max(10, k.S(18))
+    zaplacone = min(koszt_hp, max(0, k.gracz.hp - 1))
+    k.gracz.hp -= zaplacone
+    hp = k.S(45) + zaplacone // 2
+    atak = k.S(18)
+    _ustaw_przyzwanie(k.stan, "Krwawy sługa", "🩸", hp, atak, przejecie=0.55)
+    print(
+        f"  🩸  Poświęcasz {zaplacone} HP i przywołujesz krwawego sługę!"
+        f" HP {hp}, atak {atak}."
+    )
+    return None
+
+
+def _sk_ofiarny_rytual(k: Kontekst) -> str | None:
+    pct = 0.30
+    mnoznik = 3.0 + 0.25 * (k.ranga - 1)
+    poswiecenie = max(1, int(k.gracz.hp * pct))
+    k.gracz.hp = max(1, k.gracz.hp - poswiecenie)
+    obrazenia = int(poswiecenie * mnoznik)
+    k.przeciwnik.hp -= obrazenia
+    print(
+        f"  🩸  Ofiarny rytuał! Poświęcasz {poswiecenie} HP —"
+        f" {k.przeciwnik.nazwa} traci {obrazenia} HP!"
+    )
+    if not k.przeciwnik.zyje():
+        return "wygrana"
+    return None
+
+
+# Rejestr umiejętności: klucz z UMIEJETNOSCI → funkcja obsługi.
+# Dodanie nowego skilla to nowa funkcja i jeden wpis, a nie kolejny elif.
+HANDLERY_UMIEJETNOSCI: dict[str, Callable[["Kontekst"], str | None]] = {
+    "potezny_cios": _sk_potezny_cios,
+    "tarcza_wiary": _sk_tarcza_wiary,
+    "okrzyk_bojowy": _sk_okrzyk_bojowy,
+    "szal_berserka": _sk_szal_berserka,
+    "boskie_swiatlo": _sk_boskie_swiatlo,
+    "swiety_cios": _sk_swiety_cios,
+    "wscieklosc": _sk_wscieklosc,
+    "niszczace_uderzenie": _sk_niszczace_uderzenie,
+    "kula_ognia": _sk_kula_ognia,
+    "lodowe_wiezy": _sk_lodowe_wiezy,
+    "tarcza_runowa": _sk_tarcza_runowa,
+    "meteor": _sk_meteor,
+    "przyspieszenie_magiczne": _sk_przyspieszenie_magiczne,
+    "kula_pioruna": _sk_kula_pioruna,
+    "cios_w_plecy": _sk_cios_w_plecy,
+    "trucizna": _sk_trucizna,
+    "dymna_bomba": _sk_dymna_bomba,
+    "smiertelne_uderzenie": _sk_smiertelne_uderzenie,
+    "cien_smierci": _sk_cien_smierci,
+    "egzekucja": _sk_egzekucja,
+    "unik": _sk_unik,
+    "grad_strzal": _sk_grad_strzal,
+    "mroczna_strzala": _sk_mroczna_strzala,
+    "klatwa_mroku": _sk_klatwa_mroku,
+    "splot_korzeni": _sk_splot_korzeni,
+    "forma_niedzwiedzia": _sk_forma_niedzwiedzia,
+    "uzdrowienie": _sk_uzdrowienie,
+    "burza_natury": _sk_burza_natury,
+    "forma_wilka": _sk_forma_wilka,
+    "regeneracja": _sk_regeneracja,
+    "forma_kruka": _sk_forma_kruka,
+    "totem_zycia": _sk_totem_zycia,
+    "forma_ducha": _sk_forma_ducha,
+    "piorun_szamana": _sk_piorun_szamana,
+    "kolce_natury": _sk_kolce_natury,
+    "gniew_puszczy": _sk_gniew_puszczy,
+    "wysysanie_zycia": _sk_wysysanie_zycia,
+    "przywolaj_szkielet": _sk_przywolaj_szkielet,
+    "klatwa_smierci": _sk_klatwa_smierci,
+    "rozpad": _sk_rozpad,
+    "przywolaj_ghul": _sk_przywolaj_ghul,
+    "dotyk_smierci": _sk_dotyk_smierci,
+    "fala_smierci": _sk_fala_smierci,
+    "przywolaj_widmo": _sk_przywolaj_widmo,
+    "wiecznie_zywi": _sk_wiecznie_zywi,
+    "pakt_krwi": _sk_pakt_krwi,
+    "krwawy_sluga": _sk_krwawy_sluga,
+    "ofiarny_rytual": _sk_ofiarny_rytual,
+}
+
+
+# ------------------------------------------------------------------ #
+#  Dyspozytor                                                          #
+# ------------------------------------------------------------------ #
+
 def _uzyj_umiejetnosci(
     klucz: str, gracz: Gracz, przeciwnik: Przeciwnik, stan: dict
 ) -> str | None:
@@ -434,23 +1148,13 @@ def _uzyj_umiejetnosci(
     koszt = info["koszt_many"]
     ranga = ranga_skilla(gracz, klucz)
 
-    def S(baza: int) -> int:
-        return skaluj_wartosc(gracz, klucz, baza)
-
-    def T(baza: int) -> int:
-        return czas_trwania(gracz, klucz, baza)
-
-    def mag(lo: int, hi: int) -> int:
-        a, b = S(lo), S(hi)
-        return int(random.randint(min(a, b), max(a, b)) * dmg_wzmocnienie)
-
     # Arcymag: przyspieszenie — następny czar darmowy i 2× silniejszy
-    dmg_wzmocnienie = 1.0
+    wzmocnienie = 1.0
     if stan["przyspieszenie"] and koszt > 0:
-        dmg_wzmocnienie = 2.0
+        wzmocnienie = 2.0
         koszt = 0
         stan["przyspieszenie"] = False
-        print(f"\n  ⚡ Przyspieszenie magiczne! Obrażenia ×2, mana darmowa!")
+        print("\n  ⚡ Przyspieszenie magiczne! Obrażenia ×2, mana darmowa!")
 
     gracz.mana -= koszt
     print(f"\n  {info['ikona']}  Używasz: {info['nazwa']} (r.{ranga})!")
@@ -470,517 +1174,22 @@ def _uzyj_umiejetnosci(
     )
     stan["nastepny_atak_mnoznik"] = 1.0
 
-    # ---- WOJOWNIK – klasa główna ----
+    handler = HANDLERY_UMIEJETNOSCI.get(klucz)
+    if handler is None:
+        print("  Ta umiejętność jeszcze nic nie robi.")
+        return None
 
-    if klucz == "potezny_cios":
-        mnoznik = 2.0 + 0.15 * (ranga - 1)
-        obrazenia = int(_oblicz_obrazenia(efektywny_atak, przeciwnik.obrona) * mnoznik)
-        przeciwnik.hp -= obrazenia
-        stan["brak_obrony_tura"] = True
-        print(f"  Zadajesz {obrazenia} obrażeń! (Tracisz obronę przy odwecie)")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    elif klucz == "tarcza_wiary":
-        stan["buff_obrona_mnoznik"] = 2.0
-        stan["buff_obrona_tury"] = T(1)
-        print(f"  Twoja obrona jest podwojona przez {stan['buff_obrona_tury']} tur(y) wroga!")
-
-    elif klucz == "okrzyk_bojowy":
-        bonus = 0.30 + 0.05 * (ranga - 1)
-        stan["buff_atak_mnoznik"] = 1.0 + bonus
-        stan["buff_atak_tury"] = T(2)
-        print(
-            f"  Okrzyk bojowy! Atak +{int(bonus * 100)}%"
-            f" przez {stan['buff_atak_tury']} tury!"
+    return handler(
+        Kontekst(
+            gracz=gracz,
+            przeciwnik=przeciwnik,
+            stan=stan,
+            ranga=ranga,
+            efektywny_atak=efektywny_atak,
+            _klucz=klucz,
+            _wzmocnienie=wzmocnienie,
         )
-
-    elif klucz == "szal_berserka":
-        bonus = 0.50 + 0.05 * (ranga - 1)
-        stan["buff_atak_mnoznik"] = 1.0 + bonus
-        stan["buff_atak_tury"] = T(3)
-        stan["leczenie_zablokowane"] = True
-        print(
-            f"  Szał berserka! Atak +{int(bonus * 100)}%"
-            f" przez {stan['buff_atak_tury']} tury — leczenie zablokowane!"
-        )
-
-    # ---- WOJOWNIK – Paladyn ----
-
-    elif klucz == "boskie_swiatlo":
-        lecz = S(50)
-        wyleczone = min(lecz, gracz.max_hp - gracz.hp)
-        gracz.hp += wyleczone
-        print(f"  Boskie światło! Przywróciłeś {wyleczone} HP!")
-
-    elif klucz == "swiety_cios":
-        mnoznik = 2.5 + 0.10 * (ranga - 1)
-        bazowe = int(_oblicz_obrazenia(efektywny_atak, przeciwnik.obrona) * mnoznik)
-        swiete = S(20)
-        obrazenia = bazowe + swiete
-        przeciwnik.hp -= obrazenia
-        print(
-            f"  Zadajesz {obrazenia} obrażeń"
-            f" ({bazowe} fizycznych + {swiete} świętych)!"
-        )
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- WOJOWNIK – Barbarzyńca ----
-
-    elif klucz == "wscieklosc":
-        bonus = 0.80 + 0.05 * (ranga - 1)
-        tury = T(4)
-        stan["buff_atak_mnoznik"] = 1.0 + bonus
-        stan["buff_atak_tury"] = tury
-        stan["buff_obrona_mnoznik"] = 0.5
-        stan["buff_obrona_tury"] = tury
-        print(
-            f"  Wściekłość! Atak +{int(bonus * 100)}% przez {tury} tury"
-            f" — obrona -50%!"
-        )
-
-    elif klucz == "niszczace_uderzenie":
-        pct = 0.30 + 0.04 * (ranga - 1)
-        obrazenia = max(1, int(przeciwnik.hp * pct))
-        przeciwnik.hp -= obrazenia
-        print(
-            f"  Niszczące uderzenie! Zadajesz {obrazenia} obrażeń"
-            f" ({int(pct * 100)}% HP wroga)!"
-        )
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- MAG – klasa główna ----
-
-    elif klucz == "kula_ognia":
-        obrazenia = mag(35, 55)
-        przeciwnik.hp -= obrazenia
-        print(f"  Kula ognia trafia za {obrazenia} obrażeń magicznych!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    elif klucz == "lodowe_wiezy":
-        stan["wrog_ogluszone_tury"] = 1 + (1 if ranga >= 4 else 0)
-        print(
-            f"  {przeciwnik.nazwa} jest zamrożony i pomija"
-            f" {stan['wrog_ogluszone_tury']} tur(y)!"
-        )
-
-    elif klucz == "tarcza_runowa":
-        stan["tarcza_runowa"] = S(40)
-        print(f"  Tarcza runowa aktywna! Absorbuje do {stan['tarcza_runowa']} obrażeń.")
-
-    elif klucz == "meteor":
-        obrazenia = mag(80, 120)
-        przeciwnik.hp -= obrazenia
-        print(f"  Meteor uderza za {obrazenia} obrażeń magicznych!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- MAG – Arcymag ----
-
-    elif klucz == "przyspieszenie_magiczne":
-        stan["przyspieszenie"] = True
-        print("  Przyspieszenie magiczne! Następny czar będzie darmowy i ×2 silniejszy.")
-
-    elif klucz == "kula_pioruna":
-        obrazenia = mag(100, 150)
-        przeciwnik.hp -= obrazenia
-        print(f"  Kula pioruna uderza za {obrazenia} obrażeń magicznych!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- ŁOTRZYK – klasa główna ----
-
-    elif klucz == "cios_w_plecy":
-        bazowe = _oblicz_obrazenia(efektywny_atak, przeciwnik.obrona)
-        szansa = 0.40 + 0.05 * (ranga - 1)
-        aktywuje = stan["tura"] == 1 or random.random() < szansa
-        if aktywuje:
-            obrazenia = bazowe * 2
-            print(f"  Cios w plecy! Zadajesz {obrazenia} obrażeń (podwójne)!")
-        else:
-            obrazenia = bazowe
-            print(f"  Zadajesz {obrazenia} obrażeń.")
-        przeciwnik.hp -= obrazenia
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    elif klucz == "trucizna":
-        tury = T(3)
-        dps = S(10)
-        stan["wrog_trucizna_tury"] = tury
-        stan["wrog_trucizna_obrazenia"] = dps
-        print(
-            f"  {przeciwnik.nazwa} jest zatruty!"
-            f" Traci {dps} HP na turę przez {tury} tury."
-        )
-
-    elif klucz == "dymna_bomba":
-        print("  Rzucasz bombę dymną! Znikasz w chmurze dymu...")
-        return "ucieczka"
-
-    elif klucz == "smiertelne_uderzenie":
-        prog = 0.25 + 0.02 * (ranga - 1)
-        if przeciwnik.hp < przeciwnik.max_hp * prog:
-            mnoznik = 3.0 + 0.2 * (ranga - 1)
-            obrazenia = int(_oblicz_obrazenia(efektywny_atak, przeciwnik.obrona) * mnoznik)
-            print(f"  Śmiertelne uderzenie! Zadajesz {obrazenia} obrażeń!")
-        else:
-            obrazenia = _oblicz_obrazenia(efektywny_atak, przeciwnik.obrona)
-            print(f"  Zadajesz {obrazenia} obrażeń (wróg zbyt silny na egzekucję).")
-        przeciwnik.hp -= obrazenia
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- ŁOTRZYK – Zabójca ----
-
-    elif klucz == "cien_smierci":
-        bazowe = _oblicz_obrazenia(efektywny_atak, przeciwnik.obrona)
-        szansa = min(0.90, 0.60 + 0.05 * (ranga - 1))
-        if random.random() < szansa:
-            obrazenia = bazowe * 4
-            print(f"  KRYTYCZNE TRAFIENIE! Cień śmierci zadaje {obrazenia} obrażeń!")
-        else:
-            obrazenia = bazowe
-            print(f"  Cios chybił — zadajesz {obrazenia} obrażeń.")
-        przeciwnik.hp -= obrazenia
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    elif klucz == "egzekucja":
-        prog = 0.15 + 0.02 * (ranga - 1)
-        if przeciwnik.hp < przeciwnik.max_hp * prog:
-            print(f"  Egzekucja! Kończysz {przeciwnik.nazwa} jednym ciosem!")
-            przeciwnik.hp = 0
-            return "wygrana"
-        obrazenia = _oblicz_obrazenia(efektywny_atak, przeciwnik.obrona)
-        przeciwnik.hp -= obrazenia
-        print(f"  Zadajesz {obrazenia} obrażeń (wróg zbyt silny na egzekucję).")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- ŁOTRZYK – Zwiadowca ----
-
-    elif klucz == "unik":
-        szansa = min(0.95, 0.75 + 0.05 * (ranga - 1))
-        stan["unik_aktywny"] = True
-        stan["unik_szansa"] = szansa
-        print(
-            f"  Przygotowujesz się do uniku!"
-            f" ({int(szansa * 100)}% szans na ominięcie ataku wroga)"
-        )
-
-    elif klucz == "grad_strzal":
-        strzaly = 3 + (ranga - 1) // 2
-        total = 0
-        trafienia = 0
-        for _ in range(strzaly):
-            if not przeciwnik.zyje():
-                break
-            dam = _oblicz_obrazenia(efektywny_atak, przeciwnik.obrona)
-            przeciwnik.hp = max(0, przeciwnik.hp - dam)
-            total += dam
-            trafienia += 1
-        print(f"  Grad strzał: {trafienia} trafień za łącznie {total} obrażeń!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- MAG – Mroczny mag ----
-
-    elif klucz == "mroczna_strzala":
-        obrazenia = mag(45, 70)
-        przeciwnik.hp -= obrazenia
-        print(f"  Mroczna strzała trafia za {obrazenia} obrażeń mrocznych!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    elif klucz == "klatwa_mroku":
-        tury = T(3)
-        dps = S(15)
-        stan["wrog_oslabienie_tury"] = tury
-        stan["wrog_trucizna_tury"] = tury
-        stan["wrog_trucizna_obrazenia"] = dps
-        print(
-            f"  Klątwa mroku! {przeciwnik.nazwa} zadaje 50% mniej obrażeń"
-            f" i traci {dps} HP/turę przez {tury} tury."
-        )
-
-    # ---- DRUID – klasa główna ----
-
-    elif klucz == "splot_korzeni":
-        stan["wrog_ogluszone_tury"] = 1 + (1 if ranga >= 4 else 0)
-        print(
-            f"  🌿  Sploty korzeni oplatają {przeciwnik.nazwa}!"
-            f" Pomija {stan['wrog_ogluszone_tury']} tur(y)."
-        )
-
-    elif klucz == "forma_niedzwiedzia":
-        tury = T(4)
-        _ustaw_forme(
-            stan,
-            "niedźwiedź",
-            tury,
-            forma_atak=1.20 + 0.04 * (ranga - 1),
-            forma_obrona=1.40 + 0.06 * (ranga - 1),
-            forma_regen=S(8),
-        )
-        print(
-            f"  🐻  Przemieniasz się w niedźwiedzia na {tury} tury!"
-            f" Atak ×{stan['forma_atak']:.2f}, obrona ×{stan['forma_obrona']:.2f},"
-            f" +{stan['forma_regen']} HP/turę."
-        )
-
-    elif klucz == "uzdrowienie":
-        lecz = S(50)
-        wyleczone = min(lecz, gracz.max_hp - gracz.hp)
-        gracz.hp += wyleczone
-        print(f"  💚  Uzdrowienie! Przywróciłeś {wyleczone} HP!")
-
-    elif klucz == "burza_natury":
-        obrazenia = mag(40, 60)
-        przeciwnik.hp -= obrazenia
-        print(f"  ⛈  Burza natury uderza za {obrazenia} obrażeń żywiołowych!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    elif klucz == "forma_wilka":
-        tury = T(4)
-        _ustaw_forme(
-            stan,
-            "wilk",
-            tury,
-            forma_atak=1.45 + 0.06 * (ranga - 1),
-            forma_obrona=0.75,
-            forma_kryt=0.15 + 0.03 * (ranga - 1),
-        )
-        print(
-            f"  🐺  Przemieniasz się w wilka na {tury} tury!"
-            f" Atak ×{stan['forma_atak']:.2f}, słabsza obrona,"
-            f" +{int(stan['forma_kryt'] * 100)}% szansy na krytyk."
-        )
-
-    elif klucz == "regeneracja":
-        stan["regeneracja_hp"] = S(15)
-        stan["regeneracja_tury"] = T(4)
-        print(
-            f"  🌱  Regeneracja! Będziesz odnawiać {stan['regeneracja_hp']} HP"
-            f" na turę przez {stan['regeneracja_tury']} tury."
-        )
-
-    elif klucz == "forma_kruka":
-        tury = T(4)
-        _ustaw_forme(
-            stan,
-            "kruk",
-            tury,
-            forma_atak=1.05,
-            forma_unik=min(0.70, 0.40 + 0.05 * (ranga - 1)),
-        )
-        print(
-            f"  🐦  Przemieniasz się w kruka na {tury} tury!"
-            f" {int(stan['forma_unik'] * 100)}% szansy na unik ciosów."
-        )
-
-    # ---- DRUID – Szaman ----
-
-    elif klucz == "totem_zycia":
-        stan["regeneracja_hp"] = S(30)
-        stan["regeneracja_tury"] = T(3)
-        print(
-            f"  🔺  Totem życia! Będziesz odnawiać {stan['regeneracja_hp']} HP"
-            f" na turę przez {stan['regeneracja_tury']} tury."
-        )
-
-    elif klucz == "forma_ducha":
-        tury = T(4)
-        _ustaw_forme(
-            stan,
-            "duch",
-            tury,
-            forma_unik=min(0.60, 0.30 + 0.04 * (ranga - 1)),
-            forma_mana=S(8),
-        )
-        print(
-            f"  👻  Przemieniasz się w ducha na {tury} tury!"
-            f" {int(stan['forma_unik'] * 100)}% uniku,"
-            f" +{stan['forma_mana']} many na turę."
-        )
-
-    elif klucz == "piorun_szamana":
-        obrazenia = mag(70, 100)
-        przeciwnik.hp -= obrazenia
-        print(f"  ⚡  Piorun szamana uderza za {obrazenia} obrażeń błyskawicznych!")
-        szansa_stun = min(0.90, 0.50 + 0.08 * (ranga - 1))
-        if random.random() < szansa_stun:
-            stan["wrog_ogluszone_tury"] = 1
-            print(f"  {przeciwnik.nazwa} jest ogłuszony i pomija następną turę!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- DRUID – Strażnik Lasu ----
-
-    elif klucz == "kolce_natury":
-        tury = T(4)
-        dps = S(20)
-        stan["wrog_trucizna_tury"] = tury
-        stan["wrog_trucizna_obrazenia"] = dps
-        print(
-            f"  🌵  Kolce natury! {przeciwnik.nazwa} traci {dps} HP"
-            f" na turę przez {tury} tury."
-        )
-
-    elif klucz == "gniew_puszczy":
-        aktywne = sum([
-            stan["wrog_trucizna_tury"] > 0,
-            stan["wrog_ogluszone_tury"] > 0,
-            stan["wrog_oslabienie_tury"] > 0,
-            stan["wrog_rozpad"],
-        ])
-        mnoznik = max(1, aktywne)
-        lo, hi = S(50), S(80)
-        obrazenia = int(random.randint(min(lo, hi), max(lo, hi)) * mnoznik * dmg_wzmocnienie)
-        przeciwnik.hp -= obrazenia
-        print(f"  🌲  Gniew puszczy! ×{mnoznik} efektów — zadajesz {obrazenia} obrażeń!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    # ---- NEKROMANTA – klasa główna ----
-
-    elif klucz == "wysysanie_zycia":
-        obrazenia = mag(30, 50)
-        przeciwnik.hp -= obrazenia
-        wyleczone = min(obrazenia, gracz.max_hp - gracz.hp)
-        gracz.hp += wyleczone
-        print(f"  🩸  Wysysasz {obrazenia} HP od {przeciwnik.nazwa}!")
-        print(f"  Leczysz się o {wyleczone} HP!")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    elif klucz == "przywolaj_szkielet":
-        hp = S(28)
-        atak = S(10)
-        _ustaw_przyzwanie(stan, "Szkielet", "💀", hp, atak, przejecie=0.45)
-        print(
-            f"  💀  Przywołujesz szkielet! HP {hp}, atak {atak}."
-            f" Może przejąć ciosy wroga."
-        )
-
-    elif klucz == "klatwa_smierci":
-        tury = T(3)
-        stan["wrog_oslabienie_tury"] = tury
-        print(
-            f"  💀  Klątwa śmierci! {przeciwnik.nazwa} zadaje 50% mniej obrażeń"
-            f" przez {tury} tury."
-        )
-
-    elif klucz == "rozpad":
-        if not stan["wrog_rozpad"]:
-            stan["wrog_rozpad"] = True
-            pct = 0.20 + 0.03 * (ranga - 1)
-            utracone = max(1, int(przeciwnik.max_hp * pct))
-            przeciwnik.max_hp -= utracone
-            przeciwnik.hp = min(przeciwnik.hp, przeciwnik.max_hp)
-            print(
-                f"  🦴  Rozpad! {przeciwnik.nazwa} traci {utracone}"
-                f" maksymalnego HP ({int(pct * 100)}% — teraz {przeciwnik.max_hp})."
-            )
-        else:
-            print(f"  Rozpad już działa na {przeciwnik.nazwa}.")
-
-    elif klucz == "przywolaj_ghul":
-        hp = S(50)
-        atak = S(12)
-        _ustaw_przyzwanie(stan, "Ghul", "🧟", hp, atak, przejecie=0.70)
-        print(
-            f"  🧟  Przywołujesz ghula! HP {hp}, atak {atak}."
-            f" Chętnie przejmuje ciosy."
-        )
-
-    elif klucz == "dotyk_smierci":
-        tury = T(3)
-        dps = S(25)
-        stan["wrog_trucizna_tury"] = tury
-        stan["wrog_trucizna_obrazenia"] = dps
-        print(
-            f"  ☠  Dotyk śmierci! {przeciwnik.nazwa} traci {dps} HP"
-            f" na turę przez {tury} tury."
-        )
-
-    # ---- NEKROMANTA – Lich ----
-
-    elif klucz == "fala_smierci":
-        obrazenia = mag(60, 90)
-        przeciwnik.hp -= obrazenia
-        pct_lecz = 0.30 + 0.05 * (ranga - 1)
-        wyleczone = min(int(obrazenia * pct_lecz), gracz.max_hp - gracz.hp)
-        gracz.hp += wyleczone
-        print(f"  💀  Fala śmierci uderza za {obrazenia} obrażeń!")
-        print(f"  Leczysz się o {wyleczone} HP ({int(pct_lecz * 100)}% obrażeń).")
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    elif klucz == "przywolaj_widmo":
-        hp = S(32)
-        atak = S(16)
-        _ustaw_przyzwanie(
-            stan, "Widmo", "👻", hp, atak, przejecie=0.40, przebicie=0.5
-        )
-        print(
-            f"  👻  Przywołujesz widmo z Otchłani! HP {hp}, atak {atak}."
-            f" Ataki ignorują połowę obrony wroga."
-        )
-
-    elif klucz == "wiecznie_zywi":
-        hp = S(40)
-        stan["lich_ochrona"] = True
-        stan["lich_ochrona_hp"] = hp
-        print(
-            f"  💀  Ochrona Licha aktywna! Jeśli miałbyś umrzeć,"
-            f" zamiast tego odzyskasz {hp} HP (raz)."
-        )
-
-    # ---- NEKROMANTA – Kapłan Mroku ----
-
-    elif klucz == "pakt_krwi":
-        koszt_hp = max(8, 20 - 2 * (ranga - 1))
-        gracz.hp = max(1, gracz.hp - koszt_hp)
-        mnoznik = 3.0 + 0.25 * (ranga - 1)
-        stan["nastepny_atak_mnoznik"] = mnoznik
-        print(
-            f"  🗡  Pakt krwi! Tracisz {koszt_hp} HP."
-            f" Następny atak zadaje ×{mnoznik:.2f} obrażeń!"
-        )
-
-    elif klucz == "krwawy_sluga":
-        koszt_hp = max(10, S(18))
-        zaplacone = min(koszt_hp, max(0, gracz.hp - 1))
-        gracz.hp -= zaplacone
-        hp = S(45) + zaplacone // 2
-        atak = S(18)
-        _ustaw_przyzwanie(stan, "Krwawy sługa", "🩸", hp, atak, przejecie=0.55)
-        print(
-            f"  🩸  Poświęcasz {zaplacone} HP i przywołujesz krwawego sługę!"
-            f" HP {hp}, atak {atak}."
-        )
-
-    elif klucz == "ofiarny_rytual":
-        pct = 0.30
-        mnoznik = 3.0 + 0.25 * (ranga - 1)
-        poswiecenie = max(1, int(gracz.hp * pct))
-        gracz.hp = max(1, gracz.hp - poswiecenie)
-        obrazenia = int(poswiecenie * mnoznik)
-        przeciwnik.hp -= obrazenia
-        print(
-            f"  🩸  Ofiarny rytuał! Poświęcasz {poswiecenie} HP —"
-            f" {przeciwnik.nazwa} traci {obrazenia} HP!"
-        )
-        if not przeciwnik.zyje():
-            return "wygrana"
-
-    return None
-
+    )
 
 def _menu_przedmiotow(gracz: Gracz, stan: dict) -> bool:
     """

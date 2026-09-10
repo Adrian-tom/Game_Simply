@@ -8,7 +8,10 @@ from game.player import Gracz
 from game.skills import MAX_RANGA
 from game.mapa import SRODEK
 
-_PLIK_ZAPISU = Path("savegame.json")
+# Zapis leży obok gry, nie w bieżącym katalogu — inaczej uruchomienie
+# `python P:\...\main.py` z innego miejsca tworzyłoby drugi, pusty zapis.
+_KATALOG_GRY = Path(__file__).resolve().parent.parent
+_PLIK_ZAPISU = _KATALOG_GRY / "savegame.json"
 
 
 def _gracz_do_dict(gracz: Gracz) -> dict:
@@ -22,7 +25,10 @@ def _gracz_do_dict(gracz: Gracz) -> dict:
         "mapa_y": gracz.mapa_y,
         "aktualny_biom": gracz.aktualny_biom,
         "mapa_gen": gracz.mapa_gen,
-        "mapa_pola": getattr(gracz, "mapa_pola", None),
+        "seed": int(getattr(gracz, "seed", 0) or 0),
+        "region_x": int(getattr(gracz, "region_x", 0) or 0),
+        "region_y": int(getattr(gracz, "region_y", 0) or 0),
+        "regiony": dict(getattr(gracz, "regiony", {}) or {}),
         "punkty_atrybutow": getattr(gracz, "punkty_atrybutow", 0),
         "poziom": gracz.poziom,
         "exp": gracz.exp,
@@ -40,6 +46,7 @@ def _gracz_do_dict(gracz: Gracz) -> dict:
         "wyposazenie": gracz.wyposazenie,
         "aktywne_questy": list(gracz.aktywne_questy),
         "ukonczone_questy": list(gracz.ukonczone_questy),
+        "questy_start": dict(getattr(gracz, "questy_start", {}) or {}),
         "statystyki": gracz.statystyki,
         "umiejetnosci": gracz.umiejetnosci,
         "rangi_umiejetnosci": getattr(gracz, "rangi_umiejetnosci", {}),
@@ -75,7 +82,17 @@ def _dict_do_gracza(dane: dict) -> Gracz:
     gracz.mapa_y = dane.get("mapa_y", SRODEK)
     gracz.aktualny_biom = dane.get("aktualny_biom", "Obóz")
     gracz.mapa_gen = dane.get("mapa_gen", 1)
-    gracz.mapa_pola = dane.get("mapa_pola")
+    gracz.seed = int(dane.get("seed", 0) or 0)
+    gracz.regiony = dict(dane.get("regiony") or {})
+    if "region_x" in dane or "region_y" in dane:
+        gracz.region_x = int(dane.get("region_x", 0) or 0)
+        gracz.region_y = int(dane.get("region_y", 0) or 0)
+    else:
+        # Stary zapis sprzed trwałego świata — zapewnij_mape() go zmigruje.
+        for atrybut in ("region_x", "region_y"):
+            if hasattr(gracz, atrybut):
+                delattr(gracz, atrybut)
+        gracz.mapa_pola = dane.get("mapa_pola")
     gracz.punkty_atrybutow = dane.get("punkty_atrybutow", 0)
     gracz.poziom = dane.get("poziom", 1)
     gracz.exp = dane.get("exp", 0)
@@ -93,6 +110,9 @@ def _dict_do_gracza(dane: dict) -> Gracz:
     gracz.wyposazenie = dane.get("wyposazenie", {"bron": None, "zbroja": None})
     gracz.aktywne_questy = set(dane.get("aktywne_questy", []))
     gracz.ukonczone_questy = set(dane.get("ukonczone_questy", []))
+    gracz.questy_start = {
+        k: int(v) for k, v in (dane.get("questy_start") or {}).items()
+    }
     gracz.statystyki = dane.get("statystyki", gracz.statystyki)
     gracz.umiejetnosci = dane.get("umiejetnosci", gracz.umiejetnosci)
     zapisane_rangi = dane.get("rangi_umiejetnosci") or {}
@@ -147,27 +167,49 @@ def _dict_do_gracza(dane: dict) -> Gracz:
     return gracz
 
 
+class ZapisUszkodzony(Exception):
+    """Plik zapisu istnieje, ale nie da się go odczytać."""
+
+
 def zapisz_gre(gracz: Gracz) -> bool:
-    """Zapisuje stan gry do pliku JSON. Zwraca True przy sukcesie."""
+    """Zapisuje stan gry do pliku JSON. Zwraca True przy sukcesie.
+
+    Zapis jest atomowy: najpierw plik tymczasowy, potem podmiana. Autosave leci
+    po każdym ruchu na mapie, więc przerwanie w trakcie nie może zostawić
+    obciętego JSON-a w miejscu działającego zapisu.
+    """
+    tymczasowy = _PLIK_ZAPISU.with_suffix(".json.tmp")
     try:
         dane = _gracz_do_dict(gracz)
-        with open(_PLIK_ZAPISU, "w", encoding="utf-8") as f:
+        with open(tymczasowy, "w", encoding="utf-8") as f:
             json.dump(dane, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tymczasowy, _PLIK_ZAPISU)
         return True
-    except OSError:
+    except (OSError, TypeError, ValueError):
+        try:
+            if tymczasowy.exists():
+                os.remove(tymczasowy)
+        except OSError:
+            pass
         return False
 
 
 def wczytaj_gre() -> Gracz | None:
-    """Wczytuje zapis gry z pliku JSON. Zwraca Gracz lub None gdy brak zapisu."""
+    """Wczytuje zapis gry. Zwraca None gdy brak pliku.
+
+    Gdy plik istnieje, ale jest uszkodzony, podnosi ZapisUszkodzony — dzięki
+    temu gra mówi „zapis uszkodzony”, zamiast cicho udawać, że go nie ma.
+    """
     if not _PLIK_ZAPISU.exists():
         return None
     try:
         with open(_PLIK_ZAPISU, "r", encoding="utf-8") as f:
             dane = json.load(f)
         return _dict_do_gracza(dane)
-    except (OSError, json.JSONDecodeError, KeyError):
-        return None
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as blad:
+        raise ZapisUszkodzony(str(blad)) from blad
 
 
 def zapis_istnieje() -> bool:

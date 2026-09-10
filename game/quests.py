@@ -85,9 +85,31 @@ QUESTY: dict[str, dict] = {
 #  Logika questów                                                       #
 # ------------------------------------------------------------------ #
 
-def _postep(gracz, quest: dict) -> int:
-    """Zwraca aktualny postęp w zadaniu questa."""
-    return gracz.statystyki.get(quest["stat_klucz"], 0)
+def _punkt_startowy(gracz) -> dict[str, int]:
+    """Statystyki zamrożone w chwili przyjęcia questów."""
+    start = getattr(gracz, "questy_start", None)
+    if not isinstance(start, dict):
+        start = {}
+        gracz.questy_start = start
+    return start
+
+
+def przyjmij_questa(gracz, klucz: str) -> None:
+    """Przyjmuje questa i zapamiętuje aktualny stan statystyki.
+
+    Bez tego snapshotu quest „zabij 15 potworów" zaliczyłby się natychmiast
+    komuś, kto ma już 20 zabójstw — liczy się postęp OD przyjęcia.
+    """
+    quest = QUESTY[klucz]
+    _punkt_startowy(gracz)[klucz] = gracz.statystyki.get(quest["stat_klucz"], 0)
+    gracz.aktywne_questy.add(klucz)
+
+
+def _postep(gracz, quest: dict, klucz: str) -> int:
+    """Postęp w zadaniu, liczony od momentu przyjęcia questa."""
+    teraz = gracz.statystyki.get(quest["stat_klucz"], 0)
+    start = _punkt_startowy(gracz).get(klucz, 0)
+    return max(0, teraz - start)
 
 
 def _ukoncz_questa(gracz, klucz: str, quest: dict) -> list[str]:
@@ -126,7 +148,7 @@ def sprawdz_questy(gracz) -> list[str]:
         if klucz in gracz.ukonczone_questy:
             continue
         quest = QUESTY[klucz]
-        postep = _postep(gracz, quest)
+        postep = _postep(gracz, quest, klucz)
         if postep >= quest["cel_ilosc"]:
             komunikaty.extend(_ukoncz_questa(gracz, klucz, quest))
     return komunikaty
@@ -155,7 +177,7 @@ def pokaz_tablice_questow(gracz) -> None:
             print("  ─── AKTYWNE ───")
             for klucz in aktywne:
                 quest = QUESTY[klucz]
-                postep = _postep(gracz, quest)
+                postep = _postep(gracz, quest, klucz)
                 cel = quest["cel_ilosc"]
                 print(f"  [{numer}] ⏳ {quest.get('ikona', '📜')} {quest['nazwa']}  ({postep}/{cel})")
                 print(f"       {quest['opis']}")
@@ -200,8 +222,9 @@ def pokaz_tablice_questow(gracz) -> None:
                 elif klucz in gracz.ukonczone_questy:
                     print(f"  Ten quest został już ukończony!")
                 else:
-                    gracz.aktywne_questy.add(klucz)
+                    przyjmij_questa(gracz, klucz)
                     print(f"  ✅  Przyjąłeś questa: {QUESTY[klucz]['nazwa']}!")
+                    print("     Postęp liczy się od teraz.")
                 nacisnij_enter()
                 continue
         except ValueError:

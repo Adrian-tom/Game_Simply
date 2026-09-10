@@ -393,7 +393,11 @@ def znizka_sklepu(gracz: Gracz) -> float:
 
 
 def cena_dla(gracz: Gracz, baza: int) -> int:
-    return max(1, int(baza * (1.0 - znizka_sklepu(gracz))))
+    """Cena po zniżce z pochodzenia/cech i po korekcie za reputację."""
+    from game.karma import mnoznik_cen
+
+    cena = baza * (1.0 - znizka_sklepu(gracz)) * mnoznik_cen(gracz)
+    return max(1, int(cena))
 
 
 def bonus_leczenia_mikstury(gracz: Gracz) -> int:
