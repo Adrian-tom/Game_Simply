@@ -1,7 +1,11 @@
-# Pro RPG – Tekstowa gra fantasy po polsku
+# Pro RPG – gra fantasy po polsku z grafiką pixelart
 
-Prosta, w pełni tekstowa (CLI) gra RPG fantasy napisana w Pythonie 3.
-Wszystkie komunikaty, menu i nazwy akcji są **po polsku**. Interfejs używa **ikon** (biomy, budynki, menu, wrogowie), żeby siatka mapy i listy nie były samymi literami i liczbami.
+Gra RPG fantasy w Pythonie 3. Wszystkie komunikaty, menu i nazwy akcji są **po polsku**.
+
+Gra działa w **oknie z grafiką pixelart** (pygame-ce): po lewej izometryczna mapa
+regionu z oświetleniem i mgłą wojny oraz HUD postaci, po prawej konsola z tekstem
+gry i klikalnymi opcjami. Cała grafika jest liczona w kodzie — w repo nie ma
+plików PNG. Bez pygame gra startuje w klasycznym trybie tekstowym w terminalu.
 
 Szczegółowy opis pętli gry, systemów i zależności: **[ANALIZA.md](ANALIZA.md)**.
 
@@ -18,11 +22,27 @@ uruchom.bat
 Albo bezpośrednio:
 
 ```bash
-python main.py
+pip install -r requirements.txt   # raz — grafika (pygame-ce)
+python main.py                    # okno z grafiką
+python main.py --tekst            # tryb tekstowy w terminalu
 ```
 
-Wymagania: **Python 3.10+** (brak zewnętrznych bibliotek). `uruchom.bat` najpierw szuka Pythona w `%USERPROFILE%\.local\bin\`.
-Konsola z UTF-8 (Windows Terminal / nowy PowerShell) pokazuje ikony poprawnie.
+Wymagania: **Python 3.10+** i **pygame-ce** (tylko do okna). `uruchom.bat` najpierw szuka
+Pythona w `%USERPROFILE%\.local\bin\`, a przy pierwszym starcie sam doinstalowuje pygame-ce
+(`pip install --user`). Jeśli instalacja się nie uda, gra rusza w trybie tekstowym.
+
+### Sterowanie w oknie
+
+| Klawisz / mysz | Działanie |
+|---|---|
+| klik na opcję `[n]` w konsoli | wybór opcji (to samo co wpisanie numeru i Enter) |
+| cyfry + `Enter` | wybór opcji, wpisywanie imienia itd. |
+| strzałki (na wyprawie) | ruch: ⬆ północ, ⬇ południe, ⬅ zachód, ➡ wschód |
+| `Spacja` (na wyprawie) | zbadaj pole / wejdź (`[5]`) |
+| `Spacja` / klik (przy „Naciśnij Enter”) | dalej |
+| kółko myszy | przewijanie konsoli |
+| `F2` | dzień / zmierzch (oświetlenie ognisk, okien, portali) |
+| `F11` | pełny ekran (okno można też dowolnie powiększać) |
 
 ---
 
@@ -83,8 +103,8 @@ Konsola z UTF-8 (Windows Terminal / nowy PowerShell) pokazuje ikony poprawnie.
 
 ```
 Game_Simply/
-├── main.py          # Punkt wejścia – menu i obóz
-├── uruchom.bat      # Skrót Windows — odpala grę
+├── main.py          # Punkt wejścia – menu i obóz; okno albo --tekst
+├── uruchom.bat      # Skrót Windows — doinstalowuje pygame-ce i odpala grę
 ├── requirements.txt
 ├── README.md
 ├── ANALIZA.md       # Architektura, pętle gry, systemy
@@ -109,14 +129,21 @@ Game_Simply/
     ├── rekruci.py   # Najemnicy i towarzysze
     ├── mityczne.py  # Portale, leże smoka, latająca wyspa
     ├── savegame.py  # Zapis JSON
+    ├── ekran.py     # Łącznik logiki z oknem (bieżąca postać, skróty klawiszy)
     └── utils.py     # Wyświetlanie, input
+grafika/             # Okno pixelart (pygame-ce) — logika gry nic stąd nie importuje
+    ├── okno.py      # Okno, konsola z emoji i klikalnymi opcjami, HUD, przejęcie print/input
+    ├── scena.py     # Izometryczna mapa regionu: kafle, mgła, światło, gracz
+    ├── teren.py     # Kafle biomów, drzewa, skały, budynki, sprite gracza
+    └── piksele.py   # Prymitywy: cieniowanie brył, dithering, kontury, poświaty
 ```
 
 ---
 
 ## Jak grać?
 
-1. Uruchom grę: dwuklik **`uruchom.bat`** albo `python main.py`
+1. Uruchom grę: dwuklik **`uruchom.bat`** albo `python main.py`. W oknie klikaj opcje w konsoli
+   albo wpisuj numery; na wyprawie chodź strzałkami.
 2. Wybierz **Nowa gra**, imię, klasę, pochodzenie, 3 cechy i tryb trudności.
 3. W **Obozie**:
    - `[1]` 🗺 Wyrusz na przygodę
@@ -150,16 +177,21 @@ Game_Simply/
 
 ## Testy
 
-Testy korzystają wyłącznie ze standardowej biblioteki (`unittest`) — nie trzeba nic instalować.
+Testy korzystają ze standardowej biblioteki (`unittest`). Testy logiki nie wymagają niczego;
+testy okna (`tests/test_grafika.py`) potrzebują pygame-ce i bez niego są pomijane.
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
+Okno renderuje się też bez monitora (`SDL_VIDEODRIVER=dummy`), więc testy grafiki działają w CI.
+
 Pokrywają trwały świat (powroty przez krawędź, seed, migrację starych zapisów),
 zapis (round-trip, atomowość, uszkodzony plik), questy (postęp od przyjęcia),
 karmę (ceny, rekrutacja, świątynie) oraz rejestr umiejętności (każdy skill ma handler
-i da się go wywołać). To samo uruchamia CI na Pythonie 3.10 i 3.13.
+i da się go wywołać), a także okno: scenę mapy, mgłę, noc, klikalne opcje konsoli
+i oddanie `print`/`input` po zamknięciu. CI uruchamia testy na Pythonie 3.10 i 3.13 —
+najpierw bez pygame (tryb tekstowy musi zostać samodzielny), potem z grafiką.
 
 ---
 

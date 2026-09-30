@@ -28,6 +28,7 @@ from game.mapa import (
 from game.oboz import zbierz_na_polu, pozostale_zbiory, linia_surowcow
 from game.mityczne import zdarzenie_mityczne
 from game.rekruci import oferta_rekrutacji, rozlicz_zbieraczy
+from game import ekran
 from game.savegame import zapisz_gre
 from game.atrybuty import SKILLE, przeprowadz_test, trudnosc
 from game.osada import dodaj_czas, oznacz_wyjscie, rozlicz_powrot_do_obozu
@@ -1112,6 +1113,10 @@ def wyrusz_w_podroz(gracz: Gracz) -> str:
         nacisnij_enter()
 
 
+# Klawisze okna graficznego → odpowiedzi menu eksploracji (klucze z mapa._KIERUNKI).
+_SKROTY_EKSPLORACJI = {"gora": "1", "lewo": "2", "prawo": "3", "dol": "4", "spacja": "5"}
+
+
 def _menu_eksploracji(gracz: Gracz) -> str:
     """Rysuje mapę i pyta o ruch albo zwiad."""
     while True:
@@ -1151,7 +1156,11 @@ def _menu_eksploracji(gracz: Gracz) -> str:
         print(f"  {linia_surowcow(gracz)}")
         print("  [0]  🏕  Wróć do obozu (pozycja zostaje)")
         print()
-        wybor = input("  Twój wybór: ").strip()
+        ekran.ustaw_skroty(_SKROTY_EKSPLORACJI)
+        try:
+            wybor = input("  Twój wybór: ").strip()
+        finally:
+            ekran.ustaw_skroty(None)
         if wybor in ("0", "5", "6") or wybor in kierunki():
             return wybor
         print("  Nieprawidłowy wybór.")

@@ -23,9 +23,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Gra i testy korzystają wyłącznie ze stdlib — nie ma czego instalować.
+      # Logika gry to czysty stdlib — najpierw testy bez żadnych pakietów,
+      # żeby tryb tekstowy (--tekst) nie zaczął po cichu zależeć od pygame.
       - name: Sprawdź, że wszystkie moduły się importują
         run: python -c "import main"
 
-      - name: Uruchom testy
+      - name: Testy logiki (bez pygame)
+        run: python -m unittest discover -s tests -v
+
+      - name: Zainstaluj grafikę (pygame-ce)
+        run: python -m pip install -r requirements.txt
+
+      # SDL_VIDEODRIVER=dummy — okno renderuje się bez monitora.
+      - name: Testy z grafiką
+        env:
+          SDL_VIDEODRIVER: dummy
         run: python -m unittest discover -s tests -v

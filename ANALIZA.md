@@ -1,12 +1,13 @@
 # Analiza gry — Pro RPG (Game_Simply)
 
-Dokument opisuje architekturę, pętle rozgrywki i systemy. Kod jest w Pythonie 3.10+ (stdlib), wejście: `main.py`.
+Dokument opisuje architekturę, pętle rozgrywki i systemy. Kod jest w Pythonie 3.10+, wejście: `main.py`.
+Logika (`game/`) to czysty stdlib; okno z grafiką pixelart (`grafika/`) używa pygame-ce.
 
 ---
 
 ## 1. Co to jest
 
-Tekstowe RPG fantasy: obóz jako hub, trwała mapa regionu 9×9 (81 pól), walka turowa, atrybuty w stylu BG3 (k20), osada z ekonomią czasu i miasto z własną siatką.
+RPG fantasy z grafiką pixelart w oknie (albo w trybie tekstowym): obóz jako hub, trwała mapa regionu 9×9 (81 pól), walka turowa, atrybuty w stylu BG3 (k20), osada z ekonomią czasu i miasto z własną siatką.
 
 Gracz nie „przechodzi poziomy lochu” — wraca do obozu, rozbudowuje go i wraca w to samo miejsce na mapie. To pętla **wyprawa → łup/czas → obóz → inwestycja**.
 
@@ -40,8 +41,23 @@ menu główne
 | Hub | `oboz.py`, `osada.py`, `rekruci.py`, `shop.py`, `quests.py` | Budynki, osadnicy, handel |
 | Fabuła | `dialogues.py` | Wątki NPC + rekrutacja |
 | UI | `ikony.py`, `utils.py` | Ikony, czyszczenie ekranu |
+| Łącznik | `ekran.py` | Co pokazać w oknie: bieżąca postać, skróty klawiszy |
+| Grafika | `grafika/okno.py`, `scena.py`, `teren.py`, `piksele.py` | Okno pygame-ce: mapa, HUD, konsola |
 
 Zależności idą „w dół”: `world` woła miasto i osadę; `dialogues` woła rekrutów dopiero w opcji rozmowy (bez cyklu na imporcie).
+
+### Okno graficzne
+
+`grafika.okno` podmienia `print`, `input` i `os.system("cls")`, więc **cała istniejąca logika
+działa w oknie bez zmian**: tekst trafia do konsoli po prawej, a `input` czeka na klawisz
+albo klik w opcję `[n]`. Grafika czyta stan z `game.ekran` (bieżąca postać i skróty klawiszy),
+a logika nigdy nie importuje pygame. Dzięki temu ekrany można przenosić na grafikę pojedynczo —
+na razie grafikę ma mapa regionu; walka, dialogi, sklep i miasto są jeszcze tekstem w konsoli.
+
+Mapa to region 9×9 w rzucie izometrycznym (320×240 pikseli, skala ×2). Wrażenie bryły dają:
+jedno źródło światła i cieniowanie po normalnej, rampy 4 kolorów z ditheringiem Bayera,
+kontury 1 px, boki kafli w warstwach skały i — w trybie zmierzchu — mapa światła
+(ogniska, okna, portale, latarnia gracza) mnożona przez scenę.
 
 ---
 
@@ -103,8 +119,8 @@ Wrogowie skalują się z poziomem gracza, poziomem regionu (`1 + odległość od
 siatce wokół obozu `[0, 0]` i można do nich wracać. Osada wiąże czas wyprawy ze złotem.
 Karma ma realne skutki. Ikony czynią CLI czytelnym. Stdlib only, także w testach.
 
-**Słabe.** Brak grafiki poza emoji (szerokość znaków bywa nierówna w starym `cmd.exe`).
-Walka jest tekstowa i powtarzalna przy długim grindzie. Wątki NPC nie blokują się wzajemnie.
+**Słabe.** Grafikę ma na razie tylko mapa regionu — pozostałe ekrany to tekst w konsoli okna.
+Postać gracza to mały sprite (9×13 px), różny tylko kolorami klas. Walka jest tekstowa i powtarzalna przy długim grindzie. Wątki NPC nie blokują się wzajemnie.
 Miasto nie zapisuje pozycji — każde wejście zaczyna przy bramie. Jeden slot zapisu.
 **Brak zakończenia kampanii — gra jest świadomie sandboksem** (patrz sekcja 10).
 
@@ -152,9 +168,17 @@ Poza kampanią:
 - Więcej przepisów w warsztacie niż 3.
 - Mapa świata: podgląd siatki regionów, nie tylko bieżącego.
 - Trzy sloty zapisu.
-- Wyrównanie komórek mapy albo tryb ASCII dla starego `cmd.exe`.
+- Wyrównanie komórek mapy albo tryb ASCII dla starego `cmd.exe` (tryb `--tekst`).
 
-**Nie teraz:** GUI, nowa klasa, zależności pip wymagane do odpalenia `uruchom.bat`.
+**Grafika — kolejne ekrany** (po mapie regionu):
+
+1. Obóz jako scena (namiot, palenisko, zbudowane budynki) i menu jako okna pixelart.
+2. Walka: sprite'y wrogów, animacje ciosów, paski HP nad głowami.
+3. Dialogi w stylu Disco Elysium z testami k20 (wątki NPC już są w `dialogues.py`).
+4. Miasto 3×3, osada, sklep i ekwipunek jako osobne ekrany.
+
+**Nie teraz:** nowa klasa. Wersja w Unity została porzucona (30.09.2026) — zostajemy przy
+pixelarcie liczonym w kodzie w pygame-ce.
 
 ---
 
@@ -169,6 +193,8 @@ python -m unittest discover -s tests -v
 Ręcznie, po większej zmianie:
 
 - `python -c "import main"` z katalogu repo.
+- `python main.py` — okno: ekran tytułowy z mapą, klik w `[1]` Nowa gra, HUD po lewej na dole.
+- `python main.py --tekst` — ten sam przebieg w terminalu.
 - Nowa gra → obóz: ikony w menu `[1]`–`[16]`, linia „Reputacja".
 - Wyprawa: nagłówek `REGION [0, 0] · poziom 1`, siatka 9×9, licznik odkryte N/81.
 - Dojdź do krawędzi i wróć — musi pokazać `ZNANY REGION` i te same odkryte pola.

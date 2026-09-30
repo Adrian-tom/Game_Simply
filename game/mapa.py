@@ -11,6 +11,7 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from game import ekran
 from game.ikony import (
     GRACZ_MAPA,
     IKONY_BIOM,
@@ -290,6 +291,8 @@ def rysuj_mape(gracz: Gracz) -> None:
     print(f"  📍  {opis_regionu(gracz)}")
     print(f"  Biom: {etykieta_biomu(pole['biom'])}{miejsce}")
     print()
+    if ekran.graficzny:
+        return  # siatkę i legendę pokazuje okno obok konsoli
     naglowek = "     " + " ".join(f"{x:>2}" for x in range(ROZMIAR))
     print(naglowek)
     for y in range(ROZMIAR):

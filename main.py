@@ -2,9 +2,13 @@
 Główny plik gry RPG – Pro RPG (tekstowa gra fantasy po polsku).
 
 Uruchomienie:
-    python main.py
+    python main.py            # okno z grafiką pixelart (pygame-ce)
+    python main.py --tekst    # klasyczny tryb w terminalu
 """
 
+import sys
+
+from game import ekran
 from game.player import Gracz
 from game.shop import otworz_sklep, otworz_kuznia
 from game.skills import PODKLASY, otworz_ksiege_umiejetnosci
@@ -408,6 +412,7 @@ def nowa_gra(gracz: Gracz | None = None) -> None:
     """Główna pętla rozgrywki."""
     if gracz is None:
         gracz = stworz_postac()
+    ekran.ustaw_gracza(gracz)
 
     while True:
         # Sprawdź osiągnięcia i questy po każdym powrocie do obozu
@@ -516,6 +521,7 @@ def nowa_gra(gracz: Gracz | None = None) -> None:
 def main() -> None:
     """Główna pętla programu z menu startowym."""
     while True:
+        ekran.ustaw_gracza(None)  # menu główne = ekran tytułowy w oknie
         wybor = menu_glowne()
 
         if wybor == "1":
@@ -555,11 +561,25 @@ def main() -> None:
             nacisnij_enter()
 
 
-if __name__ == "__main__":
+def uruchom(argumenty: list[str]) -> None:
+    """Okno pixelart (pygame-ce) albo — z ``--tekst`` lub bez pygame — terminal."""
+    if "--tekst" not in argumenty:
+        try:
+            from grafika.okno import uruchom_w_oknie
+        except ImportError:
+            print("  Brak biblioteki pygame-ce — gra startuje w trybie tekstowym.")
+            print("  Grafika: pip install -r requirements.txt  (albo uruchom.bat)\n")
+        else:
+            uruchom_w_oknie(main)
+            return
     try:
         main()
     except (KeyboardInterrupt, EOFError):
         # Ctrl+C, Ctrl+Z albo koniec strumienia wejścia — wychodzimy po ludzku,
         # bez wysypywania tracebacku na gracza.
         print("\n\n  Przerwano. Do zobaczenia w następnej przygodzie!\n")
+
+
+if __name__ == "__main__":
+    uruchom(sys.argv[1:])
 

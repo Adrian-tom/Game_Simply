@@ -1,17 +1,16 @@
 # Game_Simply — wymagania
 #
-# Brak pakietów z PyPI. Gra korzysta wyłącznie ze standardowej
-# biblioteki Pythona (json, random, pathlib, dataclasses, typing).
-#
 # Wymagane:
 #   Python >= 3.10
 #
-# Instalacja zależności (nic do pobrania):
-#   pip install -r requirements.txt
+# Grafika pixelart (okno gry). Bez niej gra startuje w trybie tekstowym
+# w terminalu — logika i testy logiki korzystają wyłącznie ze stdlib.
+pygame-ce>=2.5
+#
+# Instalacja:
+#   pip install -r requirements.txt     (uruchom.bat robi to sam przy pierwszym starcie)
 #
 # Uruchomienie:
 #   uruchom.bat
-#   python main.py
-#
-# Ten plik jest celowo bez wpisów pakietów.
-# Nie dodawaj tu bibliotek — projekt ma zostać samodzielny (stdlib only).
+#   python main.py            # okno
+#   python main.py --tekst    # terminal
