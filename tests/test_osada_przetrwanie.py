@@ -286,5 +286,33 @@ class TestDziedzictwa(unittest.TestCase):
             self.assertIsNone(dziedzictwo.po_smierci(g))
 
 
+class TestWydarzen(unittest.TestCase):
+    def test_czysta_studnia_chroni_przed_zaraza(self):
+        from game.wydarzenia import _zaraza
+        g = nowy()
+        g.flagi["czysta_studnia"] = True
+        _zaraza(g)
+        self.assertFalse(any(o.get("chory") for o in osada.osadnicy(g)))
+
+    def test_palisada_zatrzymuje_wilki(self):
+        from game.wydarzenia import _wilki
+        g = nowy()
+        g.budynki.add("palisada")
+        g.surowce["zywnosc"] = 20
+        _wilki(g)
+        self.assertEqual(g.surowce["zywnosc"], 20)
+
+    def test_wydarzenie_raz_na_pore(self):
+        from game import wydarzenia
+        g = nowy()
+        stara = wydarzenia.SZANSA_DZIENNA
+        wydarzenia.SZANSA_DZIENNA = 1.0
+        try:
+            razem = sum(len(wydarzenia.dzien_wydarzen(g)) for _ in range(20))
+        finally:
+            wydarzenia.SZANSA_DZIENNA = stara
+        self.assertLessEqual(razem, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

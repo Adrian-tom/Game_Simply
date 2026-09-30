@@ -565,7 +565,16 @@ def _pokaz_watek(postac: dict, klucz: str, gracz) -> None:
 
 
 def _pokaz_dialog(klucz: str, gracz=None) -> None:
-    """Wyświetla interaktywny dialog z NPC (wątek, testy, rekrutacja)."""
+    """Rozmowa z NPC. Z postacią gracza — w silniku rozmów (głosy, testy z szansą, myśli)."""
+    if gracz is not None:
+        from game.rozmowy import rozmowa_z_npc
+        rozmowa_z_npc(gracz, klucz)
+        return
+    _pokaz_dialog_prosty(klucz, gracz)
+
+
+def _pokaz_dialog_prosty(klucz: str, gracz=None) -> None:
+    """Dawny dialog (bez postaci gracza: tylko tematy)."""
     postac = _DIALOGI[klucz]
     wyswietl_linie()
     powitanie = random.choice(postac["powitania"])

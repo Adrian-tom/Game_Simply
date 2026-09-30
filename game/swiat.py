@@ -7,7 +7,8 @@ Każdy dzień, niezależnie od tego, gdzie jest bohater:
   4. rośnie zagrożenie najazdem (i może dojść do najazdu),
   5. ruszają karawany i ceny w innych osadach,
   6. dojrzewają myśli w gabinecie,
-  7. czasem ktoś z osady przychodzi ze sprawą do rozstrzygnięcia.
+  7. czasem ktoś z osady przychodzi ze sprawą do rozstrzygnięcia,
+  8. czasem los: powódź, pożar, zaraza, wilki albo urodzaj.
 
 Wieści zwykłe trafiają do ``gracz.kronika`` (pokazywanej w obozie),
 pilne są zwracane i drukowane od razu.
@@ -85,6 +86,10 @@ def _jeden_dzien(gracz: "Gracz", odpoczynek: bool) -> list[str]:
         if sprawa:
             gracz.sprawy.append(sprawa)
             gracz.kronika.append("  📜  Ktoś z osady czeka na ciebie ze sprawą ([22] w obozie).")
+
+    # wydarzenia sezonowe (powódź, pożar, zaraza, wilki, urodzaj)
+    from game.wydarzenia import dzien_wydarzen
+    pilne += dzien_wydarzen(gracz)
 
     # zagrożenie i najazd (na końcu dnia — po nocy przychodzą bandy)
     pilne += obrona.dzien_obrony(gracz)

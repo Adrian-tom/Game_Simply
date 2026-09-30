@@ -722,3 +722,76 @@ def rozmowa_z_hersztem(gracz: "Gracz", sila: int, banda: str) -> str:
         "st_zastraszania": max(8, min(20, 16 + sila // 30 - sila_obrony(gracz) // 12 - poziom_budynku(gracz, "palisada"))),
     }
     return prowadz(gracz, "herszt", kontekst) or "walka"
+
+
+# ------------------------------------------------------------------ #
+#  Dawni NPC w silniku rozmów                                          #
+# ------------------------------------------------------------------ #
+
+# Głos, który odzywa się przy każdej z postaci (bierny test), i myśl na koniec wątku.
+_GLOSY_NPC: dict[str, tuple] = {
+    "karczmarz": (("spostrzegawczosc", 11, "Wyciera ten sam kufel trzeci raz. Nie myśli o kuflu — myśli o córce."), "palenisko_krolestwem"),
+    "kupiec": (("oszustwo", 12, "Uśmiecha się oczami, nie ustami. Liczy cię jak towar."), "wszystko_na_sprzedaz"),
+    "kaplan": (("perswazja", 12, "Modli się ciszej, gdy mówi o zakonie. Wstydzi się — nie Boga, braci."), "cena_krwi"),
+    "stary_rycerz": (("zastraszanie", 12, "Stary, ale stoi jak ktoś, kto wciąż czeka na cios. Nie groź mu — zrozumie to jako zaproszenie."), "twarda_reka"),
+    "tajemniczy_wedrowiec": (("spostrzegawczosc", 14, "Jego cień pada nie tam, gdzie powinien. Ktoś — albo coś — idzie za nim."), "cien_przodka"),
+    "burmistrz": (("przetrwanie", 12, "Spieczone usta, zapadnięte policzki. Burmistrz też nie je, żeby starczyło dla miasta."), "zimowy_glod"),
+    "kupiec_miejski": (("oszustwo", 13, "Mówi „przyjacielu” za często. Przyjaciół się tak nie nazywa — przyjaciół się ma."), "wszystko_na_sprzedaz"),
+}
+
+
+def _graf_npc(gracz: "Gracz", klucz: str) -> dict:
+    """Buduje graf rozmowy z danych starego dialogu (tematy, wątek, testy, rekrutacja)."""
+    from game.dialogues import _DIALOGI, _etap_watku
+
+    npc = _DIALOGI[klucz]
+    mowi = npc["imie"].upper()
+    glos, mysl = _GLOSY_NPC.get(klucz, (None, None))
+    wezly: dict = {}
+    opcje: list = []
+    for i, (temat, kwestie) in enumerate(npc["tematy"]):
+        wezly[f"temat{i}"] = {"mowi": mowi, "tekst": random.choice(kwestie),
+                              "opcje": [{"tekst": "Wróć.", "cel": "start"}]}
+        opcje.append({"tekst": temat + ".", "cel": f"temat{i}"})
+
+    watek = npc.get("watek") or {}
+    etapy = watek.get("etapy") or []
+    etap = _etap_watku(gracz, klucz)
+    if etap < len(etapy):
+        e = etapy[etap]
+        efekty = [("flaga", f"watek_{klucz}", etap + 1)]
+        efekty += [(typ, ile) for typ, ile in e.get("nagrody", []) if typ in ("karma", "zloto")]
+        if etap + 1 == len(etapy) and mysl:
+            efekty.append(("mysl", mysl))
+        wezly["watek"] = {"mowi": f"{mowi} — {watek.get('tytul', '')}".upper(), "tekst": e["tekst"],
+                          "efekty": efekty, "opcje": [{"tekst": "Wróć.", "cel": "start"}]}
+        opcje.append({"tekst": f"📜 {e['etykieta']}", "cel": "watek", "raz": True})
+
+    for i, t in enumerate(npc.get("testy") or []):
+        wezly[f"test{i}_s"] = {"mowi": mowi, "tekst": t["sukces"],
+                               "efekty": [(typ, ile) for typ, ile in t.get("nagrody", []) if typ in ("karma", "zloto")],
+                               "opcje": [{"tekst": "Wróć.", "cel": "start"}]}
+        wezly[f"test{i}_p"] = {"mowi": mowi, "tekst": t["porazka"], "opcje": [{"tekst": "Wróć.", "cel": "start"}]}
+        opcje.append({"tekst": t["etykieta"], "test": (t["skill"], t["st"]),
+                      "sukces": f"test{i}_s", "porazka": f"test{i}_p"})
+
+    if npc.get("rekrut"):
+        opcje.append({"tekst": "🤝 Zaproponuj dołączenie do osady.", "efekty": [("rekrut", npc["rekrut"])], "cel": None})
+    opcje.append({"tekst": "Odejść.", "cel": None})
+    wezly["start"] = {"mowi": mowi, "tekst": random.choice(npc["powitania"]),
+                      "glosy": [glos] if glos else [], "opcje": opcje}
+    return {"start": "start", "wezly": wezly}
+
+
+def rozmowa_z_npc(gracz: "Gracz", klucz: str) -> None:
+    """Rozmowa z postacią z dialogues.py — w silniku z głosami i białymi/czerwonymi testami."""
+    from game.dialogues import _ustaw_etap_watku
+
+    ROZMOWY[f"npc_{klucz}"] = _graf_npc(gracz, klucz)
+    try:
+        prowadz(gracz, f"npc_{klucz}")
+    finally:
+        del ROZMOWY[f"npc_{klucz}"]
+    etap = gracz.flagi.pop(f"watek_{klucz}", None)
+    if etap is not None:
+        _ustaw_etap_watku(gracz, klucz, etap)
