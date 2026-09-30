@@ -210,8 +210,17 @@ def prowadz(gracz: "Gracz", rozmowa_id: str, kontekst: dict | None = None) -> st
     s = _Sesja(gracz, rozmowa_id, dict(kontekst or {}))
     wezel_id = rozmowa["start"]
     naparu = (gracz.przedmioty or {}).get("napar_jasnosci", 0)
+    from game import ekran
+    try:
+        return _petla_rozmowy(gracz, rozmowa, s, wezel_id, naparu, ekran)
+    finally:
+        ekran.ustaw_rozmowe(None)
+
+
+def _petla_rozmowy(gracz, rozmowa, s, wezel_id, naparu, ekran):
     while wezel_id is not None:
         wezel = rozmowa["wezly"][wezel_id]
+        ekran.ustaw_rozmowe(_tekst(wezel.get("mowi", ""), s.kontekst).split(" — ")[0])
         wyczysc()
         wyswietl_linie()
         print(f"  {_tekst(wezel.get('mowi', ''), s.kontekst)}")

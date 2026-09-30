@@ -12,7 +12,9 @@ Gatunki w jednej pętli: **survival** (żywność, opał, pory roku, rany), **ci
 (głosy umiejętności, białe i czerwone testy, gabinet myśli).
 
 Gra działa w **oknie z grafiką pixelart** (pygame-ce): po lewej izometryczna mapa regionu
-z oświetleniem, mgłą wojny i rosnącą osadą oraz HUD, po prawej konsola z klikalnymi opcjami.
+z oświetleniem, mgłą wojny i rosnącą osadą, **arena walki** (sprite'y 18 rodzajów wrogów,
+zapowiedzi, garda, ogień, liczby obrażeń) albo **portret rozmówcy** na malarskim tle, pod spodem
+HUD; po prawej konsola z klikalnymi opcjami.
 Cała grafika jest liczona w kodzie. Bez pygame gra startuje w trybie tekstowym w terminalu.
 
 Architektura, pętle gry i liczby z symulacji balansu: **[ANALIZA.md](ANALIZA.md)**.
@@ -125,9 +127,12 @@ Game_Simply/
 ├── grafika/           # Okno pixelart (pygame-ce) — logika gry nic stąd nie importuje
 │   ├── okno.py        # Okno, konsola, HUD, przejęcie print/input
 │   ├── scena.py       # Izometryczna mapa regionu, rosnąca osada
+│   ├── arena.py       # Ekran walki
+│   ├── potwory.py     # Sprite'y wrogów z brył
+│   ├── portret.py     # Widok rozmowy
 │   ├── teren.py       # Kafle, roślinność, budynki, sprite gracza
 │   └── piksele.py     # Prymitywy pixelartu
-└── tests/             # 94 testy unittest
+└── tests/             # 99 testów unittest
 ```
 
 ---

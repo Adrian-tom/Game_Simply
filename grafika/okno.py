@@ -25,6 +25,7 @@ import pygame
 
 from game import ekran
 from grafika.arena import ArenaWalki
+from grafika.portret import WidokRozmowy
 from grafika.scena import SZER, WYS, ScenaMapy
 
 SZEROKOSC, WYSOKOSC = 1280, 720
@@ -253,6 +254,7 @@ class Okno:
         self.konsola = Konsola(pygame.Rect(648, 8, 624, 704), self.pisarz)
         self.scena = ScenaMapy()
         self.arena = ArenaWalki()
+        self.rozmowa = WidokRozmowy()
         self.mapa = pygame.Surface((SZER, WYS))
         self._tytul = None
         self._print = builtins.print
@@ -323,6 +325,8 @@ class Okno:
         etykiety_walki = None
         if ekran.walka is not None:
             etykiety_walki = self.arena.rysuj(self.mapa, ekran.walka, self.t)
+        elif ekran.rozmowa:
+            self.rozmowa.rysuj(self.mapa, ekran.rozmowa, self.t)
         elif gracz is not None and getattr(gracz, "mapa_pola", None):
             self.scena.rysuj(
                 self.mapa, gracz.mapa_pola, self.t,
@@ -338,6 +342,8 @@ class Okno:
         pygame.draw.rect(self.ekran, RAMKA, (0, 0, SZER * SKALA_MAPY, WYS * SKALA_MAPY), 2)
         if etykiety_walki:
             self._etykiety_walki(etykiety_walki)
+        elif ekran.walka is None and ekran.rozmowa:
+            self._napis(ekran.rozmowa, 24, WYS * SKALA_MAPY - 52, ZLOTY, duzy=True)
         hud = pygame.Rect(8, WYS * SKALA_MAPY + 8, SZER * SKALA_MAPY - 16, WYSOKOSC - WYS * SKALA_MAPY - 16)
         ramka(self.ekran, hud)
         if gracz is None:

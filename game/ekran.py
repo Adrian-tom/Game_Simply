@@ -35,6 +35,15 @@ def koniec_walki() -> None:
     walka = None
 
 
+# Kto mówi w trwającej rozmowie — okno rysuje wtedy jego portret.
+rozmowa: str | None = None
+
+
+def ustaw_rozmowe(mowi: str | None) -> None:
+    global rozmowa
+    rozmowa = mowi
+
+
 def ustaw_gracza(nowy: Gracz | None) -> None:
     global gracz
     gracz = nowy
