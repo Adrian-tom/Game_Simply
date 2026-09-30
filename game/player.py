@@ -112,6 +112,7 @@ class Gracz:
         self.rangi_umiejetnosci: dict[str, int] = {k: 1 for k in self.umiejetnosci}
         self.punkty_umiejetnosci = 0
         self.surowce: dict[str, int] = {
+            "zywnosc": 25,
             "drewno": 3, "kamien": 2, "ziola": 1, "skora": 0, "ruda": 0,
         }
         self.budynki: set[str] = set()
@@ -122,6 +123,35 @@ class Gracz:
         self.chaty: int = 0
         self.osadnicy: list[dict] = []
         self.watki_npc: dict[str, int] = {}
+        # --- przetrwanie ---
+        self.prowiant: int = 0
+        self.glod: int = 0
+        self.rany: list[dict] = []
+        # --- osada ---
+        self.poziomy_budynkow: dict[str, int] = {}
+        self.zagrozenie: float = 0.0
+        self.najazd_za: int | None = None
+        self.najazdy: int = 0
+        self.kronika: list[str] = []
+        self.sprawy: list[str] = []
+        self.narzedzia: int = 0
+        self.zapasy_cel: dict[str, int] = {"mikstura": 3}
+        # --- rzemiosło i handel ---
+        self.przedmioty: dict[str, int] = {}
+        self.skladniki: dict[str, int] = {}
+        self.przepisy: list[str] = []
+        self.ulepszenia: dict[str, int] = {"bron": 0, "zbroja": 0}
+        self.karawany: list[dict] = []
+        self.ceny: dict[str, dict[str, float]] = {}
+        # --- ród, talenty, umysł ---
+        self.pokolenie: int = 1
+        self.rod: list[dict] = []
+        self.talenty: list[str] = []
+        self.punkty_talentow: int = 0
+        self.flagi: dict[str, object] = {}
+        self.testy_rozmow: dict[str, int] = {}
+        self.mysli: dict[str, dict] = {}
+        self.w_obozie: bool = True
         self.atrybuty: dict[str, int] = startowe_atrybuty(klasa)
         self.biegle_skille: list[str] = biegle_skille_klasy(klasa)
         self.pochodzenie: str | None = None
@@ -155,7 +185,8 @@ class Gracz:
             return "Nie masz żadnych mikstur!"
         lecz = 40
         from game.pochodzenie import bonus_leczenia_mikstury
-        lecz += bonus_leczenia_mikstury(self)
+        from game.przetrwanie import mnoznik_leczenia
+        lecz = int((lecz + bonus_leczenia_mikstury(self)) * mnoznik_leczenia(self))
         self.mikstury -= 1
         poprzednie_hp = self.hp
         self.hp = min(self.hp + lecz, self.max_hp)
@@ -169,7 +200,8 @@ class Gracz:
         self.mikstury_duze -= 1
         poprzednie_hp = self.hp
         from game.pochodzenie import bonus_leczenia_mikstury
-        lecz = 80 + bonus_leczenia_mikstury(self)
+        from game.przetrwanie import mnoznik_leczenia
+        lecz = int((80 + bonus_leczenia_mikstury(self)) * mnoznik_leczenia(self))
         self.hp = min(self.hp + lecz, self.max_hp)
         faktyczne = self.hp - poprzednie_hp
         return (
@@ -226,6 +258,7 @@ class Gracz:
         pkt_skilli = 2 if self.poziom in (5, 10, 15) else 1
         self.punkty_atrybutow = getattr(self, "punkty_atrybutow", 0) + pkt_atr
         self.punkty_umiejetnosci = getattr(self, "punkty_umiejetnosci", 0) + pkt_skilli
+        self.punkty_talentow = int(getattr(self, "punkty_talentow", 0) or 0) + 1
 
         komunikaty = [
             f"*** AWANS NA POZIOM {self.poziom}! ***",

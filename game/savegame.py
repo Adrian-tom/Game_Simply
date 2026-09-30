@@ -13,6 +13,15 @@ from game.mapa import SRODEK
 _KATALOG_GRY = Path(__file__).resolve().parent.parent
 _PLIK_ZAPISU = _KATALOG_GRY / "savegame.json"
 
+# Pola dodane z systemami przetrwania, osady, rzemiosła, handlu, rodu i umysłu.
+# Zapisywane i wczytywane hurtem; brak pola w starym zapisie = wartość z Gracz().
+NOWE_POLA = (
+    "prowiant", "glod", "rany", "poziomy_budynkow", "zagrozenie", "najazd_za", "najazdy",
+    "kronika", "sprawy", "narzedzia", "zapasy_cel", "przedmioty", "skladniki", "przepisy",
+    "ulepszenia", "karawany", "ceny", "pokolenie", "rod", "talenty", "punkty_talentow",
+    "flagi", "testy_rozmow", "mysli", "w_obozie",
+)
+
 
 def _gracz_do_dict(gracz: Gracz) -> dict:
     """Serializuje obiekt gracza do słownika."""
@@ -70,6 +79,7 @@ def _gracz_do_dict(gracz: Gracz) -> dict:
         "biegle_skille": list(getattr(gracz, "biegle_skille", []) or []),
         "pochodzenie": getattr(gracz, "pochodzenie", None),
         "cechy": list(getattr(gracz, "cechy", []) or []),
+        **{pole: getattr(gracz, pole, None) for pole in NOWE_POLA},
     }
 
 
@@ -139,9 +149,8 @@ def _dict_do_gracza(dane: dict) -> Gracz:
     gracz.antidota = dane.get("antidota", 0)
     gracz.karma = dane.get("karma", 0)
     if "surowce" in dane:
-        gracz.surowce = {
-            "drewno": 0, "kamien": 0, "ziola": 0, "skora": 0, "ruda": 0,
-        }
+        from game.oboz import SUROWCE
+        gracz.surowce = {k: 0 for k in SUROWCE}
         gracz.surowce.update(dane.get("surowce") or {})
     # brak klucza = stary zapis sprzed systemu obozu — daj zapas startowy
     gracz.budynki = set(dane.get("budynki") or [])
@@ -164,6 +173,18 @@ def _dict_do_gracza(dane: dict) -> Gracz:
     zapewnij_atrybuty(gracz)
     gracz.pochodzenie = dane.get("pochodzenie")
     gracz.cechy = list(dane.get("cechy") or [])
+    for pole in NOWE_POLA:
+        if dane.get(pole) is not None:
+            setattr(gracz, pole, dane[pole])
+    if "punkty_talentow" not in dane:
+        gracz.punkty_talentow = max(0, gracz.poziom - 1)
+    if "zywnosc" not in (dane.get("surowce") or {}):
+        gracz.surowce["zywnosc"] = 25  # stary zapis sprzed systemu żywności
+    if gracz.hp <= 0:
+        # Stary zapis z trupem (gra zapisywała postać z 0 HP): budzi się ciężko ranna.
+        from game.przetrwanie import dodaj_rane
+        gracz.hp = max(1, gracz.max_hp // 4)
+        dodaj_rane(gracz, "ciezka_rana")
     return gracz
 
 

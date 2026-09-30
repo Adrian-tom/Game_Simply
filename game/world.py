@@ -28,7 +28,7 @@ from game.mapa import (
 from game.oboz import zbierz_na_polu, pozostale_zbiory, linia_surowcow
 from game.mityczne import zdarzenie_mityczne
 from game.rekruci import oferta_rekrutacji, rozlicz_zbieraczy
-from game import ekran
+from game import ekran, kalendarz, przetrwanie, talenty
 from game.savegame import zapisz_gre
 from game.atrybuty import SKILLE, przeprowadz_test, trudnosc
 from game.osada import dodaj_czas, oznacz_wyjscie, rozlicz_powrot_do_obozu
@@ -1051,10 +1051,12 @@ def _zakoncz_wyprawe(gracz: Gracz) -> str:
     wyswietl_linie("═")
     print(f"  Wracasz do obozu z pola ({gracz.mapa_x}, {gracz.mapa_y}).")
     print("  Twoja pozycja na mapie zostaje zapamiętana.")
-    for msg in rozlicz_zbieraczy(gracz):
-        print(msg)
-    for msg in rozlicz_powrot_do_obozu(gracz):
-        print(msg)
+    zostalo = int(getattr(gracz, "prowiant", 0) or 0)
+    przetrwanie.rozpakuj_prowiant(gracz)
+    gracz.w_obozie = True
+    if zostalo:
+        print(f"  🍖  Niezjedzony prowiant ({zostalo}) wraca do magazynu.")
+    print("  📰  Wieści z osady czekają w obozie.")
     nacisnij_enter()
     return "powrot"
 
@@ -1064,6 +1066,11 @@ def wyrusz_w_podroz(gracz: Gracz) -> str:
     zapewnij_mape(gracz)
     gracz.blogoslawienstwo_wyprawy = False
     oznacz_wyjscie(gracz)
+    print()
+    print(przetrwanie.spakuj_prowiant(gracz))
+    if kalendarz.pora(gracz)["klucz"] == "zima" and not przetrwanie.ma_odzienie(gracz):
+        print("  ❄  Zima, a ty bez ciepłego odzienia — mróz będzie ranił co dzień (warsztat: ciepłe odzienie).")
+    nacisnij_enter()
 
     while True:
         wybor = _menu_eksploracji(gracz)
@@ -1190,6 +1197,8 @@ def _po_wejsciu_na_pole(gracz: Gracz) -> str | None:
         return None
 
     szansa = 0.22 if pierwsze else 0.08
+    if talenty.ma(gracz, "szosty_zmysl"):
+        szansa /= 2
     if random.random() < szansa:
         if random.random() < 0.55:
             return _konfrontacja_przed_walka(gracz, biom_nazwa)

@@ -213,6 +213,11 @@ def premia_skilla(gracz: Gracz, skill: str) -> int:
         premia += biegosc(gracz)
     from game.pochodzenie import premia_testu_cech
     premia += premia_testu_cech(gracz, skill)
+    from game import mysli, przetrwanie, talenty
+    premia += mysli.premia_testu(gracz, skill)
+    premia += przetrwanie.kara_testu(gracz, info["atrybut"])
+    if skill in ("perswazja", "oszustwo", "zastraszanie") and talenty.ma(gracz, "czytanie_ludzi"):
+        premia += 2
     return premia
 
 

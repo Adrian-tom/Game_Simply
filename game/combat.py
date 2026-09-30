@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from typing import Callable
 
 from game.player import Gracz
-from game.enemy import Przeciwnik, losuj_przeciwnika, losuj_bossa
+from game import przetrwanie, talenty
+from game.enemy import NAZWY_TYPOW, Przeciwnik, losuj_bossa, losuj_przeciwnika, mnoznik_typu
 from game.skills import (
     UMIEJETNOSCI,
     ranga_skilla,
@@ -110,6 +111,15 @@ def _nowy_stan_walki() -> dict:
         "forma_regen": 0,
         "forma_mana": 0,
         "tarcza_losu_uzyta": False,
+        # Zapowiedzi, garda i nowe efekty
+        "zapowiedz": None,
+        "hp_przy_zapowiedzi": 0,
+        "garda": False,
+        "wrog_podpalony": 0,
+        "olej_tury": 0,
+        "eliksir_sily_tury": 0,
+        "odpornosc_ognia": False,
+        "nieustepliwy_uzyty": False,
     }
 
 
@@ -206,6 +216,11 @@ def _sprobuj_ocalic(gracz: Gracz, stan: dict) -> bool:
             f" odnawiasz {gracz.hp} HP!"
         )
         return True
+    if talenty.ma(gracz, "nieustepliwy") and not stan.get("nieustepliwy_uzyty"):
+        stan["nieustepliwy_uzyty"] = True
+        gracz.hp = 1
+        print("  ⚔  Nieustępliwy! Chwiejesz się, ale stoisz — 1 HP.")
+        return True
     from game.pochodzenie import ma_tarczę_losu
     if ma_tarczę_losu(gracz) and not stan.get("tarcza_losu_uzyta"):
         stan["tarcza_losu_uzyta"] = True
@@ -287,6 +302,15 @@ def _koniec_rundy(stan: dict, gracz: Gracz) -> None:
             f" (Pozostało tur: {stan['gracz_krwawienie_tury']})"
         )
 
+    for licznik, koniec in (
+        ("olej_tury", "  🛢  Olej na ostrzu wypalił się."),
+        ("eliksir_sily_tury", "  💪  Eliksir siły przestaje działać."),
+    ):
+        if stan.get(licznik, 0) > 0:
+            stan[licznik] -= 1
+            if stan[licznik] == 0:
+                print(koniec)
+
     cd = stan.setdefault("cd", {})
     for klucz in list(cd):
         if cd[klucz] > 0:
@@ -349,6 +373,14 @@ def _wyswietl_stan_walki(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> No
         efekty.append(f"{przeciwnik.nazwa} osłabiony ({stan['wrog_oslabienie_tury']} tur)")
     if stan["wrog_rozpad"]:
         efekty.append(f"{przeciwnik.nazwa} w rozpadzie (-20% max HP)")
+    if stan.get("wrog_podpalony", 0) > 0:
+        efekty.append(f"🔥 {przeciwnik.nazwa} płonie ({stan['wrog_podpalony']} tur)")
+    if stan.get("olej_tury", 0) > 0:
+        efekty.append(f"🛢 Płonące ostrze ({stan['olej_tury']} tur)")
+    if stan.get("eliksir_sily_tury", 0) > 0:
+        efekty.append(f"💪 Eliksir siły ({stan['eliksir_sily_tury']} tur)")
+    if stan.get("odpornosc_ognia"):
+        efekty.append("🧯 Odporność na ogień")
     if stan["jest_boss"]:
         efekty.append("⚠ BOSS!")
     if stan.get("forma"):
@@ -365,6 +397,10 @@ def _wyswietl_stan_walki(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> No
         efekty.append("CD: " + ", ".join(cd_txt))
     if efekty:
         print(f"  Efekty: {', '.join(efekty)}")
+    stan_zdrowia = przetrwanie.opis_stanu(gracz)
+    if stan_zdrowia != "zdrowy":
+        print(f"  Twój stan: {stan_zdrowia}")
+    _pokaz_wiedze_o_wrogu(gracz, przeciwnik, stan)
 
     wyswietl_linie()
 
@@ -518,7 +554,7 @@ def _sk_boskie_swiatlo(k: Kontekst) -> str | None:
 def _sk_swiety_cios(k: Kontekst) -> str | None:
     mnoznik = 2.5 + 0.10 * (k.ranga - 1)
     bazowe = int(_oblicz_obrazenia(k.efektywny_atak, k.przeciwnik.obrona) * mnoznik)
-    swiete = k.S(20)
+    swiete = int(k.S(20) * mnoznik_typu(k.przeciwnik, "swiete"))
     obrazenia = bazowe + swiete
     k.przeciwnik.hp -= obrazenia
     print(
@@ -564,9 +600,10 @@ def _sk_niszczace_uderzenie(k: Kontekst) -> str | None:
 
 
 def _sk_kula_ognia(k: Kontekst) -> str | None:
-    obrazenia = k.mag(35, 55)
+    obrazenia = int(k.mag(35, 55) * mnoznik_typu(k.przeciwnik, "ogien"))
     k.przeciwnik.hp -= obrazenia
-    print(f"  Kula ognia trafia za {obrazenia} obrażeń magicznych!")
+    print(f"  Kula ognia trafia za {obrazenia} obrażeń magicznych!{_dopisek_typu(k.przeciwnik, 'ogien')}")
+    _podpal(k.przeciwnik, k.stan, 2)
     if not k.przeciwnik.zyje():
         return "wygrana"
     return None
@@ -588,9 +625,10 @@ def _sk_tarcza_runowa(k: Kontekst) -> str | None:
 
 
 def _sk_meteor(k: Kontekst) -> str | None:
-    obrazenia = k.mag(80, 120)
+    obrazenia = int(k.mag(80, 120) * mnoznik_typu(k.przeciwnik, "ogien"))
     k.przeciwnik.hp -= obrazenia
-    print(f"  Meteor uderza za {obrazenia} obrażeń magicznych!")
+    print(f"  Meteor uderza za {obrazenia} obrażeń magicznych!{_dopisek_typu(k.przeciwnik, 'ogien')}")
+    _podpal(k.przeciwnik, k.stan, 3)
     if not k.przeciwnik.zyje():
         return "wygrana"
     return None
@@ -1170,6 +1208,7 @@ def _uzyj_umiejetnosci(
             * stan["buff_atak_mnoznik"]
             * stan["nastepny_atak_mnoznik"]
             * float(stan.get("forma_atak") or 1.0)
+            * _mnoznik_gracza(gracz, przeciwnik, stan)
         ),
     )
     stan["nastepny_atak_mnoznik"] = 1.0
@@ -1209,11 +1248,19 @@ def _menu_przedmiotow(gracz: Gracz, stan: dict) -> bool:
             f"  [4] 🧴  Antidotum ({getattr(gracz, 'antidota', 0)})"
             f" — zdejmuje truciznę i krwawienie"
         )
+        zapas = getattr(gracz, "przedmioty", None) or {}
+        for nr, (klucz, ikona, nazwa, opis) in enumerate(_PRZEDMIOTY_BOJOWE, 5):
+            if zapas.get(klucz, 0) > 0:
+                print(f"  [{nr}] {ikona}  {nazwa} ({zapas[klucz]}) — {opis}")
         print("  [0] ↩  Wróć\n")
 
         wybor = input("  Wybierz przedmiot: ").strip()
         if wybor == "0":
             return False
+        if wybor.isdigit() and 5 <= int(wybor) < 5 + len(_PRZEDMIOTY_BOJOWE):
+            if _uzyj_przedmiotu_bojowego(gracz, stan, _PRZEDMIOTY_BOJOWE[int(wybor) - 5][0]):
+                return True
+            continue
 
         if wybor in ("1", "2"):
             if stan["leczenie_zablokowane"]:
@@ -1299,6 +1346,7 @@ def _tura_gracza(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> str | None
     (walka trwa dalej).
     """
     while True:
+        _pokaz_zapowiedz(przeciwnik, stan)
         print("\n  Co robisz?")
         print("  [1] ⚔  Atakuj")
         if stan["leczenie_zablokowane"]:
@@ -1306,7 +1354,8 @@ def _tura_gracza(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> str | None
         else:
             print(f"  [2] 🧪  Przedmioty (mikstury: {gracz.mikstury})")
         print("  [3] ✨  Umiejętności")
-        print("  [4] 🏃  Uciekaj")
+        print(f"  [4] 🏃  Uciekaj (szansa {int(szansa_ucieczki(gracz, stan) * 100)}%)")
+        print("  [5] 🛡  Garda — połowa obrażeń w tej turze, potem kontra")
 
         wybor = input("\n  Twój wybór: ").strip()
 
@@ -1318,6 +1367,7 @@ def _tura_gracza(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> str | None
                     * stan["buff_atak_mnoznik"]
                     * stan["nastepny_atak_mnoznik"]
                     * float(stan.get("forma_atak") or 1.0)
+                    * _mnoznik_gracza(gracz, przeciwnik, stan)
                 ),
             )
             stan["nastepny_atak_mnoznik"] = 1.0
@@ -1338,6 +1388,11 @@ def _tura_gracza(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> str | None
                 print(f"\n  ⚡ KRYTYCZNE TRAFIENIE! Atakujesz {przeciwnik.nazwa}! Zadajesz {obrazenia} obrażeń!")
             else:
                 print(f"\n  ⚔  Atakujesz {przeciwnik.nazwa}! Zadajesz {obrazenia} obrażeń.")
+            if stan.get("olej_tury", 0) > 0 and przeciwnik.zyje():
+                ogien = int((8 + 3 * gracz.poziom) * mnoznik_typu(przeciwnik, "ogien"))
+                przeciwnik.hp -= ogien
+                print(f"  🛢  Płonące ostrze dokłada {ogien} obrażeń od ognia!{_dopisek_typu(przeciwnik, 'ogien')}")
+                _podpal(przeciwnik, stan, 1)
             wamp = suma_flagi(gracz, "wampir")
             if wamp > 0 and obrazenia > 0:
                 heal = min(int(obrazenia * wamp), gracz.max_hp - gracz.hp)
@@ -1360,77 +1415,247 @@ def _tura_gracza(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> str | None
             return _uzyj_umiejetnosci(klucz, gracz, przeciwnik, stan)
 
         elif wybor == "4":
-            limit = 0.25 if getattr(gracz, "tryb_trudnosci", "normalny") == "hardcore" else 0.5
-            szansa = random.random()
-            if szansa < limit:
+            if random.random() < szansa_ucieczki(gracz, stan):
                 print("\n  🏃  Udało ci się uciec!")
                 return "ucieczka"
             print("\n  🏃  Nie udało się uciec — przeciwnik blokuje drogę!")
             return None
 
+        elif wybor == "5":
+            stan["garda"] = True
+            print("\n  🛡  Przyjmujesz gardę. Czekasz na jego ruch.")
+            return None
+
         else:
-            print("  Nieprawidłowy wybór. Wpisz 1, 2, 3 lub 4.")
+            print("  Nieprawidłowy wybór. Wpisz 1–5.")
 
 
 # ------------------------------------------------------------------ #
 #  Tura przeciwnika                                                   #
 # ------------------------------------------------------------------ #
 
-def _specjal_wroga(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> bool:
-    """
-    Unikalne zachowania wrogów. Zwraca True, jeśli wróg zużył turę
-    na umiejętność zamiast zwykłego ataku.
-    """
-    nazwa = przeciwnik.nazwa.lower()
+def szansa_ucieczki(gracz: Gracz, stan: dict) -> float:
+    """Ucieczka zależy od Zręczności, klasy, ran i talentów — nie jest rzutem monetą."""
+    from game.atrybuty import modyfikator
 
-    if "troll" in nazwa:
-        regen = max(4, int(przeciwnik.max_hp * 0.08))
+    szansa = 0.35 + 0.06 * modyfikator(gracz, "zrecznosc")
+    if gracz.klasa == "Lotrzyk":
+        szansa += 0.15
+    if talenty.ma(gracz, "szosty_zmysl"):
+        szansa += 0.15
+    szansa += przetrwanie.premia_ucieczki(gracz)
+    if stan.get("jest_boss"):
+        szansa -= 0.25
+    if getattr(gracz, "tryb_trudnosci", "normalny") == "hardcore":
+        szansa -= 0.10
+    return max(0.05, min(0.90, szansa))
+
+
+def _mnoznik_gracza(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> float:
+    """Wszystko, co zmienia siłę ciosu poza buffami umiejętności."""
+    m = przetrwanie.mnoznik_ataku(gracz)
+    if stan.get("eliksir_sily_tury", 0) > 0:
+        m *= 1.4
+    if stan.get("jest_boss") and talenty.ma(gracz, "zabojca_potworow"):
+        m *= 1.2
+    return m
+
+
+def _dopisek_typu(przeciwnik: Przeciwnik, typ: str) -> str:
+    m = mnoznik_typu(przeciwnik, typ)
+    if m > 1:
+        return f"  ({NAZWY_TYPOW[typ]}: SŁABOŚĆ!)"
+    if m < 1:
+        return f"  ({NAZWY_TYPOW[typ]}: odporny)"
+    return ""
+
+
+def _podpal(przeciwnik: Przeciwnik, stan: dict, tury: int) -> None:
+    if "ogien" in przeciwnik.odpornosci:
+        return
+    if stan.get("wrog_podpalony", 0) == 0 and przeciwnik.regeneracja:
+        print(f"  🔥  {przeciwnik.nazwa} płonie — ogień nie pozwala ranom się zasklepić!")
+    stan["wrog_podpalony"] = max(stan.get("wrog_podpalony", 0), tury)
+
+
+def _pokaz_wiedze_o_wrogu(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
+    """Bierny test wiedzy: kto ma głowę (INT/MDR), ten widzi słabości wroga."""
+    if stan.get("wiedza_pokazana") is not None:
+        if stan["wiedza_pokazana"]:
+            print(stan["wiedza_pokazana"])
+        return
+    from game.atrybuty import modyfikator
+
+    wiedza = 10 + max(modyfikator(gracz, "inteligencja"), modyfikator(gracz, "madrosc"))
+    if talenty.ma(gracz, "wewnetrzny_glos"):
+        wiedza += 2
+    czesci = []
+    if przeciwnik.slabosci:
+        czesci.append("słaby na: " + ", ".join(NAZWY_TYPOW[t] for t in sorted(przeciwnik.slabosci)))
+    if przeciwnik.odpornosci:
+        czesci.append("odporny na: " + ", ".join(NAZWY_TYPOW[t] for t in sorted(przeciwnik.odpornosci)))
+    if przeciwnik.regeneracja:
+        czesci.append("regeneruje się (ogień to przerywa)")
+    if czesci and wiedza >= 12:
+        stan["wiedza_pokazana"] = f"  🧠  WIEDZA [bierny test ST 12: sukces] — {przeciwnik.nazwa}: {'; '.join(czesci)}."
+        print(stan["wiedza_pokazana"])
+    else:
+        stan["wiedza_pokazana"] = ""
+
+
+_OPISY_ZAPOWIEDZI = {
+    "ciezki_cios": "bierze potężny zamach — następny cios będzie podwójny. Garda zatrzyma 70%.",
+    "ogien": "nabiera powietrza — w następnej turze zieje ogniem, obrona nie pomoże. Garda −50%, eliksir ognioodporności −50%.",
+    "klatwa": "zaczyna inkantację klątwy. Zadaj mocny cios (20% jego życia) albo go ogłusz, by ją przerwać.",
+}
+
+
+def _pokaz_zapowiedz(przeciwnik: Przeciwnik, stan: dict) -> None:
+    typ = stan.get("zapowiedz")
+    if typ:
+        print(f"\n  ⚠  ZAPOWIEDŹ: {przeciwnik.nazwa} {_OPISY_ZAPOWIEDZI[typ]}")
+
+
+def _plomienie_i_regeneracja(przeciwnik: Przeciwnik, stan: dict) -> bool:
+    """Ogień pali, regeneracja leczy — chyba że ogień ją blokuje. True = wróg padł."""
+    if stan.get("wrog_podpalony", 0) > 0:
+        dmg = max(3, int(przeciwnik.max_hp * 0.04 * mnoznik_typu(przeciwnik, "ogien")))
+        przeciwnik.hp = max(0, przeciwnik.hp - dmg)
+        stan["wrog_podpalony"] -= 1
+        print(f"  🔥  {przeciwnik.nazwa} płonie: −{dmg} HP.")
+        if not przeciwnik.zyje():
+            return True
+    elif przeciwnik.regeneracja and przeciwnik.hp < przeciwnik.max_hp:
+        regen = max(3, int(przeciwnik.max_hp * przeciwnik.regeneracja))
         faktyczne = min(regen, przeciwnik.max_hp - przeciwnik.hp)
-        if faktyczne > 0:
-            przeciwnik.hp += faktyczne
-            print(f"  💚  {przeciwnik.nazwa} regeneruje {faktyczne} HP!")
-
-    if "wiedźma" in nazwa or "wiedzma" in nazwa:
-        if random.random() < 0.35:
-            stan["gracz_trucizna_tury"] = max(stan["gracz_trucizna_tury"], 3)
-            stan["gracz_trucizna_obrazenia"] = 12 if stan["jest_boss"] else 8
-            print(f"  ⚗  {przeciwnik.nazwa} rzuca klątwę trucizny zamiast ataku!")
-            return True
-
-    if "smok" in nazwa and stan["tura"] % 3 == 0:
-        dmg = random.randint(28, 48) if stan["jest_boss"] else random.randint(16, 28)
-        form_unik = float(stan.get("forma_unik") or 0)
-        if form_unik > 0 and random.random() < form_unik:
-            print(
-                f"  Unikasz zionięcia {przeciwnik.nazwa}"
-                f" w postaci {stan.get('forma')}!"
-            )
-            return True
-        from game.atrybuty import szansa_uniku_zrecznosc
-        if random.random() < szansa_uniku_zrecznosc(gracz):
-            print(f"  💨  Zręczność! Unikasz zionięcia {przeciwnik.nazwa}!")
-            return True
-        if stan["tarcza_runowa"] > 0:
-            absorbcja = min(stan["tarcza_runowa"], dmg)
-            stan["tarcza_runowa"] -= absorbcja
-            dmg -= absorbcja
-            print(f"  🔮  Tarcza runowa absorbuje {absorbcja} obrażeń ognia!")
-        dmg = _przejmij_obrazenia_sluga(stan, dmg, przeciwnik.nazwa)
-        if dmg > 0:
-            gracz.hp = max(0, gracz.hp - dmg)
-            print(f"  🔥  {przeciwnik.nazwa} zieje ogniem! Otrzymujesz {dmg} obrażeń (ignoruje obronę)!")
-        _sprobuj_ocalic(gracz, stan)
-        return True
-
+        przeciwnik.hp += faktyczne
+        print(f"  💚  {przeciwnik.nazwa} regeneruje {faktyczne} HP! (ogień by to przerwał)")
     return False
+
+
+def _szal_bossa(przeciwnik: Przeciwnik, stan: dict) -> None:
+    if stan.get("jest_boss") and not przeciwnik.szal_uzyty and przeciwnik.hp <= przeciwnik.max_hp * 0.5:
+        przeciwnik.szal_uzyty = True
+        przeciwnik.atak = int(przeciwnik.atak * 1.25)
+        print(f"  🔥  {przeciwnik.nazwa} wpada w SZAŁ! Atak +25% do końca walki.")
+
+
+def _zadaj_graczowi(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict, obrazenia: int, opis: str) -> None:
+    obrazenia = _przejmij_obrazenia_sluga(stan, obrazenia, przeciwnik.nazwa)
+    if obrazenia <= 0:
+        return
+    gracz.hp = max(0, gracz.hp - obrazenia)
+    print(f"  {opis} Otrzymujesz {obrazenia} obrażeń!")
+    if _sprobuj_ocalic(gracz, stan):
+        return
+    rana = przetrwanie.moze_zranic(gracz, obrazenia, stan["jest_boss"])
+    if rana:
+        print(rana)
+
+
+def _wykonaj_zapowiedz(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
+    typ = stan.pop("zapowiedz")
+    stan["zapowiedz"] = None
+    garda = stan.get("garda")
+    if typ == "ciezki_cios":
+        obr = _oblicz_obrazenia(przeciwnik.atak, gracz.obrona) * 2
+        if garda:
+            obr = max(1, int(obr * 0.3))
+        _zadaj_graczowi(gracz, przeciwnik, stan, obr,
+                        f"💥  {przeciwnik.nazwa} spuszcza potężny cios{' na twoją gardę' if garda else ''}!")
+    elif typ == "ogien":
+        from game.atrybuty import szansa_uniku_zrecznosc
+        if random.random() < float(stan.get("forma_unik") or 0) or (
+            not przetrwanie.bez_uniku(gracz) and random.random() < szansa_uniku_zrecznosc(gracz)
+        ):
+            print(f"  💨  Uskakujesz przed ogniem {przeciwnik.nazwa}!")
+            return
+        baza = random.randint(16, 28) * (1 + 0.10 * (przeciwnik.poziom - 1))
+        if stan.get("jest_boss"):
+            baza *= 1.4
+        if garda:
+            baza *= 0.5
+        if stan.get("odpornosc_ognia"):
+            baza *= 0.5
+        obr = int(baza)
+        if stan["tarcza_runowa"] > 0:
+            absorbcja = min(stan["tarcza_runowa"], obr)
+            stan["tarcza_runowa"] -= absorbcja
+            obr -= absorbcja
+            print(f"  🔮  Tarcza runowa absorbuje {absorbcja} obrażeń ognia!")
+        _zadaj_graczowi(gracz, przeciwnik, stan, obr, f"🔥  {przeciwnik.nazwa} zieje ogniem!")
+    elif typ == "klatwa":
+        strata = stan.get("hp_przy_zapowiedzi", przeciwnik.hp) - przeciwnik.hp
+        if strata >= przeciwnik.max_hp * 0.2:
+            print(f"  ✋  Twój cios przerywa inkantację {przeciwnik.nazwa}! Klątwa się rozpada.")
+            return
+        stan["gracz_trucizna_tury"] = max(stan["gracz_trucizna_tury"], 3)
+        stan["gracz_trucizna_obrazenia"] = int((12 if stan["jest_boss"] else 7) * (1 + 0.1 * (przeciwnik.poziom - 1)))
+        print(f"  ⚗  {przeciwnik.nazwa} kończy klątwę! Trucizna: −{stan['gracz_trucizna_obrazenia']} HP na turę przez 3 tury (antidotum pomoże).")
+
+
+def _po_turze_wroga(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
+    """Koniec tury wroga: garda przechodzi w kontrę, wróg może zapowiedzieć kolejny ruch."""
+    if stan.get("garda"):
+        stan["garda"] = False
+        kontra = 1.6 if talenty.ma(gracz, "kontra") else 1.3
+        stan["nastepny_atak_mnoznik"] = max(stan["nastepny_atak_mnoznik"], kontra)
+        print(f"  🛡  Garda otwiera kontrę: następny cios ×{kontra}.")
+    if not gracz.zyje() or not przeciwnik.zyje() or stan.get("zapowiedz"):
+        return
+    for typ, szansa in przeciwnik.zapowiedzi.items():
+        if random.random() < szansa:
+            stan["zapowiedz"] = typ
+            stan["hp_przy_zapowiedzi"] = przeciwnik.hp
+            print(f"  ⚠  {przeciwnik.nazwa} {_OPISY_ZAPOWIEDZI[typ]}")
+            return
+
+
+_PRZEDMIOTY_BOJOWE = [
+    ("bandaz", "🩹", "Bandaż", "zatrzymuje krwawienie i opatruje ranę"),
+    ("eliksir_sily", "💪", "Eliksir siły", "atak +40% przez 3 tury"),
+    ("eliksir_ognia", "🧯", "Eliksir ognioodporności", "ogień −50% do końca walki"),
+    ("olej_ognisty", "🛢", "Olej ognisty", "płonące ostrze na 3 tury, blokuje regenerację"),
+    ("bomba", "💣", "Bomba", "50+ obrażeń, ignoruje obronę"),
+]
+
+
+def _uzyj_przedmiotu_bojowego(gracz: Gracz, stan: dict, klucz: str) -> bool:
+    zapas = getattr(gracz, "przedmioty", None) or {}
+    if zapas.get(klucz, 0) <= 0:
+        print("  Nie masz tego przedmiotu.")
+        return False
+    zapas[klucz] -= 1
+    dlugo = 2 if talenty.ma(gracz, "kamien_filozoficzny") else 1
+    if klucz == "bandaz":
+        stan["gracz_krwawienie_tury"] = 0
+        msg = przetrwanie.wylecz_jedna(gracz, 3 if talenty.ma(gracz, "polowy_medyk") else 2)
+        print("  🩹  Opatrujesz się. Krwawienie ustaje." + (f"\n{msg}" if msg else ""))
+    elif klucz == "eliksir_sily":
+        stan["eliksir_sily_tury"] = 3 * dlugo
+        print(f"  💪  Mięśnie płoną siłą: atak +40% przez {3 * dlugo} tury.")
+    elif klucz == "eliksir_ognia":
+        stan["odpornosc_ognia"] = True
+        print("  🧯  Skóra chłodnieje. Ogień zrani cię o połowę słabiej.")
+    elif klucz == "olej_ognisty":
+        stan["olej_tury"] = 3 * dlugo
+        print(f"  🛢  Nacierasz ostrze olejem i podpalasz. Płonie przez {3 * dlugo} tury.")
+    elif klucz == "bomba":
+        wrog = stan.get("_wrog")
+        if wrog is not None:
+            obr = int(50 * (1 + 0.10 * (gracz.poziom - 1)))
+            wrog.hp -= obr
+            print(f"  💣  Bomba wybucha! {wrog.nazwa} traci {obr} HP.")
+            _podpal(wrog, stan, 1)
+    return True
 
 
 def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
     """Obsługuje turę przeciwnika z uwzględnieniem aktywnych efektów."""
 
-    # Trucizna na wroga
+    # Trucizna na wroga (odporność ×0.5, słabość ×1.5)
     if stan["wrog_trucizna_tury"] > 0:
-        dam = stan["wrog_trucizna_obrazenia"]
+        dam = max(1, int(stan["wrog_trucizna_obrazenia"] * mnoznik_typu(przeciwnik, "trucizna")))
         przeciwnik.hp = max(0, przeciwnik.hp - dam)
         stan["wrog_trucizna_tury"] -= 1
         print(
@@ -1440,13 +1665,23 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
         if not przeciwnik.zyje():
             return
 
-    # Ogłuszenie wroga
-    if stan["wrog_ogluszone_tury"] > 0:
-        stan["wrog_ogluszone_tury"] -= 1
-        print(f"  ❄  {przeciwnik.nazwa} jest ogłuszony i pomija turę!")
+    if _plomienie_i_regeneracja(przeciwnik, stan):
         return
 
-    if _specjal_wroga(gracz, przeciwnik, stan):
+    # Ogłuszenie wroga — przerywa też zapowiedziany ruch
+    if stan["wrog_ogluszone_tury"] > 0:
+        stan["wrog_ogluszone_tury"] -= 1
+        if stan.get("zapowiedz"):
+            print(f"  ❄  Ogłuszenie przerywa to, co {przeciwnik.nazwa} szykował!")
+            stan["zapowiedz"] = None
+        print(f"  ❄  {przeciwnik.nazwa} jest ogłuszony i pomija turę!")
+        _po_turze_wroga(gracz, przeciwnik, stan)
+        return
+
+    _szal_bossa(przeciwnik, stan)
+    if stan.get("zapowiedz"):
+        _wykonaj_zapowiedz(gracz, przeciwnik, stan)
+        _po_turze_wroga(gracz, przeciwnik, stan)
         return
     if stan["brak_obrony_tura"]:
         efektywna_obrona = 0
@@ -1464,6 +1699,8 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
     )
 
     obrazenia = _oblicz_obrazenia(przeciwnik.atak, efektywna_obrona)
+    if stan.get("garda"):
+        obrazenia = max(1, obrazenia // 2)
 
     # Osłabienie (Klątwa śmierci)
     if stan["wrog_oslabienie_tury"] > 0:
@@ -1475,6 +1712,7 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
         stan["unik_aktywny"] = False
         if random.random() < stan.get("unik_szansa", 0.75):
             print(f"  💨  Uniknąłeś ataku {przeciwnik.nazwa}!")
+            _po_turze_wroga(gracz, przeciwnik, stan)
             return
         print(f"  💨  Próbowałeś uniknąć, ale {przeciwnik.nazwa} trafił!")
 
@@ -1484,12 +1722,14 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
             f"  Unikasz ataku {przeciwnik.nazwa}"
             f" w postaci {stan.get('forma')}!"
         )
+        _po_turze_wroga(gracz, przeciwnik, stan)
         return
 
     from game.atrybuty import szansa_uniku_zrecznosc
-    pasywny_unik = szansa_uniku_zrecznosc(gracz)
+    pasywny_unik = 0.0 if przetrwanie.bez_uniku(gracz) else szansa_uniku_zrecznosc(gracz)
     if pasywny_unik > 0 and random.random() < pasywny_unik:
         print(f"  💨  Zręczność! Unikasz ciosu {przeciwnik.nazwa}!")
+        _po_turze_wroga(gracz, przeciwnik, stan)
         return
 
     # Tarcza runowa
@@ -1505,17 +1745,23 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
 
     obrazenia = _przejmij_obrazenia_sluga(stan, obrazenia, przeciwnik.nazwa)
     if obrazenia <= 0:
+        _po_turze_wroga(gracz, przeciwnik, stan)
         return
 
     gracz.hp = max(0, gracz.hp - obrazenia)
 
     if obrazenia > 0:
-        print(f"  💀  {przeciwnik.nazwa} atakuje cię! Otrzymujesz {obrazenia} obrażeń.")
+        garda = "  (garda)" if stan.get("garda") else ""
+        print(f"  💀  {przeciwnik.nazwa} atakuje cię! Otrzymujesz {obrazenia} obrażeń.{garda}")
     else:
         print(f"  🔮  Tarcza runowa całkowicie zablokowała atak {przeciwnik.nazwa}!")
 
     if _sprobuj_ocalic(gracz, stan):
+        _po_turze_wroga(gracz, przeciwnik, stan)
         return
+    rana = przetrwanie.moze_zranic(gracz, obrazenia, stan["jest_boss"])
+    if rana:
+        print(rana)
 
     # Szansa wroga na nałożenie statusu gracza (bossowie 2× szansa)
     szansa_status = 0.20 if stan["jest_boss"] else 0.10
@@ -1536,6 +1782,7 @@ def _tura_przeciwnika(gracz: Gracz, przeciwnik: Przeciwnik, stan: dict) -> None:
             else:
                 stan["gracz_ogluszone_tury"] = 1
                 print(f"  ❄  {przeciwnik.nazwa} ogłuszył cię! Pomijasz następną turę!")
+    _po_turze_wroga(gracz, przeciwnik, stan)
 
 
 # ------------------------------------------------------------------ #
@@ -1577,6 +1824,9 @@ def _zakonczenie_wygrana(gracz: Gracz, przeciwnik: Przeciwnik, jest_boss: bool =
         print("  🧪  Szczęśliwy łup: +1 mikstura!")
     _drop_po_walce(gracz, jest_boss)
     _drop_surowcow(gracz, jest_boss)
+    from game.rzemioslo import lup_skladnikow
+    for msg in lup_skladnikow(gracz, przeciwnik, jest_boss):
+        print(msg)
     for msg in komunikaty:
         print(f"  {msg}")
     nacisnij_enter()
@@ -1604,6 +1854,7 @@ def przeprowadz_walke(
             przeciwnik = losuj_przeciwnika(gracz.poziom, biom, mapa_gen, tryb)
     stan = _nowy_stan_walki()
     stan["jest_boss"] = jest_boss
+    stan["_wrog"] = przeciwnik
 
     from game.ikony import etykieta_biomu, wrog
 

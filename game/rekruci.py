@@ -152,6 +152,7 @@ _ETYKIETY_ZAJEC = {
     "zbiory": "🌲 zbiory",
     "handel": "💰 handel",
     "rzemioslo": "🔧 rzemiosło",
+    "obrona": "🛡 obrona osady",
 }
 
 
@@ -439,6 +440,7 @@ def _menu_rekruta(gracz: Gracz, wpis: dict) -> None:
     print("  [2]  🌲  Przydziel do zbiorów")
     print("  [3]  💰  Przydziel do handlu")
     print("  [4]  🔧  Przydziel do rzemiosła")
+    print("  [6]  🛡  Przydziel do obrony osady")
     print("  [5]  🚪  Zwolnij (nie wróci)")
     print("  [0]  ↩  Wróć\n")
     wybor = input("  Twój wybór: ").strip()
@@ -450,6 +452,8 @@ def _menu_rekruta(gracz: Gracz, wpis: dict) -> None:
         print(_ustaw_zajecie(gracz, wpis, "handel"))
     elif wybor == "4":
         print(_ustaw_zajecie(gracz, wpis, "rzemioslo"))
+    elif wybor == "6":
+        print(_ustaw_zajecie(gracz, wpis, "obrona"))
     elif wybor == "5":
         _lista(gracz).remove(wpis)
         gracz.statystyki["zrekrutowani"] = len(_lista(gracz))

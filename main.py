@@ -8,7 +8,14 @@ Uruchomienie:
 
 import sys
 
-from game import ekran
+from game import dziedzictwo, ekran, kalendarz, przetrwanie
+from game.handel import menu_handlu
+from game.mysli import menu_mysli
+from game.obrona import menu_obrony, opis_zagrozenia
+from game.osada import bilans_zywnosci, ikona_morale, osadnicy, srednie_morale
+from game.rozmowy import menu_spraw
+from game.rzemioslo import menu_rzemiosla
+from game.talenty import menu_talentow, punkty as punkty_talentow
 from game.player import Gracz
 from game.shop import otworz_sklep, otworz_kuznia
 from game.skills import PODKLASY, otworz_ksiege_umiejetnosci
@@ -333,6 +340,20 @@ def menu_obozu(gracz: Gracz) -> str:
     print(f"  Reputacja: {etykieta_karmy(gracz)}")
     print(f"  Obóz: {opis_obozu(gracz)}")
     print(f"  {linia_surowcow(gracz)}")
+    zywnosc = gracz.surowce.get("zywnosc", 0)
+    print(f"  📅 {kalendarz.opis_daty(gracz)}   🍖 {zywnosc} ({bilans_zywnosci(gracz):+d}/dz.)"
+          f"   ⚔ {opis_zagrozenia(gracz)}")
+    if osadnicy(gracz):
+        m = srednie_morale(gracz)
+        print(f"  Osadnicy: {len(osadnicy(gracz))}  morale {ikona_morale(m)} {m:.0f}")
+    zdrowie = przetrwanie.opis_stanu(gracz)
+    if zdrowie != "zdrowy":
+        print(f"  🩹 Stan: {zdrowie}")
+    wiesci = rozlicz_powrot_do_obozu(gracz)
+    if wiesci:
+        print("\n  📰  WIEŚCI Z OSADY")
+        for msg in wiesci:
+            print(msg)
     towar = etykieta_towarzysza(gracz)
     if towar:
         print(f"  Towarzysz walki: {towar}")
@@ -341,16 +362,17 @@ def menu_obozu(gracz: Gracz) -> str:
     pkt_u = getattr(gracz, "punkty_umiejetnosci", 0)
     if pkt_u > 0:
         print(f"  ⭐  Masz {pkt_u} punkt(y) umiejętności — otwórz księgę [10].")
+    if punkty_talentow(gracz) > 0:
+        print(f"  ⭐  Masz {punkty_talentow(gracz)} punkt(y) talentów — drzewko [20].")
+    if gracz.sprawy:
+        print(f"  📜  Czekają sprawy osady: {len(gracz.sprawy)} — [22].")
     print()
     print("  [1]  🗺  Wyrusz na przygodę")
     if ma_budynek(gracz, "sklep"):
         print("  [2]  🏪  Sklep")
     else:
         print("  [2]  🏪  Sklep  (zbuduj w [11])")
-    if ma_budynek(gracz, "dom"):
-        print("  [3]  😴  Odpoczynek w domu (+80 HP, 5 złota)")
-    else:
-        print("  [3]  🔥  Odpoczynek przy palenisku (+30 HP, 10 złota)")
+    print(f"  [3]  😴  Odpoczynek — dzień w obozie (+{_leczenie_odpoczynku(gracz)} HP, pełna mana, rany goją się szybciej)")
     print("  [4]  🎒  Ekwipunek")
     print("  [5]  📜  Tablica questów")
     print("  [6]  🏆  Osiągnięcia")
@@ -363,7 +385,13 @@ def menu_obozu(gracz: Gracz) -> str:
         print("  [13] 🐴  Stajnie (szybka podróż)")
     print("  [14] 🤝  Drużyna (rekruci)")
     print("  [15] 🪓  Praca w obozie")
-    print("  [16] 🛖  Osada (chaty, osadnicy, warsztat)")
+    print("  [16] 🛖  Osada (osadnicy, zawody, zamówienia)")
+    print("  [17] ⚗  Rzemiosło i alchemia")
+    print("  [18] 🛡  Obrona osady")
+    print("  [19] 💰  Handel i karawany")
+    print("  [20] 🌳  Drzewko talentów" + ("  ⭐" if punkty_talentow(gracz) > 0 else ""))
+    print("  [21] 🧠  Gabinet myśli")
+    print(f"  [22] 📜  Sprawy osady ({len(gracz.sprawy)})")
     gwiazdka_atr = "  ⭐" if getattr(gracz, "punkty_atrybutow", 0) > 0 else ""
     print(f"  [7]  📋  Karta postaci (atrybuty, testy){gwiazdka_atr}")
     if gracz.podklasa_dostepna:
@@ -373,40 +401,54 @@ def menu_obozu(gracz: Gracz) -> str:
     return input("  Twój wybór: ").strip()
 
 
+def _leczenie_odpoczynku(gracz: Gracz) -> int:
+    from game.oboz import poziom_budynku
+    return 30 + 25 * poziom_budynku(gracz, "dom") + 15 * poziom_budynku(gracz, "lecznica")
+
+
 def odpoczynek(gracz: Gracz) -> None:
-    """Gracz odpoczywa. Dom w obozie leczy mocniej i taniej.
+    """Dzień odpoczynku w obozie.
 
-    Odpoczynek zabiera dzień — bez tego pełne HP i mana kosztowałyby 5 złota
-    w nieskończoność i cała ekonomia mikstur byłaby dekoracją.
+    Kosztuje dzień — a dzień to jedzenie z magazynu, utrzymanie osady
+    i rosnące zagrożenie. (Wcześniej kosztował złoto, a targ płacił
+    więcej niż odpoczynek kosztował — siedzenie w obozie było zyskiem.)
     """
-    w_domu = ma_budynek(gracz, "dom")
-    koszt = 5 if w_domu else 10
-    lecz = 80 if w_domu else 30
-    if gracz.zloto < koszt:
-        print(f"\n  Nie masz wystarczająco złota (potrzebujesz {koszt} szt.).")
-        nacisnij_enter()
-        return
-
     poprzednie = gracz.hp
-    gracz.zloto -= koszt
-    gracz.hp = min(gracz.hp + lecz, gracz.max_hp)
-    faktyczne = gracz.hp - poprzednie
-    miejsce = "w domu" if w_domu else "przy palenisku"
-    print(f"\n  😴  Odpocząłeś {miejsce} i odzyskałeś {faktyczne} HP. (-{koszt} złota)")
+    gracz.hp = min(gracz.hp + _leczenie_odpoczynku(gracz), gracz.max_hp)
+    print(f"\n  😴  Odpoczywasz i odzyskujesz {gracz.hp - poprzednie} HP.")
     if gracz.max_mana > 0:
         gracz.mana = gracz.max_mana
         print(f"  🔮  Mana uzupełniona do {gracz.max_mana}!")
-
-    dodaj_czas(gracz, 1)
-    print("  🌙  Minął dzień.")
-    for msg in rozlicz_powrot_do_obozu(gracz):
+    from game.swiat import minij_dni
+    for msg in minij_dni(gracz, 1, odpoczynek=True):
         print(msg)
+    print("  🌙  Minął dzień.")
     nacisnij_enter()
 
 
 # ------------------------------------------------------------------ #
 #  Pętla nowej gry                                                     #
 # ------------------------------------------------------------------ #
+
+def _po_smierci(gracz: Gracz) -> Gracz | None:
+    """Upadek bohatera: omdlenie (normalny) albo dziedzic (hardcore). None = koniec gry."""
+    nastepca = dziedzictwo.po_smierci(gracz)
+    if nastepca is None:
+        wyczysc()
+        wyswietl_linie("═")
+        print("  KONIEC GRY")
+        wyswietl_linie("═")
+        print(f"\n  {gracz.imie} poległ, a ród wygasł...")
+        wyswietl_linie()
+        _pokaz_statystyki_konca(gracz)
+        usun_zapis()
+        print("  ☠  Zapis usunięty.\n")
+        nacisnij_enter()
+        return None
+    ekran.ustaw_gracza(nastepca)
+    zapisz_gre(nastepca)
+    return nastepca
+
 
 def nowa_gra(gracz: Gracz | None = None) -> None:
     """Główna pętla rozgrywki."""
@@ -423,26 +465,21 @@ def nowa_gra(gracz: Gracz | None = None) -> None:
         if nowe_questy:
             nacisnij_enter()
 
+        if not gracz.zyje():
+            nastepca = _po_smierci(gracz)
+            if nastepca is None:
+                return
+            gracz = nastepca
+            continue
+
         wybor = menu_obozu(gracz)
 
         if wybor == "1":
             wynik = wyrusz_w_podroz(gracz)
-            # Autosave po każdej wyprawie
-            zapisz_gre(gracz)
             if wynik == "przegrana":
-                wyczysc()
-                wyswietl_linie("═")
-                print("  KONIEC GRY")
-                wyswietl_linie("═")
-                print(f"\n  {gracz.imie} poległ w walce...")
-                wyswietl_linie()
-                _pokaz_statystyki_konca(gracz)
-                # Hardcore: usuń zapis po śmierci
-                if getattr(gracz, "tryb_trudnosci", "normalny") == "hardcore":
-                    usun_zapis()
-                    print("  ☠  HARDCORE — zapis usunięty.\n")
-                    nacisnij_enter()
-                return
+                gracz.hp = 0
+                continue
+            zapisz_gre(gracz)
 
         elif wybor == "2":
             if ma_budynek(gracz, "sklep"):
@@ -502,6 +539,29 @@ def nowa_gra(gracz: Gracz | None = None) -> None:
 
         elif wybor == "8" and gracz.podklasa_dostepna:
             _wybierz_podklase_dialog(gracz)
+
+        elif wybor == "17":
+            menu_rzemiosla(gracz)
+            zapisz_gre(gracz)
+
+        elif wybor == "18":
+            menu_obrony(gracz)
+
+        elif wybor == "19":
+            menu_handlu(gracz)
+            zapisz_gre(gracz)
+
+        elif wybor == "20":
+            menu_talentow(gracz)
+            zapisz_gre(gracz)
+
+        elif wybor == "21":
+            menu_mysli(gracz)
+            zapisz_gre(gracz)
+
+        elif wybor == "22":
+            menu_spraw(gracz)
+            zapisz_gre(gracz)
 
         elif wybor == "0":
             zapisz_gre(gracz)

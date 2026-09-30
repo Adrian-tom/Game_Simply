@@ -680,7 +680,12 @@ def dialog_kupiec(gracz=None) -> None:
 
 
 def dialog_kowal(gracz=None) -> None:
-    _pokaz_dialog("kowal", gracz)
+    """Grimbold rozmawia w silniku rozmów (głosy, białe/czerwone testy)."""
+    if gracz is None:
+        _pokaz_dialog("kowal", gracz)
+        return
+    from game.rozmowy import prowadz
+    prowadz(gracz, "grimbold")
 
 
 def dialog_kaplan(gracz=None) -> None:
