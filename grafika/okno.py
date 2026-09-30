@@ -151,10 +151,13 @@ class Konsola:
         if self.pisarz.szerokosc(linia) <= szer:
             return [linia]
         wcięcie = len(linia) - len(linia.lstrip(" "))
-        slowa = linia.split(" ")
+        slowa = linia.lstrip(" ").split(" ")
         wiersze, biezacy = [], ""
-        for slowo in slowa:
-            proba = f"{biezacy} {slowo}" if biezacy else slowo
+        for i, slowo in enumerate(slowa):
+            if i == 0:
+                biezacy = " " * wcięcie + slowo
+                continue
+            proba = f"{biezacy} {slowo}"
             if biezacy and self.pisarz.szerokosc(proba) > szer:
                 wiersze.append(biezacy)
                 biezacy = " " * (wcięcie + 2) + slowo
@@ -320,6 +323,7 @@ class Okno:
                 self.mapa, gracz.mapa_pola, self.t,
                 region=(gracz.region_x, gracz.region_y),
                 gracz_xy=(gracz.mapa_x, gracz.mapa_y), klasa=gracz.klasa,
+                osada=_osada_do_rysunku(gracz),
             )
         else:
             self.scena.rysuj(self.mapa, self._pola_tytulowe(), self.t, region=_REGION_TYTULOWY,
@@ -375,18 +379,35 @@ class Okno:
             pasek(self.ekran, x + 56, y, 300, g.mana / max(1, g.max_mana), (70, 110, 220))
             self._napis(f"{g.mana}/{g.max_mana}", x + 368, y - 2)
 
-        y += 32
+        from game import kalendarz, przetrwanie
+        from game.obrona import opis_zagrozenia
+        from game.osada import bilans_zywnosci, ikona_morale, osadnicy, srednie_morale
+
+        y += 28
         biom = g.aktualny_biom or "—"
-        self._napis(f"Dzień {g.czas}  ·  region [{g.region_x}, {g.region_y}] poz. {g.mapa_gen}  ·  {biom}", x, y)
-        y += 22
-        self._napis(f"Reputacja: {etykieta_karmy(g)}", x, y, PRZYGASZONY)
-        y += 22
+        self._napis(f"{kalendarz.opis_daty(g)}  ·  region [{g.region_x}, {g.region_y}] poz. {g.mapa_gen}  ·  {biom}", x, y)
+        y += 21
+        prowiant = f"  ·  prowiant {g.prowiant}" if not getattr(g, "w_obozie", True) else ""
+        zagrozenie = opis_zagrozenia(g)
+        kolor = (236, 120, 100) if "NAJAZD" in zagrozenie or "najazd" in zagrozenie else PRZYGASZONY
+        self._napis(f"🍖 {g.surowce.get('zywnosc', 0)} ({bilans_zywnosci(g):+d}/dz.){prowiant}  ·  ⚔ {zagrozenie}", x, y, kolor)
+        y += 21
+        m = srednie_morale(g)
+        zdrowie = przetrwanie.opis_stanu(g)
+        self._napis(f"Osada: {len(osadnicy(g))} os. {ikona_morale(m)} {m:.0f}  ·  {etykieta_karmy(g)}  ·  {zdrowie}",
+                    x, y, PRZYGASZONY)
+        y += 21
         self._napis(linia_surowcow(g), x, y, PRZYGASZONY)
         if ekran.skroty:
             podp = "strzałki: ruch  ·  spacja: zbadaj  ·  F2: noc"
         else:
             podp = "kliknij opcję albo wpisz numer  ·  F2: noc  ·  F11: pełny ekran"
         self._napis(podp, x, r.bottom - 30, (120, 112, 104))
+
+
+def _osada_do_rysunku(gracz) -> tuple[int, int, int]:
+    from game.oboz import poziom_budynku
+    return (int(getattr(gracz, "chaty", 0) or 0), poziom_budynku(gracz, "palisada"), poziom_budynku(gracz, "wieza"))
 
 
 def uruchom_w_oknie(funkcja) -> None:

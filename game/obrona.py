@@ -33,7 +33,7 @@ def sila_obrony(gracz: "Gracz") -> int:
     from game.osada import CECHY_OSADNIKOW, mnoznik_pracy, osadnicy
     from game.rekruci import REKRUCI
 
-    sila = 15 * poziom_budynku(gracz, "palisada") + 10 * poziom_budynku(gracz, "wieza")
+    sila = 18 * poziom_budynku(gracz, "palisada") + 10 * poziom_budynku(gracz, "wieza")
     for o in osadnicy(gracz):
         if o["zajecie"] == "straznik" and not o.get("chory"):
             sila += 6 * mnoznik_pracy(gracz, o) * CECHY_OSADNIKOW.get(o["cecha"], {}).get("straz", 1.0)
@@ -48,11 +48,11 @@ def sila_obrony(gracz: "Gracz") -> int:
 
 def _wzrost_zagrozenia(gracz: "Gracz") -> float:
     wartosc_skarbca = gracz.zloto + sum(_magazyn(gracz).values()) * 2
-    return (2.0 + gracz.czas / 60) * kalendarz.pora(gracz)["zagrozenie"] * (1 + min(0.6, wartosc_skarbca / 1500))
+    return (1.4 + gracz.czas / 70) * kalendarz.pora(gracz)["zagrozenie"] * (1 + min(0.6, wartosc_skarbca / 1500))
 
 
 def sila_najazdu(gracz: "Gracz") -> int:
-    return int((22 + gracz.czas * 0.45 + 12 * int(getattr(gracz, "najazdy", 0) or 0)) * random.uniform(0.85, 1.15))
+    return int((16 + gracz.czas * 0.35 + 6 * int(getattr(gracz, "najazdy", 0) or 0)) * random.uniform(0.85, 1.15))
 
 
 def opis_zagrozenia(gracz: "Gracz") -> str:
@@ -272,7 +272,7 @@ def menu_obrony(gracz: "Gracz") -> None:
     wyswietl_linie("═")
     print(f"\n  Stan: {opis_zagrozenia(gracz)}")
     print(f"  Siła obrony: {sila_obrony(gracz)}")
-    print(f"    🪵 palisada poz. {poziom_budynku(gracz, 'palisada')} (+15/poziom)")
+    print(f"    🪵 palisada poz. {poziom_budynku(gracz, 'palisada')} (+18/poziom)")
     print(f"    🗼 wieża poz. {poziom_budynku(gracz, 'wieza')} (+10/poziom, wcześniejsze ostrzeżenie)")
     straz = [o for o in osadnicy(gracz) if o["zajecie"] == "straznik"]
     print(f"    🛡 strażnicy: {len(straz)}" + (" — " + ", ".join(f"{o['imie']} ({o['cecha']})" for o in straz) if straz else ""))

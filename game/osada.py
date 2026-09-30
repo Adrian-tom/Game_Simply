@@ -350,6 +350,10 @@ def dzien_osady(gracz: Gracz) -> tuple[list[str], list[str]]:
         gracz.narzedzia = narzedzia - zuzyte
         kronika.append(f"  🔧  Zużyło się {zuzyte} kompletów narzędzi (zostało {gracz.narzedzia}).")
 
+    # Dziesięcina: zadowoleni osadnicy dokładają się do wspólnej kasy.
+    zadowoleni = sum(1 for o in lista if o.get("morale", 0) >= 40 and not o.get("chory"))
+    _plus(bilans, "zloto", _zaokraglij(0.5 * zadowoleni))
+
     if ma_budynek(gracz, "targ"):
         stragany = 2 * poziom_budynku(gracz, "targ") * (1.5 if talenty.ma(gracz, "lichwiarz") else 1.0)
         _plus(bilans, "zloto", _zaokraglij(stragany))

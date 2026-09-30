@@ -141,7 +141,7 @@ BUDYNKI: dict[str, dict] = {
     },
     "palisada": {
         "nazwa": "Palisada", "ikona": "🪵", "max": 3, "utrzymanie": 0,
-        "opis": "Obrona osady +15 za poziom.",
+        "opis": "Obrona osady +18 za poziom.",
         "koszt": {"drewno": 15, "zloto": 10},
     },
     "wieza": {

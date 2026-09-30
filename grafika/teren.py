@@ -215,6 +215,46 @@ def budynek(rodzaj: str, s: int) -> pygame.Surface:
     return obrys(pow_)
 
 
+def osada_obozu(chaty: int, palisada: int, wieza: int) -> pygame.Surface:
+    """Obóz, który rośnie razem z osadą: namiot, chaty, palisada, wieża.
+
+    Punkt zaczepienia = środek pola to (26, 30) na zwróconej powierzchni.
+    """
+    pow_ = pygame.Surface((52, 44), pygame.SRCALPHA)
+    cx, cy = 26, 30
+    miejsca = [(-13, -3), (13, -3), (-19, 2), (19, 2), (-8, 5), (9, 6), (-2, -7), (4, -8)]
+    elementy = []
+    for i in range(min(chaty, len(miejsca))):
+        dx, dy = miejsca[i]
+        elementy.append((dy, "chata", dx, i))
+    elementy.append((0, "namiot", 0, 0))
+    if wieza:
+        elementy.append((-6, "wieza", -20, 0))
+    for dy, rodzaj, dx, i in sorted(elementy):
+        if rodzaj == "chata":
+            chatka = pygame.Surface((14, 16), pygame.SRCALPHA)
+            domek(chatka, 7, 13, 5, 4, DREWNO, DACHOWKA if i % 3 else ZLOTO, 40 + i, "deski", dach_h=4)
+            pow_.blit(obrys(chatka), (cx + dx - 7, cy + dy - 13))
+        elif rodzaj == "namiot":
+            n = namiot()
+            pow_.blit(n, (cx - n.get_width() // 2 - 2, cy + 4 - n.get_height()))
+        else:
+            wiez = pygame.Surface((12, 26), pygame.SRCALPHA)
+            domek(wiez, 6, 23, 4, 14 + 2 * wieza, KAMIEN, LUPEK, 77, "cegla", dach_h=5)
+            pow_.blit(obrys(wiez), (cx + dx - 6, cy + dy - 23))
+    if palisada:
+        for i in range(22):
+            kat = i / 22 * math.tau
+            px = cx + int(math.cos(kat) * 24)
+            py = cy + int(math.sin(kat) * 11)
+            wys = 4 + palisada
+            if 0.15 * math.pi < kat < 0.85 * math.pi and i % 5 == 0:
+                continue  # brama od frontu
+            pow_.fill((58, 38, 26), (px - 1, py - wys, 2, wys))
+            pow_.set_at((px, py - wys), (120, 86, 52))
+    return pow_
+
+
 def jaskinia(s: int) -> pygame.Surface:
     pow_ = pygame.Surface((30, 20), pygame.SRCALPHA)
     pow_.blit(kula(14, 9, KAMIEN, s, 0.3), (0, 1))

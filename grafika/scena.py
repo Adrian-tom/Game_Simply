@@ -69,6 +69,11 @@ class ScenaMapy:
             self._dekor[klucz] = teren.dekoracje(biom, punkt, self._ziarno(region, x, y))
         return self._dekor[klucz]
 
+    def _osada(self, osada):
+        if osada not in self._dekor:
+            self._dekor[osada] = teren.osada_obozu(*osada)
+        return self._dekor[osada]
+
     def _gracz(self, klasa):
         if klasa not in self._sprite_gracza:
             self._sprite_gracza[klasa] = teren.sprite_gracza(klasa)
@@ -77,11 +82,15 @@ class ScenaMapy:
     # -------------------------------------------------------------- #
     def rysuj(self, cel: pygame.Surface, pola, t: float, region=(0, 0),
               gracz_xy: tuple[int, int] | None = None, klasa: str | None = None,
-              wszystko_odkryte: bool = False) -> None:
+              wszystko_odkryte: bool = False, osada: tuple[int, int, int] | None = None) -> None:
         """Rysuje region na powierzchni SZER×WYS."""
         cel.blit(self._niebo[self.zmierzch], (0, 0))
         swiatla = []
         pozycja_gracza = None
+        karczowisko = None
+        if osada and osada[0] >= 3:
+            karczowisko = next(((x, y) for y, w in enumerate(pola) for x, p in enumerate(w)
+                                if p.get("punkt") == "obóz"), None)
         klatka = int(t * 3) % 3
         n = len(pola)
         for suma in range(2 * n - 1):  # od tyłu do przodu — bliższe zasłaniają dalsze
@@ -102,7 +111,14 @@ class ScenaMapy:
                 if tu_gracz:
                     cel.blit(self._obwodka, (sx - TW // 2, sy - h))
                 punkt = pole.get("punkt")
-                for spr, dx, dy in self._dekoracje(region, x, y, biom, punkt):
+                dekoracje = self._dekoracje(region, x, y, biom, punkt)
+                if karczowisko and not punkt and max(abs(x - karczowisko[0]), abs(y - karczowisko[1])) <= 1:
+                    dekoracje = []  # osada wykarczowała okolicę obozu
+                if punkt == "obóz" and osada and any(osada):
+                    widok = self._osada(osada)
+                    cel.blit(widok, (srodek[0] - 26, srodek[1] - 30))
+                    dekoracje = [d for d in dekoracje if d[0] is None]
+                for spr, dx, dy in dekoracje:
                     if spr is None:
                         teren.ognisko(cel, srodek[0] + dx, srodek[1] + dy, t)
                         swiatla.append(("ogien", srodek[0] + dx, srodek[1] + dy - 2))

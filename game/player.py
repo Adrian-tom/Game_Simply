@@ -112,7 +112,7 @@ class Gracz:
         self.rangi_umiejetnosci: dict[str, int] = {k: 1 for k in self.umiejetnosci}
         self.punkty_umiejetnosci = 0
         self.surowce: dict[str, int] = {
-            "zywnosc": 25,
+            "zywnosc": 30,
             "drewno": 3, "kamien": 2, "ziola": 1, "skora": 0, "ruda": 0,
         }
         self.budynki: set[str] = set()
@@ -120,8 +120,12 @@ class Gracz:
         self.zbieracze_w_pracy = False
         self.czas: int = 0
         self.czas_wyjscia: int = 0
-        self.chaty: int = 0
-        self.osadnicy: list[dict] = []
+        # Obóz startowy: dwie chaty i dwoje ludzi, którzy uwierzyli w twój ogień.
+        self.chaty: int = 2
+        self.osadnicy: list[dict] = [
+            {"imie": "Olek", "zajecie": "drwal", "morale": 60.0, "cecha": "pracowity", "dosw": {}, "chory": 0},
+            {"imie": "Jagna", "zajecie": "mysliwy", "morale": 60.0, "cecha": "wesoly", "dosw": {}, "chory": 0},
+        ]
         self.watki_npc: dict[str, int] = {}
         # --- przetrwanie ---
         self.prowiant: int = 0
