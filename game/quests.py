@@ -222,7 +222,10 @@ def sprawdz_questy(gracz) -> list[str]:
 
 def pokaz_tablice_questow(gracz) -> None:
     """Wyświetla interaktywną tablicę questów w obozie."""
+    from game.utils import wyczysc
+
     while True:
+        wyczysc()
         wyswietl_linie("═")
         print("  📜  TABLICA QUESTÓW\n")
 
@@ -269,7 +272,8 @@ def pokaz_tablice_questow(gracz) -> None:
             print("  Wszystkie questy zostały ukończone lub przyjęte. Gratulacje!")
             print()
 
-        print("  Wpisz numer questa, aby go przyjąć (lub [0] aby wyjść):\n")
+        print("  Wpisz numer questa, aby go przyjąć.")
+        print("  [0] Wróć\n")
         wybor = input("  Twój wybór: ").strip()
 
         if wybor == "0":

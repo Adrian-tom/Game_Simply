@@ -1842,9 +1842,18 @@ def przeprowadz_walke(
     jest_boss: bool = False,
     przeciwnik: Przeciwnik | None = None,
 ) -> str:
+    """Główna pętla walki. Zwraca: 'wygrana', 'przegrana' lub 'ucieczka'.
+
+    Na czas walki okno graficzne (jeśli jest) rysuje arenę zamiast mapy.
     """
-    Główna pętla walki. Zwraca: 'wygrana', 'przegrana' lub 'ucieczka'.
-    """
+    from game import ekran
+    try:
+        return _walka(gracz, biom, jest_boss, przeciwnik)
+    finally:
+        ekran.koniec_walki()
+
+
+def _walka(gracz: Gracz, biom: str | None, jest_boss: bool, przeciwnik: Przeciwnik | None) -> str:
     mapa_gen = getattr(gracz, "mapa_gen", 1)
     tryb = getattr(gracz, "tryb_trudnosci", "normalny")
     if przeciwnik is None:
@@ -1855,6 +1864,8 @@ def przeprowadz_walke(
     stan = _nowy_stan_walki()
     stan["jest_boss"] = jest_boss
     stan["_wrog"] = przeciwnik
+    from game import ekran
+    ekran.ustaw_walke(gracz, przeciwnik, stan)
 
     from game.ikony import etykieta_biomu, wrog
 

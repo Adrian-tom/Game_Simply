@@ -21,6 +21,20 @@ gracz: Gracz | None = None
 skroty: dict[str, str] = {}
 
 
+# Trwająca walka (gracz, wrog, stan) — okno rysuje wtedy arenę zamiast mapy.
+walka: dict | None = None
+
+
+def ustaw_walke(gracz, wrog, stan) -> None:
+    global walka
+    walka = {"gracz": gracz, "wrog": wrog, "stan": stan}
+
+
+def koniec_walki() -> None:
+    global walka
+    walka = None
+
+
 def ustaw_gracza(nowy: Gracz | None) -> None:
     global gracz
     gracz = nowy

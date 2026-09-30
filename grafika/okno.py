@@ -24,6 +24,7 @@ import sys
 import pygame
 
 from game import ekran
+from grafika.arena import ArenaWalki
 from grafika.scena import SZER, WYS, ScenaMapy
 
 SZEROKOSC, WYSOKOSC = 1280, 720
@@ -251,6 +252,7 @@ class Okno:
         self.duzy = Pisarz(24, pogrubiony=True)
         self.konsola = Konsola(pygame.Rect(648, 8, 624, 704), self.pisarz)
         self.scena = ScenaMapy()
+        self.arena = ArenaWalki()
         self.mapa = pygame.Surface((SZER, WYS))
         self._tytul = None
         self._print = builtins.print
@@ -318,7 +320,10 @@ class Okno:
     def rysuj(self, wpisywane: str | None = None) -> None:
         self.ekran.fill(TLO)
         gracz = ekran.gracz
-        if gracz is not None and getattr(gracz, "mapa_pola", None):
+        etykiety_walki = None
+        if ekran.walka is not None:
+            etykiety_walki = self.arena.rysuj(self.mapa, ekran.walka, self.t)
+        elif gracz is not None and getattr(gracz, "mapa_pola", None):
             self.scena.rysuj(
                 self.mapa, gracz.mapa_pola, self.t,
                 region=(gracz.region_x, gracz.region_y),
@@ -331,6 +336,8 @@ class Okno:
         pygame.transform.scale(self.mapa, (SZER * SKALA_MAPY, WYS * SKALA_MAPY),
                                self.ekran.subsurface((0, 0, SZER * SKALA_MAPY, WYS * SKALA_MAPY)))
         pygame.draw.rect(self.ekran, RAMKA, (0, 0, SZER * SKALA_MAPY, WYS * SKALA_MAPY), 2)
+        if etykiety_walki:
+            self._etykiety_walki(etykiety_walki)
         hud = pygame.Rect(8, WYS * SKALA_MAPY + 8, SZER * SKALA_MAPY - 16, WYSOKOSC - WYS * SKALA_MAPY - 16)
         ramka(self.ekran, hud)
         if gracz is None:
@@ -340,6 +347,20 @@ class Okno:
         ramka(self.ekran, self.konsola.rect)
         self.konsola.rysuj(self.ekran, wpisywane, self.t, pygame.mouse.get_pos())
         pygame.display.flip()
+
+    def _etykiety_walki(self, e: dict) -> None:
+        w = ekran.walka
+        if not w:
+            return
+        g, wrog = w["gracz"], w["wrog"]
+        s = SKALA_MAPY
+        self._napis(f"{g.imie}  {g.hp}/{g.max_hp}", e["gracz"][0] * s, e["gracz"][1] * s - 6, (240, 220, 200))
+        poziom = f" (poz. {getattr(wrog, 'poziom', 1)})"
+        tekst = f"{wrog.nazwa}{poziom}  {max(0, wrog.hp)}/{wrog.max_hp}"
+        x = min(e["wrog"][0] * s - 40, SZER * s - 12 - self.hud.szerokosc(tekst))
+        self._napis(tekst, max(8, x), e["wrog"][1] * s - 6, (250, 200, 180))
+        for x, y, tekst in e["liczby"]:
+            self._napis(tekst, x * s, y * s, (255, 90, 70), duzy=True)
 
     def _pola_tytulowe(self):
         if self._tytul is None:
