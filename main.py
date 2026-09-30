@@ -354,6 +354,9 @@ def menu_obozu(gracz: Gracz) -> str:
         print("\n  📰  WIEŚCI Z OSADY")
         for msg in wiesci:
             print(msg)
+    from game.doradca import porady
+    for rada in porady(gracz):
+        print(f"  💡  {rada}")
     towar = etykieta_towarzysza(gracz)
     if towar:
         print(f"  Towarzysz walki: {towar}")

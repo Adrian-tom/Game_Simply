@@ -1,31 +1,42 @@
 # Analiza gry — Pro RPG (Game_Simply)
 
-Dokument opisuje architekturę, pętle rozgrywki i systemy. Kod jest w Pythonie 3.10+, wejście: `main.py`.
+Dokument opisuje architekturę, pętle rozgrywki, systemy i balans. Kod: Python 3.10+, wejście `main.py`.
 Logika (`game/`) to czysty stdlib; okno z grafiką pixelart (`grafika/`) używa pygame-ce.
 
 ---
 
 ## 1. Co to jest
 
-RPG fantasy z grafiką pixelart w oknie (albo w trybie tekstowym): obóz jako hub, trwała mapa regionu 9×9 (81 pól), walka turowa, atrybuty w stylu BG3 (k20), osada z ekonomią czasu i miasto z własną siatką.
+**Survival city builder RPG fantasy.** Bohater prowadzi osadę: wyprawy w trwały świat dają surowce,
+łup i doświadczenie, a osada — jedzenie, rzemiosło i ludzi. Czas kosztuje: każdy dzień to jedzenie,
+utrzymanie budynków i rosnące zagrożenie najazdem, a co 90 dni przychodzi zima.
 
-Gracz nie „przechodzi poziomy lochu” — wraca do obozu, rozbudowuje go i wraca w to samo miejsce na mapie. To pętla **wyprawa → łup/czas → obóz → inwestycja**.
+Gatunki spięte w jedną pętlę: survival, city builder, RPG, obrona osady, rzemiosło i alchemia,
+handel i karawany, narracja w stylu Disco Elysium.
+
+**Kampania (akty, finał) jest świadomie odłożona** — gra jest sandboksem z presją czasu.
 
 ---
 
 ## 2. Pętle rozgrywki
 
 ```
-menu główne
-  └─ nowa gra / zapis
-       └─ OBOZ (hub)
-            ├─ wyprawa  →  mapa świata  →  miasto / karczma / walka / zbiory
-            │                └─ powrót: zbiory rekrutów + targ (złoto × dni nieobecności)
-            ├─ rozbudowa, praca, osada, drużyna
-            └─ sklep / kuźnia / questy / karta / księga
+                ┌──────────────── dzień świata (game/swiat.py) ────────────────┐
+                │ pora roku · bohater je/goi rany · osada pracuje, je, pali,  │
+                │ psuje zapasy, płaci utrzymanie · morale, choroby, odejścia │
+                │ · karawany i ceny · myśli dojrzewają · sprawy osady        │
+                │ · zagrożenie → zapowiedź → NAJAZD                           │
+                └───────▲──────────────▲───────────────▲──────────────────────┘
+                        │              │               │
+   wyprawa (1 ruch = 1 dzień)   odpoczynek (1 dzień)   praca (2 dni)
+        │ surowce, żywność, łup, EXP, rzadkie składniki
+        ▼
+   OBÓZ ── rozbudowa · zawody · zamówienia · rzemiosło · karawany · talenty · myśli · sprawy
 ```
 
-**Czas świata** (`gracz.czas`) rośnie przy ruchu na mapie, w mieście i przy pracy. Targ nie płaci za siedzenie w obozie — tylko za nieobecność od wyjścia na wyprawę.
+Krótka pętla: wyprawa → powrót z surowcami → inwestycja w osadę.
+Średnia pętla: pora roku — zbierać latem i jesienią, przetrwać zimę.
+Długa pętla: najazdy rosną z czasem — osada musi rosnąć szybciej niż bandy.
 
 ---
 
@@ -33,170 +44,132 @@ menu główne
 
 | Warstwa | Moduły | Rola |
 |---|---|---|
-| Wejście | `main.py` | Menu, obóz, pętla życia postaci |
-| Stan | `player.py`, `savegame.py` | Postać JSON |
-| Świat | `mapa.py`, `world.py`, `miasto.py`, `mityczne.py` | Ruch, zdarzenia, lokacje |
-| Walka | `combat.py`, `enemy.py`, `skills.py` | Tury, skill-e, bossowie |
-| Postać | `atrybuty.py`, `pochodzenie.py`, `items.py` | k20, cechy, ekwipunek |
-| Hub | `oboz.py`, `osada.py`, `rekruci.py`, `shop.py`, `quests.py` | Budynki, osadnicy, handel |
-| Fabuła | `dialogues.py` | Wątki NPC + rekrutacja |
-| UI | `ikony.py`, `utils.py` | Ikony, czyszczenie ekranu |
-| Łącznik | `ekran.py` | Co pokazać w oknie: bieżąca postać, skróty klawiszy |
-| Grafika | `grafika/okno.py`, `scena.py`, `teren.py`, `piksele.py` | Okno pygame-ce: mapa, HUD, konsola |
+| Wejście | `main.py` | Menu, obóz (22 opcje), śmierć i dziedzictwo |
+| Czas | `swiat.py`, `kalendarz.py` | Dzienny cykl świata — jedyne miejsce, gdzie mija czas |
+| Przetrwanie | `przetrwanie.py` | Prowiant, głód, zimno, rany |
+| Osada | `osada.py`, `oboz.py`, `obrona.py`, `rekruci.py` | Osadnicy, zawody, budynki, najazdy, drużyna |
+| Gospodarka | `rzemioslo.py`, `handel.py`, `shop.py`, `items.py` | Przepisy, karawany, sklep, ekwipunek |
+| Walka | `combat.py`, `enemy.py`, `skills.py` | Tury, garda, zapowiedzi, żywioły, bossowie |
+| Postać | `player.py`, `atrybuty.py`, `pochodzenie.py`, `talenty.py` | k20, cechy, talenty |
+| Narracja | `rozmowy.py`, `mysli.py`, `dialogues.py`, `doradca.py` | Rozmowy DE, gabinet myśli, NPC |
+| Świat | `mapa.py`, `world.py`, `miasto.py`, `mityczne.py` | Regiony, eksploracja, lokacje |
+| Stan | `savegame.py`, `dziedzictwo.py` | Zapis z migracją, ród |
+| Grafika | `grafika/*`, `ekran.py` | Okno pixelart, łącznik z logiką |
 
-Zależności idą „w dół”: `world` woła miasto i osadę; `dialogues` woła rekrutów dopiero w opcji rozmowy (bez cyklu na imporcie).
+Zależności idą „w dół”. Moduły dnia (`swiat`) importują resztę leniwie, żeby nie tworzyć cykli.
 
 ### Okno graficzne
 
-`grafika.okno` podmienia `print`, `input` i `os.system("cls")`, więc **cała istniejąca logika
-działa w oknie bez zmian**: tekst trafia do konsoli po prawej, a `input` czeka na klawisz
-albo klik w opcję `[n]`. Grafika czyta stan z `game.ekran` (bieżąca postać i skróty klawiszy),
-a logika nigdy nie importuje pygame. Dzięki temu ekrany można przenosić na grafikę pojedynczo —
-na razie grafikę ma mapa regionu; walka, dialogi, sklep i miasto są jeszcze tekstem w konsoli.
-
-Mapa to region 9×9 w rzucie izometrycznym (320×240 pikseli, skala ×2). Wrażenie bryły dają:
-jedno źródło światła i cieniowanie po normalnej, rampy 4 kolorów z ditheringiem Bayera,
-kontury 1 px, boki kafli w warstwach skały i — w trybie zmierzchu — mapa światła
-(ogniska, okna, portale, latarnia gracza) mnożona przez scenę.
+`grafika.okno` podmienia `print`, `input` i `os.system("cls")`, więc cała logika działa w oknie bez
+zmian. Grafika czyta stan z `game.ekran`; logika nigdy nie importuje pygame. Mapa rysuje region 9×9
+w rzucie izometrycznym, a obóz rośnie razem z osadą (chaty, palisada, wieża, wykarczowana okolica).
 
 ---
 
-## 4. Mapa i ikony
+## 4. Systemy
 
-Region 9×9 ma biomy (klastry Voronoi) i stałe punkty. Mgła wojny: pole nieodkryte = ❔. Gracz = 👤. Stare zapisy 5×5 są regenerowane; pozycja skacze do środka.
+**Dzień świata.** `swiat.minij_dni(gracz, n)` wywołuje każdy dzień po kolei. Wcześniej targ płacił
+„za nieobecność”, a odpoczynek w obozie przynosił zysk — teraz osada zarabia zawsze, ale też zawsze
+je i płaci. Wieści zwykłe trafiają do kroniki (pokazywanej w obozie), pilne — od razu na ekran.
 
-Katalog ikon jest w `game/ikony.py` (biomy, punkty, kierunki, wrogowie). `mapa.py` rysuje siatkę tymi glifami zamiast liter `T/~/#`. Opisy kierunku na eksploracji pokazują np. `🌲 las, 🍺 karczma`.
+**Pory roku.** Wiosna/lato/jesień/zima po 30 dni. Mnożniki zbiorów (zima 0,4), rolnictwa
+(jesień 1,6, zima 0), opał zimą, zagrożenie (zima 1,3), ceny żywności (zima 1,5).
 
-| System | Przykład |
-|---|---|
-| Biomy | 🌾 równiny, 🌲 las, 🐸 bagna, ⛰ wzgórza, 🏜 kanion, 🏚 ruiny |
-| Budynki świata | 🏕 obóz, 🍺 karczma, ⚒ kuźnia, 🛕 świątynia, 🕳 jaskinia |
-| Rzadkie | ☠ boss, 🌀 portal, 🐉 leże, ☁ wyspa, 🏙 miasto |
-| Hub | 🗺 wyprawa, 🏪 sklep, 🤝 drużyna, 🪓 praca, 🛖 osada |
+**Przetrwanie.** Prowiant: 8 racji + 4 za poziom stajni, zima 2 racje/dzień. Głód: −3 HP × dni,
+−10% ataku za dzień (maks. −40%), nigdy nie zabija poza walką. Zima bez odzienia: −4 HP/dzień.
+Rany: 18% szans po ciosie ≥22% max HP albo przy HP <20% (+12% boss), skutki w walce i testach.
 
-Ikony nie zmieniają mechaniki — skracają odczyt menu i mapy.
+**Osadnicy.** Morale dąży do celu (55 ± jedzenie, zimno, tawerna, karma, cecha, talenty, myśli,
+wydarzenia) o 25% dziennie. Wydajność = 0,6 + morale/125 × cecha × doświadczenie (+10%/★)
+× narzędzia (+25%). Morale <20 → 10% dziennie na odejście. Choroby 0,6%/dzień (×2 głód, ×2 zimno,
+×0,5 lecznica), chory + głód/zimno → 4% dziennie na śmierć. Zadowoleni płacą dziesięcinę 0,5 zł.
 
----
+**Budynki.** 16 typów, poziom n kosztuje koszt × n (od 2. poziomu także deski i żelazo),
+utrzymanie w złocie dziennie. Brak złota na utrzymanie = spadek morale.
 
-## 5. Systemy mechaniczne
+**Obrona.** Zagrożenie +(1,4 + dzień/70) × pora × bogactwo dziennie; przy 100 zapowiedź najazdu
+za 3–4 dni (+2 z wieżą). Siła bandy = 16 + 0,35 × dzień + 6 × liczba najazdów (±15%).
+Obrona = 18 × palisada + 10 × wieża + strażnicy (6 × wydajność × cecha) + drużyna na murach.
+Z bohaterem w obozie: rozmowa z hersztem (okup, perswazja, zastraszanie, oszustwo, głosy
+odsłaniające ranę herszta albo głód bandy) → 3 fale z taktyką → pojedynek.
 
-**Walka.** Tura: atak / przedmioty / umiejętności / ucieczka. Efekt każdej umiejętności to
-osobna funkcja `_sk_*(k: Kontekst)` w rejestrze `HANDLERY_UMIEJETNOSCI`. Krytyki z Zręczności, uniki, statusy (trucizna, krwawienie). Jeden towarzysz walki. Nekromanta: przyzwanie; Druid: forma na kilka tur.
+**Rzemiosło.** 14 przepisów; 6 znanych od startu, reszta do odkrycia (eksperyment z pary składników,
+rozmowy, zwoje kupca). Rzemieślnicy uzupełniają zapasy do celu ustawionego w zamówieniach.
 
-**Atrybuty.** SIL/ZRĘ/KON/INT/MDR/CHA, test k20 vs ST (rośnie lekko z numerem regionu). Nat 20 / nat 1.
+**Handel.** Każda osada handlowa ma normy cen (specjalności), ceny dryfują ±4% dziennie
+i wracają do normy. Karawana: 2 × odległość + 1 dni, ryzyko 6% + 7% × odległość − 5% × eskorta.
 
-**Ekonomia obozu.** Surowce z mapy i zbieraczy → budynki. Chaty (do 6) = miejsca dla osadników (zbiory / handel / rzemiosło). Targ: złoto ∝ dni × (3 + 4×handlarze). Warsztat: mikstury ze ziół podczas nieobecności.
+**Rozmowy.** Graf węzłów z głosami (bierny test: premia + 10 ≥ ST), białymi i czerwonymi testami
+(szansa w %), efektami (karma, złoto, myśli, przepisy, morale, rekrutacja, wynik rozmowy).
+Stan nieudanych testów zapisuje się w `gracz.testy_rozmow` (biały wraca po wzroście premii).
 
-**Karma.** `game/karma.py` czyta wartość zbieraną przez zdarzenia i wątki: ceny ±15%,
-modyfikator ST rekrutacji (−3…+3) i lustrzany dla zastraszania, siła daru świątyni.
-
-**Rekrutacja.** Najemnicy karczmy: złoto. Nazwane NPC: 180–280 zł **albo** CHA 18+ (bez rzutu) / CHA 16+ i perswazja ST 18–20. Zajęcia: walka, zbiory, handel, rzemiosło. Limit miejsc 8–10 (dom daje extra).
-
-**Miasto.** Osobna mapa 3×3, start przy bramie. Rynek = sklep, kuźnia = ciężki ekwipunek, gildia = najem osadnika (wymaga wolnej chaty), ratusz = Mirena, zaułek = test złodziejski.
-
-**Zapis.** `savegame.json` obok pliku gry: pozycja, `seed`, `regiony`, atrybuty, budynki,
-rekruci, `czas`, `chaty`, `osadnicy`, `watki_npc`, `questy_start`. Zapis atomowy
-(tmp + `os.replace`). Hardcore kasuje plik po śmierci.
-
----
-
-## 6. Fabuła w dialogach
-
-Osiem postaci z trzystopniowym wątkiem (`gracz.watki_npc`): Boldan (córka), Aldric (dług gildii), Grimbold (przeklęte ostrze), Eremiel (rozłam zakonu), Alderon (przysięga), Ashen (Kamienne Serce), Mirena (głód miasta), Vasco (cichy udział). Wątek nie jest osobnym questem na tablicy — to narracja w rozmowie, która motywuje rekrutację.
+**Śmierć.** Normalny: omdlenie (−30% złota, prowiant, połowa łupów i eliksirów, ciężka rana,
+3 dni świata bez bohatera). Hardcore: dziedzic z drużyny lub osady przejmuje wszystko,
+co należy do osady (`dziedzictwo.POLA_OSADY`).
 
 ---
 
-## 7. Skalowanie trudności
+## 5. Balans walki (symulacje botów)
 
-Wrogowie skalują się z poziomem gracza, poziomem regionu (`1 + odległość od obozu`) i trybem
-(łatwy / normalny / hardcore). Boss w około co trzecim regionie poza startowym. ST testów: baza + `(mapa_gen-1)//2`, cap 20.
+Bot gra rozsądnie: umiejętności ofensywne, mikstura przy HP <35%, garda na zapowiedziany cios,
+przedmioty bojowe u przygotowanego gracza. Wyniki średnio dla 5 klas i regionów 1–4, 50 walk
+na przypadek (skrypty w historii sesji; parametry w `enemy.BAZA_*` i `WZROST_*`):
 
----
+| Sytuacja | Przed przebudową | Po |
+|---|---|---|
+| Zwykły wróg, gracz na poziomie 2 × region | ~70% wygranych na **każdym** poziomie (wróg rósł z graczem) | **87%**, strata HP ~26% |
+| Zwykły wróg, gracz 2 poziomy niżej | ~70% | **82%** |
+| Boss, gracz przygotowany (sprzęt, mikstury, olej, eliksiry) | **0%** (0 na 4200 walk) | **51%** |
+| Boss, gracz bez przygotowania | 0% | **38%** |
 
-## 8. Mocne strony i ograniczenia
+Przyczyny starych problemów: boss rósł o 20% za poziom gracza (na poz. 1 Wojownik zadawał mu 1 obrażenie),
+troll regenerował 8% HP na turę od poz. 2 — Mag zadawał mu 4.
 
-**Działa.** Jedna pętla hub–mapa bez gubienia pozycji. Świat jest trwały — regiony leżą na
-siatce wokół obozu `[0, 0]` i można do nich wracać. Osada wiąże czas wyprawy ze złotem.
-Karma ma realne skutki. Ikony czynią CLI czytelnym. Stdlib only, także w testach.
+## 6. Balans osady (bot „zarządca”, 2 lata gry)
 
-**Słabe.** Grafikę ma na razie tylko mapa regionu — pozostałe ekrany to tekst w konsoli okna.
-Postać gracza to mały sprite (9×13 px), różny tylko kolorami klas. Walka jest tekstowa i powtarzalna przy długim grindzie. Wątki NPC nie blokują się wzajemnie.
-Miasto nie zapisuje pozycji — każde wejście zaczyna przy bramie. Jeden slot zapisu.
-**Brak zakończenia kampanii — gra jest świadomie sandboksem** (patrz sekcja 10).
-
----
-
-## 9. Zrobione
-
-Naprawy i systemy domknięte w gałęzi `feat/sandbox-swiat-i-naprawy`:
-
-1. **Trwały świat** — `gracz.regiony` trzyma każdy odwiedzony region pod kluczem `"rx,ry"`.
-   Wyjście za krawędź i powrót wraca w to samo miejsce, z zachowanymi odkryciami i zbiorami.
-   Trudność (`mapa_gen`) = `1 + odległość Chebysheva od (0, 0)`, więc powrót bliżej obozu
-   realnie osłabia wrogów.
-2. **Seed postaci** — `gracz.seed` losowany przy tworzeniu i zapisywany; region generuje się
-   z `(seed, rx, ry)`. Każda nowa gra to inny świat, ale ten sam region po powrocie jest
-   identyczny.
-3. **Questy nie zaliczają się wstecz** — `gracz.questy_start` zamraża statystykę przy
-   przyjęciu; postęp to różnica od tej chwili.
-4. **Zapis atomowy** — plik tymczasowy + `os.replace()` + `fsync`. Ścieżka liczona od pliku
-   gry (`Path(__file__)`), nie od katalogu roboczego. Uszkodzony zapis podnosi
-   `ZapisUszkodzony` zamiast cicho udawać brak pliku.
-5. **Odpoczynek kosztuje dzień** — `dodaj_czas(gracz, 1)` plus rozliczenie targu i osadników.
-   Wcześniej pełne HP i mana kosztowały 5 złota w nieskończoność.
-6. **Karma ma skutki** — `game/karma.py`: ceny u kupców ±15%, modyfikator ST rekrutacji
-   (i lustrzany dla zastraszania), siła daru świątyni. Reputacja widoczna w obozie i sklepie.
-7. **Czyste wyjście** — `KeyboardInterrupt`/`EOFError` łapane w `__main__`, bez tracebacku.
-8. **Handlery zamiast łańcucha `if/elif`** — `HANDLERY_UMIEJETNOSCI` mapuje klucz na funkcję
-   `_sk_*(k: Kontekst)`. 48 umiejętności, 48 handlerów, zero gałęzi. Refaktor zweryfikowany
-   testem różnicowym (432 przypadki: stary łańcuch vs nowy rejestr, identyczny wynik).
-9. **Testy i CI** — 43 testy `unittest`, workflow na Pythonie 3.10 i 3.13.
-10. **Higiena repo** — `__pycache__` wypisany z gita (`.gitignore` sam tego nie robi).
+Bot buduje według planu (farma, palisada, spichlerz, dom, sklep, tartak, wieża…), zatrudnia
+rolników, myśliwych i strażników, poluje, gdy brakuje jedzenia, czeka w obozie na zapowiedziany najazd.
+15 kampanii po 240 dni: 13 dotrwało do końca, osada 7–10 osadników, 10–15 poziomów budynków,
+~10 najazdów, średnio ~35% odpartych, 0–3 omdlenia. Osada pozostawiona sama sobie (bez zarządzania)
+upada w pierwszym roku — to zamierzone.
 
 ---
 
-## 10. Co dalej
+## 7. Mocne strony i ograniczenia
 
-**Kampania (świadomie odłożona).** Gra jest teraz sandboksem: regiony ciągną się w cztery
-strony bez końca i bez finału. Zakończenie — akty, finalny boss, epilog zależny od karmy
-i osady — to następny krok, celowo zostawiony na osobną iterację.
+**Działa.** Czas ma koszt i presję. Każdy system zasila inny: wyprawy → surowce → budynki →
+produkcja → rzemiosło → przedmioty bojowe → bossowie i obrona. Awans daje realną przewagę.
+Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd odwołany).
 
-Poza kampanią:
-
-- Pozycja w mieście (`miasto_x/y` do zapisu) zamiast resetu do bramy.
-- Etapy `watki_npc` jako flagi na tablicy questów.
-- Więcej przepisów w warsztacie niż 3.
-- Mapa świata: podgląd siatki regionów, nie tylko bieżącego.
-- Trzy sloty zapisu.
-- Wyrównanie komórek mapy albo tryb ASCII dla starego `cmd.exe` (tryb `--tekst`).
-
-**Grafika — kolejne ekrany** (po mapie regionu):
-
-1. Obóz jako scena (namiot, palenisko, zbudowane budynki) i menu jako okna pixelart.
-2. Walka: sprite'y wrogów, animacje ciosów, paski HP nad głowami.
-3. Dialogi w stylu Disco Elysium z testami k20 (wątki NPC już są w `dialogues.py`).
-4. Miasto 3×3, osada, sklep i ekwipunek jako osobne ekrany.
-
-**Nie teraz:** nowa klasa. Wersja w Unity została porzucona (30.09.2026) — zostajemy przy
-pixelarcie liczonym w kodzie w pygame-ce.
+**Słabe.**
+- Grafikę ma tylko mapa regionu; walka, rozmowy i menu to wciąż tekst w konsoli okna.
+- Mag i Druid słabiej radzą sobie z bossami (częściowo przez to, jak gra nimi bot).
+- Rozmów w nowym silniku jest 10; stare dialogi NPC (poza Grimboldem) działają w starym systemie.
+- Brak kampanii (świadomie).
 
 ---
 
-## 11. Jak testować po zmianach
+## 8. Co dalej
 
-Automatycznie:
+1. **Kampania** — akty, finał, epilog zależny od karmy i osady (odłożona na osobną iterację).
+2. Przenieść pozostałe dialogi NPC do silnika rozmów (głosy, testy, myśli).
+3. Ekrany graficzne: obóz, walka (sprite'y wrogów, zapowiedzi jako ikony), rozmowy w stylu DE.
+4. Więcej spraw osady i myśli; wydarzenia sezonowe (powódź wiosną, pożar latem, zaraza).
+5. Osadnicy z imionami w rozmowach i relacjami między sobą.
+
+---
+
+## 9. Jak testować po zmianach
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Ręcznie, po większej zmianie:
+Ręcznie po większej zmianie:
 
-- `python -c "import main"` z katalogu repo.
-- `python main.py` — okno: ekran tytułowy z mapą, klik w `[1]` Nowa gra, HUD po lewej na dole.
-- `python main.py --tekst` — ten sam przebieg w terminalu.
-- Nowa gra → obóz: ikony w menu `[1]`–`[16]`, linia „Reputacja".
-- Wyprawa: nagłówek `REGION [0, 0] · poziom 1`, siatka 9×9, licznik odkryte N/81.
-- Dojdź do krawędzi i wróć — musi pokazać `ZNANY REGION` i te same odkryte pola.
-- Odpoczynek `[3]`: „Minął dzień" i rozliczenie targu, jeśli stoi.
-- Przyjmij questa mając już dorobek — nie może zaliczyć się od razu.
+- `python main.py` — okno: HUD pokazuje porę roku, żywność z bilansem, zagrożenie, morale.
+- Nowa gra → obóz: doradca podpowiada farmę; `[16]` osadnicy z cechami; `[11]` 16 budynków.
+- Wyprawa: prowiant maleje co ruch; w lesie `[6]` daje drewno i żywność.
+- Kilka odpoczynków `[3]`: „Wczoraj: …” w `[16]`, wieści z osady w obozie.
+- Walka: zapowiedź → `[5]` garda → komunikat o kontrze.
+- `[17]` rzemiosło, `[19]` karawana, `[20]` talent, `[22]` sprawa osady (po kilku dniach).

@@ -1,25 +1,27 @@
-# Pro RPG – gra fantasy po polsku z grafiką pixelart
+# Pro RPG – survival city builder RPG fantasy po polsku
 
-Gra RPG fantasy w Pythonie 3. Wszystkie komunikaty, menu i nazwy akcji są **po polsku**.
+Gra fantasy w Pythonie 3, w której prowadzisz **bohatera i jego osadę**. Wyprawy dają surowce,
+łup i doświadczenie; osada daje jedzenie, rzemiosło i ludzi — ale je, marznie zimą,
+choruje i przyciąga bandy. Wszystkie komunikaty są **po polsku**.
 
-Gra działa w **oknie z grafiką pixelart** (pygame-ce): po lewej izometryczna mapa
-regionu z oświetleniem i mgłą wojny oraz HUD postaci, po prawej konsola z tekstem
-gry i klikalnymi opcjami. Cała grafika jest liczona w kodzie — w repo nie ma
-plików PNG. Bez pygame gra startuje w klasycznym trybie tekstowym w terminalu.
+Gatunki w jednej pętli: **survival** (żywność, opał, pory roku, rany), **city builder**
+(osadnicy z morale i cechami, 16 budynków z poziomami, łańcuchy produkcji),
+**RPG** (5 klas, podklasy, talenty, walka turowa z zapowiedziami ruchów),
+**obrona osady** (najazdy, fale, pojedynek z hersztem), **rzemiosło i alchemia**
+(odkrywanie przepisów), **handel i karawany** oraz **narracja w stylu Disco Elysium**
+(głosy umiejętności, białe i czerwone testy, gabinet myśli).
 
-Szczegółowy opis pętli gry, systemów i zależności: **[ANALIZA.md](ANALIZA.md)**.
+Gra działa w **oknie z grafiką pixelart** (pygame-ce): po lewej izometryczna mapa regionu
+z oświetleniem, mgłą wojny i rosnącą osadą oraz HUD, po prawej konsola z klikalnymi opcjami.
+Cała grafika jest liczona w kodzie. Bez pygame gra startuje w trybie tekstowym w terminalu.
+
+Architektura, pętle gry i liczby z symulacji balansu: **[ANALIZA.md](ANALIZA.md)**.
 
 ---
 
 ## Uruchomienie
 
-Na Windowsie kliknij dwukrotnie **`uruchom.bat`** (albo w PowerShellu):
-
-```bat
-uruchom.bat
-```
-
-Albo bezpośrednio:
+Na Windowsie kliknij dwukrotnie **`uruchom.bat`**. Albo:
 
 ```bash
 pip install -r requirements.txt   # raz — grafika (pygame-ce)
@@ -27,75 +29,68 @@ python main.py                    # okno z grafiką
 python main.py --tekst            # tryb tekstowy w terminalu
 ```
 
-Wymagania: **Python 3.10+** i **pygame-ce** (tylko do okna). `uruchom.bat` najpierw szuka
-Pythona w `%USERPROFILE%\.local\bin\`, a przy pierwszym starcie sam doinstalowuje pygame-ce
-(`pip install --user`). Jeśli instalacja się nie uda, gra rusza w trybie tekstowym.
+Wymagania: **Python 3.10+** i **pygame-ce** (tylko do okna). `uruchom.bat` szuka Pythona
+w `%USERPROFILE%\.local\bin\`, a przy pierwszym starcie sam doinstalowuje pygame-ce.
 
 ### Sterowanie w oknie
 
 | Klawisz / mysz | Działanie |
 |---|---|
-| klik na opcję `[n]` w konsoli | wybór opcji (to samo co wpisanie numeru i Enter) |
+| klik na opcję `[n]` w konsoli | wybór opcji (to samo co numer i Enter) |
 | cyfry + `Enter` | wybór opcji, wpisywanie imienia itd. |
 | strzałki (na wyprawie) | ruch: ⬆ północ, ⬇ południe, ⬅ zachód, ➡ wschód |
 | `Spacja` (na wyprawie) | zbadaj pole / wejdź (`[5]`) |
 | `Spacja` / klik (przy „Naciśnij Enter”) | dalej |
 | kółko myszy | przewijanie konsoli |
-| `F2` | dzień / zmierzch (oświetlenie ognisk, okien, portali) |
-| `F11` | pełny ekran (okno można też dowolnie powiększać) |
+| `F2` | dzień / zmierzch |
+| `F11` | pełny ekran |
 
 ---
 
-## Funkcje gry
+## Systemy gry
 
-| Funkcja | Opis |
+| System | Co robi |
 |---|---|
-| **Menu główne** | Nowa gra / Wczytaj zapis / Wyjście |
-| **Tworzenie postaci** | Imię, klasa, pochodzenie, 3 cechy z puli 50 (los 4→wybór 1, trzy razy), tryb trudności |
-| **Atrybuty (BG3)** | Siła, Zręczność, Kondycja, Inteligencja, Mądrość, Charyzma — testy k20 vs ST |
-| **Testy na mapie** | Wspinaczka, zamki, zastraszanie, perswazja, uniki, tropy, pułapki |
-| **Klasy i podklasy** | Wojownik, Mag, Łotrzyk, Druid, Nekromanta — specjalizacja od poziomu 5 |
-| **Umiejętności** | Rangi 1–5, cooldowny, moc rośnie z poziomem i rangą; księga w obozie `[10]` |
-| **Nekromanta** | Przywołania (szkielet, ghul, widmo, krwawy sługa) — atakują i mogą przejąć cios |
-| **Druid** | Przemiany (niedźwiedź, wilk, kruk, duch) — buffy na kilka tur walki |
-| **Levelowanie** | EXP w bieżącym poziomie; +1 pkt. atrybutów i umiejętności (bonus na 5/10/15) |
-| **Walka turowa** | Atak, przedmioty, umiejętności, ucieczka; buffy, krytyki, statusy |
-| **Przeciwnicy** | Potwory ogólne i biomowe; trolle regenerują, wiedźma klnie, smok zieje ogniem |
-| **Bossowie** | Co 3. region, na konkretnym polu ☠ |
-| **Mapa** | Region 9×9 (81 pól) z ikonami biomów i budynków, mgłą wojny ❔ |
-| **Trwały świat** | Regiony leżą na siatce wokół obozu `[0, 0]`. Wyjście za krawędź i powrót wraca **w to samo miejsce** — odkryte pola i zużyte zbiory zostają |
-| **Seed postaci** | Każda nowa gra losuje własny świat; ten sam region po powrocie wygląda tak samo |
-| **Ikony** | Biomy, punkty, kierunki, menu obozu, walka, sklep, questy — katalog `game/ikony.py` |
-| **Ekwipunek** | Broń i zbroja, plecak, sprzedaż za 50% ceny — stary przedmiot nie znika |
-| **Sklep i kuźnia** | Mikstury (leczenie, większa, mana), antidotum, ekwipunek |
-| **Questy** | Tablica w obozie — zabójstwa, zakupy, świątynie. Postęp liczy się **od przyjęcia**, nie od początku gry |
-| **Osiągnięcia** | Odblokowywane przy powrocie do obozu (m.in. Kartograf: odkryj cały region) |
-| **Zapis** | Autosave po wyprawie i po każdym ruchu; zapis **atomowy** (przerwanie nie niszczy poprzedniego); Hardcore kasuje zapis po śmierci |
-| **Świat** | Biomy, karczmy, świątynie, kuźnie, zdarzenia moralne |
-| **Karma** | Reputacja z realnymi skutkami: ceny u kupców ±15%, łatwiejsza/trudniejsza rekrutacja, hojniejszy lub skąpy dar świątyni |
-| **Obóz** | Rozbudowa: sklep, dom, kuźnia, stajnie, targ, warsztat, chaty osadników |
-| **Zbieractwo** | Na wyprawie `[6]` zbierasz surowce (2 razy na pole); biomy dają różne materiały |
-| **Drużyna** | Rekrutacja: max 1 w walce; reszta: zbiory, handel albo rzemiosło. Postacie z dialogów — fortuna albo CHA 18+ / perswazja |
-| **Dialogi** | Każde NPC ma wątek fabularny (kolejne etapy) i opcję dołączenia do osady |
-| **Miasto** | Od regionu 2 ikona 🏙 — osobna mapa 3×3 (rynek, kuźnia, ratusz, gildia, magazyn) |
-| **Osada** | Praca w obozie `[15]`; chaty i osadnicy `[16]`; targ płaci złoto za dni nieobecności |
-| **Mityczne miejsca** | Od regionu 2: 🌀 portal, 🐉 leże smoka, ☁ latająca wyspa — unikalni wrogowie i łup |
+| **Czas i pory roku** | Każdy dzień (ruch na mapie, odpoczynek, praca) to dzień osady. Rok = wiosna, lato, jesień, zima po 30 dni. Jesienią żniwa, zimą pola nie rodzą, trzeba palić drewno, a bandy są głodniejsze |
+| **Przetrwanie** | Na wyprawę bierzesz prowiant (8 racji, +4 za poziom stajni). Bez jedzenia głód: −HP i słabszy atak. Zimą bez ciepłego odzienia mróz rani co dzień |
+| **Rany** | Ciężkie ciosy zostawiają rany (złamana ręka −20% ataku, głęboka rana −50% mikstur, zwichnięta noga, wstrząs). Goją się z czasem — szybciej przy odpoczynku, w lecznicy, po maści |
+| **Osadnicy** | Morale, cecha (pracowity, leniwy, żarłoczny, odważny, chorowity…), doświadczenie w zawodzie (★), choroby. Głodni i zmarznięci pracują gorzej, chorują i odchodzą |
+| **Zawody** | Drwal, kamieniarz, zielarz, myśliwy, rolnik, górnik, tracz, hutnik, handlarz, rzemieślnik, strażnik, uzdrowiciel |
+| **Łańcuchy produkcji** | Drewno → tartak → deski; ruda + drewno → huta → żelazo; żelazo → kuźnia → narzędzia (+25% pracy) i ulepszenia broni/zbroi |
+| **Budynki** | 16 budynków, każdy z poziomami i utrzymaniem: farma, spichlerz, tartak, huta, kuźnia, warsztat, laboratorium, lecznica, targ, karawanseraj, tawerna, palisada, wieża, stajnie, sklep, dom (+ chaty) |
+| **Obrona osady** | Zagrożenie rośnie z czasem, zimą i z bogactwem. Zwiadowcy (lub wieża — dokładnie) zapowiadają najazd. W obozie: rozmowa z hersztem, 3 fale z wyborem taktyki, pojedynek. Pod nieobecność osada broni się sama |
+| **Rzemiosło i alchemia** | 14 przepisów w warsztacie, laboratorium i kuźni. Część trzeba **odkryć**: eksperyment z dwóch składników (test podpowiada trop), rozmowy, zwoje. Rzadkie składniki z biomów i potworów. Rzemieślnicy realizują **zamówienia** (docelowy zapas) |
+| **Handel i karawany** | Osady handlowe z własnymi cenami (Brzezie, Kamienny Bród, Port Veldmar + odkryte miasta). Ceny dryfują, żywność drożeje zimą. Karawana jedzie kilka dni, może wpaść w zasadzkę (eskorta pomaga), wraca ze złotem albo zamówionym towarem |
+| **Walka** | Trudność zależy od regionu (region N = wrogowie poz. 2N−1..2N). Wrogowie **zapowiadają** ciężki cios, zionięcie ogniem, klątwę — odpowiadasz **gardą** `[5]`, eliksirem albo przerwaniem. Słabości i odporności (ogień, święte, trucizna), podpalenie blokuje regenerację trolli. Bossowie wpadają w szał przy 50% HP. Ucieczka zależy od Zręczności |
+| **Przedmioty bojowe** | Bandaż, eliksir siły, eliksir ognioodporności, olej ognisty, bomba, napar jasności (+2 w rozmowie) |
+| **Śmierć** | Normalny: omdlenie — tracisz prowiant, 30% złota, część łupów, budzisz się z ciężką raną po 3 dniach. **Hardcore: dziedzic** z drużyny lub osady przejmuje osadę (połowa poziomu, dorobek osady, +punkty talentów) — gra kończy się, gdy nie zostawisz nikogo |
+| **Drzewko talentów** | 6 gałęzi × 5 węzłów: Wojaczka, Przetrwanie, Przywództwo, Rzemiosło, Handel, Umysł. 1 punkt za awans |
+| **Rozmowy (Disco Elysium)** | Głosy umiejętności wtrącają się same (bierny test) i odsłaniają opcje. **Białe** testy ⚪ wracają, gdy się rozwiniesz; **czerwone** 🔴 — jedna szansa. Przy każdym teście trudność i szansa w %. Grimbold, herszt najazdu, sprawy osady |
+| **Gabinet myśli** | Myśli z rozmów i decyzji. Przyswajanie trwa kilka dni (kara), potem trwały efekt |
+| **Sprawy osady** | Kłótnie o racje, chorzy, złodzieje, przybysze (może szpieg?), wędrowny kupiec, święto plonów, pijany strażnik — decyzje z testami i skutkami dla morale i karmy |
+| **Doradca** | W obozie 1–2 najpilniejsze podpowiedzi: głód za kilka dni, zima bez opału, najazd jutro, ludzie bez pracy |
+| **Postać** | 5 klas i podklasy od poz. 5, atrybuty w stylu BG3 (testy k20), pochodzenie i 3 cechy z puli 50, rangi umiejętności 1–5 |
+| **Świat** | Trwała mapa regionów 9×9 z biomami, mgłą wojny, karczmami, kuźniami, świątyniami, jaskiniami, miastami, bossami i miejscami mitycznymi |
+| **Questy** | 13 zadań — od zabijania goblinów po przetrwanie zimy i karawany. Postęp liczy się od przyjęcia |
+| **Zapis** | Autosave, zapis atomowy, stare zapisy migrują się same |
 
 ---
 
-## Legenda mapy
+## Jak grać — pierwsze dni
 
-| Ikona | Znaczenie | Ikona | Znaczenie |
-|---|---|---|---|
-| 👤 | ty | ❔ | nieodkryte |
-| 🌾 | równiny | 🏚 | ruiny |
-| 🌲 | las | 🐸 | bagna |
-| ⛰ | wzgórza | 🏜 | kanion |
-| 🏕 | obóz | 🍺 | karczma |
-| ⚒ | kuźnia | 🛕 | świątynia |
-| 🕳 | jaskinia | ☠ | boss |
-| 🌀 | portal | 🐉 | leże smoka |
-| ☁ | latająca wyspa | 🏙 | miasto |
+1. **Nowa gra** → imię, klasa, pochodzenie, cechy, trudność. Startujesz z namiotem, dwiema chatami,
+   dwojgiem osadników (drwal i myśliwy) i 30 racjami.
+2. **Najpierw jedzenie.** Postaw **pola uprawne** `[11]` i przestaw kogoś na rolnika `[16]`.
+   Myśliwy i polowanie w pracy `[15]` pomagają na start.
+3. **Wyprawy** `[1]` dają drewno, kamień, zioła, rudę, łup i doświadczenie. Pilnuj prowiantu i HP.
+4. **Przed pierwszym najazdem** (zwykle ok. 2. miesiąca): palisada, strażnik, zapas drewna na smołę.
+5. **Jesienią** gromadź żywność i drewno na zimę. Uszyj ciepłe odzienie w warsztacie.
+6. **Rozwijaj się**: talenty `[20]`, myśli `[21]`, rzemiosło `[17]`, karawany `[19]`, sprawy osady `[22]`.
+
+Menu obozu: `[1]` wyprawa · `[2]` sklep · `[3]` odpoczynek · `[4]` ekwipunek · `[5]` questy ·
+`[6]` osiągnięcia · `[7]` karta postaci · `[8]` podklasa · `[9]` mapa · `[10]` księga umiejętności ·
+`[11]` rozbudowa · `[12]` kuźnia · `[13]` stajnie · `[14]` drużyna · `[15]` praca · `[16]` osada ·
+`[17]` rzemiosło · `[18]` obrona · `[19]` handel · `[20]` talenty · `[21]` gabinet myśli · `[22]` sprawy osady.
 
 ---
 
@@ -103,95 +98,52 @@ Pythona w `%USERPROFILE%\.local\bin\`, a przy pierwszym starcie sam doinstalowuj
 
 ```
 Game_Simply/
-├── main.py          # Punkt wejścia – menu i obóz; okno albo --tekst
-├── uruchom.bat      # Skrót Windows — doinstalowuje pygame-ce i odpala grę
-├── requirements.txt
-├── README.md
-├── ANALIZA.md       # Architektura, pętle gry, systemy
-└── game/
-    ├── ikony.py     # Katalog ikon (biomy, punkty, wrogowie)
-    ├── player.py    # Postać, EXP, atrybuty, rangi, osiągnięcia
-    ├── atrybuty.py  # Karta postaci, testy k20, biegłości
-    ├── pochodzenie.py  # Pochodzenie i 50 cech kreacji
-    ├── enemy.py     # Przeciwnicy, bossowie, skalowanie
-    ├── combat.py    # Walka turowa i umiejętności
-    ├── world.py     # Podróż, budynki, zdarzenia
-    ├── mapa.py      # Trwały świat: siatka regionów 9×9, biomy, mgła wojny
-    ├── karma.py     # Reputacja i jej skutki (ceny, rekrutacja, świątynie)
-    ├── items.py     # Ekwipunek, plecak, sprzedaż
-    ├── shop.py      # Sklep i kuźnia
-    ├── skills.py    # Umiejętności, rangi, księga, podklasy
-    ├── quests.py    # Tablica questów
-    ├── dialogues.py # Dialogi NPC, wątki, rekrutacja
-    ├── oboz.py      # Surowce i rozbudowa obozu
-    ├── osada.py     # Praca, chaty, osadnicy, targ
-    ├── miasto.py    # Osobna mapa miasta
-    ├── rekruci.py   # Najemnicy i towarzysze
-    ├── mityczne.py  # Portale, leże smoka, latająca wyspa
-    ├── savegame.py  # Zapis JSON
-    ├── ekran.py     # Łącznik logiki z oknem (bieżąca postać, skróty klawiszy)
-    └── utils.py     # Wyświetlanie, input
-grafika/             # Okno pixelart (pygame-ce) — logika gry nic stąd nie importuje
-    ├── okno.py      # Okno, konsola z emoji i klikalnymi opcjami, HUD, przejęcie print/input
-    ├── scena.py     # Izometryczna mapa regionu: kafle, mgła, światło, gracz
-    ├── teren.py     # Kafle biomów, drzewa, skały, budynki, sprite gracza
-    └── piksele.py   # Prymitywy: cieniowanie brył, dithering, kontury, poświaty
+├── main.py            # Punkt wejścia — menu, obóz, śmierć i dziedzictwo; okno albo --tekst
+├── uruchom.bat        # Skrót Windows — doinstalowuje pygame-ce i odpala grę
+├── game/
+│   ├── swiat.py       # Dzienny cykl świata — jedno miejsce, w którym mija czas
+│   ├── kalendarz.py   # Pory roku
+│   ├── przetrwanie.py # Prowiant, głód, zimno, rany
+│   ├── osada.py       # Osadnicy, zawody, produkcja, morale, choroby, praca, targ
+│   ├── oboz.py        # Surowce, budynki z poziomami, zbieractwo na mapie
+│   ├── obrona.py      # Zagrożenie, najazdy, fale, herszt
+│   ├── rzemioslo.py   # Przepisy, odkrycia, zamówienia, ulepszenia, składniki
+│   ├── handel.py      # Osady handlowe, ceny, karawany
+│   ├── dziedzictwo.py # Omdlenie i dziedzic osady
+│   ├── talenty.py     # Drzewko talentów
+│   ├── rozmowy.py     # Silnik rozmów (głosy, białe/czerwone testy) + treść
+│   ├── mysli.py       # Gabinet myśli
+│   ├── doradca.py     # Podpowiedzi w obozie
+│   ├── combat.py      # Walka turowa, garda, zapowiedzi, żywioły, przedmioty
+│   ├── enemy.py       # Wrogowie, zdolności, poziomy regionów, bossowie, herszt
+│   ├── player.py      # Postać
+│   ├── atrybuty.py    # Atrybuty i testy k20
+│   ├── world.py, mapa.py, miasto.py, mityczne.py   # Świat i eksploracja
+│   ├── skills.py, items.py, shop.py, quests.py, rekruci.py, dialogues.py, karma.py, pochodzenie.py
+│   ├── savegame.py    # Zapis JSON (z migracją starych zapisów)
+│   └── ekran.py, ikony.py, utils.py
+├── grafika/           # Okno pixelart (pygame-ce) — logika gry nic stąd nie importuje
+│   ├── okno.py        # Okno, konsola, HUD, przejęcie print/input
+│   ├── scena.py       # Izometryczna mapa regionu, rosnąca osada
+│   ├── teren.py       # Kafle, roślinność, budynki, sprite gracza
+│   └── piksele.py     # Prymitywy pixelartu
+└── tests/             # 94 testy unittest
 ```
-
----
-
-## Jak grać?
-
-1. Uruchom grę: dwuklik **`uruchom.bat`** albo `python main.py`. W oknie klikaj opcje w konsoli
-   albo wpisuj numery; na wyprawie chodź strzałkami.
-2. Wybierz **Nowa gra**, imię, klasę, pochodzenie, 3 cechy i tryb trudności.
-3. W **Obozie**:
-   - `[1]` 🗺 Wyrusz na przygodę
-   - `[2]` 🏪 Sklep — po zbudowaniu w obozie (albo karczma w terenie)
-   - `[3]` 😴 Odpoczynek — lepszy po zbudowaniu domu
-   - `[4]` 🎒 Ekwipunek (plecak, zakładanie, zdejmowanie)
-   - `[5]` 📜 Tablica questów
-   - `[6]` 🏆 Osiągnięcia
-   - `[7]` 📋 Karta postaci (6 atrybutów, biegłości, rozdział punktów)
-   - `[9]` 🗺 Mapa okolicy
-   - `[10]` 📖 Księga umiejętności (rangi, podgląd następnych skilli)
-   - `[11]` 🏗 Rozbudowa obozu (sklep, dom, kuźnia, stajnie, targ, warsztat, chaty)
-   - `[14]` 🤝 Drużyna — najemnicy i zrekrutowane postacie
-   - `[15]` 🪓 Praca w obozie (złoto i surowce, mija czas)
-   - `[16]` 🛖 Osada — osadnicy, warsztat, sprzedaż surowców na targu
-4. Na wyprawie: ⬆ północ / ⬅ zachód / ➡ wschód / ⬇ południe. Krawędź mapy prowadzi do sąsiedniego regionu —
-   świat jest trwały, więc możesz wrócić tą samą drogą. Im dalej od obozu `[0, 0]`, tym trudniejsi wrogowie.
-   Zbadaj pole (`[5]`), żeby wejść do karczmy, kuźni, świątyni, jaskini, **miasta** albo mitycznego miejsca.
-   Na pustym polu mogą pojawić się testy (wspinaczka, zamki, bandyci, tropy).
-   Od regionu 2 na mapie mogą pojawić się 🌀 portal, 🐉 leże smoka, ☁ latająca wyspa i **🏙 miasto**.
-   W mieście poruszasz się po dzielnicach: handel na rynku, kuźnia, ratusz (Mirena), gildia (osadnicy).
-   Rozmowa z NPC odsłania wątek postaci; na końcu możesz ich zrekrutować za dużą sumę albo ekstremalną charyzmę (CHA 18+ albo perswazja przy CHA 16+).
-   `[6]` zbiera surowce (las = drewno, bagna = zioła, wzgórza/kanion = ruda).
-   `[0]` wraca do obozu, ale pozycja na mapie zostaje. Targ i osadnicy rozliczają dni, których nie było cię w obozie.
-5. Podczas walki: ⚔ atak, 🧪 przedmioty, ✨ umiejętności (z CD i rangą) lub 🏃 ucieczka.
-   Nekromanta przywołuje sługę (jeden na raz); Druid zmienia formę na kilka tur.
-6. Po walce: EXP, złoto, czasem łup do plecaka.
-7. Na poziomie 5 wybierz podklasę w obozie. Punkty atrybutów wydajesz na karcie `[7]`, punkty umiejętności w księdze.
 
 ---
 
 ## Testy
 
-Testy korzystają ze standardowej biblioteki (`unittest`). Testy logiki nie wymagają niczego;
-testy okna (`tests/test_grafika.py`) potrzebują pygame-ce i bez niego są pomijane.
-
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Okno renderuje się też bez monitora (`SDL_VIDEODRIVER=dummy`), więc testy grafiki działają w CI.
-
-Pokrywają trwały świat (powroty przez krawędź, seed, migrację starych zapisów),
-zapis (round-trip, atomowość, uszkodzony plik), questy (postęp od przyjęcia),
-karmę (ceny, rekrutacja, świątynie) oraz rejestr umiejętności (każdy skill ma handler
-i da się go wywołać), a także okno: scenę mapy, mgłę, noc, klikalne opcje konsoli
-i oddanie `print`/`input` po zamknięciu. CI uruchamia testy na Pythonie 3.10 i 3.13 —
-najpierw bez pygame (tryb tekstowy musi zostać samodzielny), potem z grafiką.
+Testy logiki nie wymagają niczego poza Pythonem; testy okna (`tests/test_grafika.py`) potrzebują
+pygame-ce i bez niego są pomijane. Okno renderuje się bez monitora (`SDL_VIDEODRIVER=dummy`).
+Testy obejmują m.in. trwały świat, zapis, questy, karmę, umiejętności, kalendarz, głód i rany,
+produkcję osady i łańcuchy, obronę i najazdy, karawany, talenty, myśli, dziedzictwo,
+rozmowy (białe/czerwone testy, spójność grafów), rzemiosło i odkrycia, gardę, ogień i ucieczkę.
+CI uruchamia je na Pythonie 3.10 i 3.13 — najpierw bez pygame, potem z grafiką.
 
 ---
 

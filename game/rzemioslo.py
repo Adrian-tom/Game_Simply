@@ -131,6 +131,7 @@ def naucz(gracz: "Gracz", klucz: str) -> str:
     if klucz in znane(gracz):
         return ""
     gracz.przepisy = list(getattr(gracz, "przepisy", None) or []) + [klucz]
+    gracz.statystyki["odkryte_przepisy"] = gracz.statystyki.get("odkryte_przepisy", 0) + 1
     p = PRZEPISY[klucz]
     return f"  📜  NOWY PRZEPIS: {p['nazwa']} ({p['stacja']}) — {_format(p['koszt'])}"
 

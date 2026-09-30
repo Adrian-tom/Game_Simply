@@ -50,6 +50,8 @@ def _jeden_dzien(gracz: "Gracz", odpoczynek: bool) -> list[str]:
     gracz.czas = int(getattr(gracz, "czas", 0) or 0) + 1
     pora = kalendarz.pora(gracz)
     if pora["klucz"] != stara_pora:
+        if stara_pora == "zima":
+            gracz.statystyki["przetrwane_zimy"] = gracz.statystyki.get("przetrwane_zimy", 0) + 1
         pilne.append(f"  {pora['ikona']}  NADCHODZI {pora['nazwa'].upper()}. {pora['opis']}")
         if pora["klucz"] == "jesien":
             pilne.append("  🍂  Za 30 dni zima: zgromadź żywność i drewno na opał.")
