@@ -10,17 +10,26 @@ i dalej jest grywalna (`python main.py`).
 
 Potrzebne: Unity (2021.3 albo nowszy; starczy zwykły szablon 3D albo 2D).
 
-1. **Unity Hub → Add → wskaż katalog `unity/GraSimply`.**
-   Hub zapyta, którą wersją edytora otworzyć — wybierz dowolną zainstalowaną.
-   Brakujące ustawienia projektu Unity dorobi samo przy pierwszym otwarciu.
+1. **Unity Hub → Add → Add project from disk → wskaż katalog `unity/GraSimply`.**
 2. W edytorze otwórz scenę `Assets/Scenes/Gra.unity` i naciśnij **Play**.
+
+Nie zakładaj nowego projektu — `unity/GraSimply` **jest** projektem. Resztę
+ustawień (`ProjectSettings/*.asset`, `Packages/manifest.json`) Unity dorobi
+samo przy pierwszym otwarciu; w repozytorium jest tylko tyle, ile potrzebuje
+Hub, żeby rozpoznać katalog.
+
+Projekt deklaruje wersję **2022.3.0f1** w `ProjectSettings/ProjectVersion.txt`.
+Jeśli masz inną, Hub zapyta, czy otworzyć swoją — zgódź się, to normalne
+i bezpieczne. Żeby pytał rzadziej, wpisz tam swoją wersję (dokładnie tak,
+jak pokazuje ją Hub, np. `6000.0.23f1`):
+
+```
+m_EditorVersion: 2022.3.0f1
+```
 
 Jeśli scena nie chce się otworzyć (zdarza się przy dużej różnicy wersji
 edytora), użyj menu **Gra Simply → Utwórz scenę gry** — zapisze świeżą scenę
 tym Unity, które masz, i doda ją do ustawień budowania.
-
-Gdyby Hub w ogóle nie chciał dodać katalogu, zadziała też droga na pewniaka:
-załóż nowy, pusty projekt i skopiuj do niego katalog `GraSimply/Assets`.
 
 ### Sterowanie
 
