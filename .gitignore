@@ -12,3 +12,7 @@ venv/
 .env
 .idea/
 .vscode/
+
+# Pakiety git robione doraźnie, gdy push nie przechodzi — to tylko kopia
+# commita do przeniesienia na inną maszynę, nie treść projektu.
+*.bundle
