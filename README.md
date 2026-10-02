@@ -132,9 +132,11 @@ Game_Simply/
 │   ├── arena.py       # Ekran walki
 │   ├── potwory.py     # Sprite'y wrogów z brył
 │   ├── portret.py     # Widok rozmowy
+│   ├── widok_osady.py # Scena obozu i osady z bliska
+│   ├── twarze.py      # Rysy twarzy rozmówców
 │   ├── teren.py       # Kafle, roślinność, budynki, sprite gracza
 │   └── piksele.py     # Prymitywy pixelartu
-└── tests/             # 99 testów unittest
+└── tests/             # 151 testów unittest
 ```
 
 ---

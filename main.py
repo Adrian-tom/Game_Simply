@@ -475,7 +475,8 @@ def nowa_gra(gracz: Gracz | None = None) -> None:
             gracz = nastepca
             continue
 
-        wybor = menu_obozu(gracz)
+        with ekran.widok_osady("oboz"):
+            wybor = menu_obozu(gracz)
 
         if wybor == "1":
             wynik = wyrusz_w_podroz(gracz)
@@ -514,7 +515,8 @@ def nowa_gra(gracz: Gracz | None = None) -> None:
             zapisz_gre(gracz)
 
         elif wybor == "11":
-            menu_rozbudowy(gracz)
+            with ekran.widok_osady("oboz"):
+                menu_rozbudowy(gracz)
             zapisz_gre(gracz)
 
         elif wybor == "12" and ma_budynek(gracz, "kuznia"):
@@ -529,11 +531,13 @@ def nowa_gra(gracz: Gracz | None = None) -> None:
             zapisz_gre(gracz)
 
         elif wybor == "15":
-            menu_pracy(gracz)
+            with ekran.widok_osady("oboz"):
+                menu_pracy(gracz)
             zapisz_gre(gracz)
 
         elif wybor == "16":
-            menu_osady(gracz)
+            with ekran.widok_osady("osada"):
+                menu_osady(gracz)
             zapisz_gre(gracz)
 
         elif wybor == "7":

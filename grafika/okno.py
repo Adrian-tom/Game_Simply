@@ -26,6 +26,7 @@ import pygame
 from game import ekran
 from grafika.arena import ArenaWalki
 from grafika.portret import WidokRozmowy
+from grafika.widok_osady import WidokOsady
 from grafika.scena import SZER, WYS, ScenaMapy
 
 SZEROKOSC, WYSOKOSC = 1280, 720
@@ -255,6 +256,7 @@ class Okno:
         self.scena = ScenaMapy()
         self.arena = ArenaWalki()
         self.rozmowa = WidokRozmowy()
+        self.osada = WidokOsady()
         self.mapa = pygame.Surface((SZER, WYS))
         self._tytul = None
         self._print = builtins.print
@@ -323,10 +325,13 @@ class Okno:
         self.ekran.fill(TLO)
         gracz = ekran.gracz
         etykiety_walki = None
+        podpisy_osady = None
         if ekran.walka is not None:
             etykiety_walki = self.arena.rysuj(self.mapa, ekran.walka, self.t)
         elif ekran.rozmowa:
             self.rozmowa.rysuj(self.mapa, ekran.rozmowa, self.t)
+        elif ekran.widok and gracz is not None:
+            podpisy_osady = self.osada.rysuj(self.mapa, gracz, ekran.widok, self.t)["podpisy"]
         elif gracz is not None and getattr(gracz, "mapa_pola", None):
             self.scena.rysuj(
                 self.mapa, gracz.mapa_pola, self.t,
@@ -342,6 +347,8 @@ class Okno:
         pygame.draw.rect(self.ekran, RAMKA, (0, 0, SZER * SKALA_MAPY, WYS * SKALA_MAPY), 2)
         if etykiety_walki:
             self._etykiety_walki(etykiety_walki)
+        elif podpisy_osady:
+            self._podpisy_osady(podpisy_osady)
         elif ekran.walka is None and ekran.rozmowa:
             self._napis(ekran.rozmowa, 24, WYS * SKALA_MAPY - 52, ZLOTY, duzy=True)
         hud = pygame.Rect(8, WYS * SKALA_MAPY + 8, SZER * SKALA_MAPY - 16, WYSOKOSC - WYS * SKALA_MAPY - 16)
@@ -353,6 +360,29 @@ class Okno:
         ramka(self.ekran, self.konsola.rect)
         self.konsola.rysuj(self.ekran, wpisywane, self.t, pygame.mouse.get_pos())
         pygame.display.flip()
+
+    def _podpisy_osady(self, podpisy) -> None:
+        """Imiona osadników nad figurkami.
+
+        Czcionki żyją tutaj, nie w scenie, więc widok oddaje same pozycje
+        w pikselach sceny. Osadnicy tłoczą się przy jednym warsztacie, więc
+        podpis, który wpadłby na już narysowany, idzie wyżej — inaczej imiona
+        zlewają się w jedno nieczytelne pasmo.
+        """
+        s = SKALA_MAPY
+        zajete: list[pygame.Rect] = []
+        for x, y, tekst, kolor in sorted(podpisy, key=lambda p: p[1]):
+            szer = self.hud.szerokosc(tekst) + 6
+            px = min(max(2, x * s - szer // 2), SZER * s - szer - 2)
+            py = max(2, y * s - 18)
+            r = pygame.Rect(px, py, szer, 16)
+            while any(r.colliderect(z) for z in zajete) and r.top > 4:
+                r.top -= 15
+            zajete.append(r)
+            plakietka = pygame.Surface(r.size, pygame.SRCALPHA)
+            plakietka.fill((16, 12, 20, 150))
+            self.ekran.blit(plakietka, r.topleft)
+            self._napis(tekst, r.x + 3, r.y + 1, kolor)
 
     def _etykiety_walki(self, e: dict) -> None:
         w = ekran.walka

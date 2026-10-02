@@ -64,6 +64,12 @@ Zależności idą „w dół”. Moduły dnia (`swiat`) importują resztę leniw
 zmian. Grafika czyta stan z `game.ekran`; logika nigdy nie importuje pygame. Mapa rysuje region 9×9
 w rzucie izometrycznym, a obóz rośnie razem z osadą (chaty, palisada, wieża, wykarczowana okolica).
 
+Okno wybiera widok po stanie w `game.ekran`: walka → arena, rozmowa → portret, `ekran.widok` →
+scena osady, inaczej mapa regionu. Menu obozu i osady wchodzą w `ekran.widok_osady(...)` —
+to menedżer kontekstu, więc zagnieżdżone menu i wyjście wyjątkiem same oddają poprzedni widok.
+Scena (`grafika.widok_osady`) czyta stan gry na żywo: postawiony budynek widać od razu, osadnicy
+kręcą się przy warsztatach swojego zajęcia, a imiona rysuje okno, bo czcionki żyją w warstwie UI.
+
 ---
 
 ## 4. Systemy
@@ -142,8 +148,9 @@ produkcja → rzemiosło → przedmioty bojowe → bossowie i obrona. Awans daje
 Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd odwołany).
 
 **Słabe.**
-- Grafikę mają mapa, walka i portrety rozmówców; menu obozu, osady i handlu to wciąż tekst
-  w konsoli okna. **To największa pozostała dziura** — tam spędza się najwięcej czasu.
+- Grafikę mają mapa, walka, portrety rozmówców oraz obóz i osada (scena z chatami, palisadą
+  i osadnikami przy warsztatach). Same menu nadal są tekstem w konsoli okna — teraz jednak nad
+  sceną osady, a nie nad obcą mapą. **Pozostała dziura**: handel i rzemiosło bez własnej scenerii.
 - Mag i Druid słabiej radzą sobie z bossami (częściowo przez to, jak gra nimi bot).
 - Rozmów w nowym silniku jest 10; `dialogues.py` został warstwą danych, przez którą `rozmowy.py`
   prowadzi wszystkich nazwanych NPC w nowym silniku.
@@ -154,7 +161,8 @@ Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd o
 ## 8. Co dalej
 
 1. **Kampania** — akty, finał, epilog zależny od karmy i osady (odłożona na osobną iterację).
-2. Ekrany graficzne: obóz i osada jako scena, menu jako okna pixelart.
+2. Menu jako okna pixelart (scena obozu i osady już jest; tekstowe pozostają listy wyborów),
+   własna sceneria dla targu i warsztatu.
 3. Więcej spraw osady i myśli; nowe wydarzenia sezonowe (powódź wiosną, pożar latem, zaraza).
 4. Osadnicy po imieniu w rozmowach — więzi z `wiezi.py` jako temat rozmowy
    (poróżnieni proszą o rozsądzenie sporu, para o zgodę na chatę).

@@ -6,6 +6,8 @@ W trybie tekstowym nikt tego nie czyta i wszystko działa jak dawniej.
 """
 from __future__ import annotations
 
+import contextlib
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -33,6 +35,28 @@ def ustaw_walke(gracz, wrog, stan) -> None:
 def koniec_walki() -> None:
     global walka
     walka = None
+
+
+# Otwarty widok osady z bliska: "oboz" albo "osada". Okno rysuje wtedy placyk
+# z chatami i osadnikami zamiast mapy regionu, żeby menu obozu i osady działy
+# się na miejscu, a nie nad obcym widokiem.
+widok: str | None = None
+
+
+@contextlib.contextmanager
+def widok_osady(nazwa: str):
+    """Na czas menu pokazuje osadę z bliska i oddaje poprzedni widok na wyjściu.
+
+    Menu zagnieżdżają się (osada → karta osadnika → warsztat) i mogą wyjść
+    wyjątkiem, więc widok wraca w ``finally``, a nie przez ustawienie na None.
+    """
+    global widok
+    poprzedni = widok
+    widok = nazwa
+    try:
+        yield
+    finally:
+        widok = poprzedni
 
 
 # Kto mówi w trwającej rozmowie — okno rysuje wtedy jego portret.
