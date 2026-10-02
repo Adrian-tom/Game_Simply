@@ -1,0 +1,44 @@
+# Wytwory Unity i .NET — generowane, nie wchodzą do repozytorium.
+
+# Unity
+GraSimply/Library/
+GraSimply/Temp/
+GraSimply/Obj/
+GraSimply/Build/
+GraSimply/Builds/
+GraSimply/Logs/
+GraSimply/UserSettings/
+GraSimply/MemoryCaptures/
+GraSimply/Recordings/
+GraSimply/Assets/AssetStoreTools*
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+*.app
+crashlytics-build.properties
+
+# .NET (projekt testowy)
+Testy/bin/
+Testy/obj/
+
+# Podgląd grafiki: .raw i .napisy to półprodukty, PNG-i zostają,
+# bo to one pokazują, jak gra wygląda.
+podglad/*.raw
+podglad/*.napisy
+
+# Wyjątek: plik projektu testów jest nasz, nie generowany przez Unity.
+!Testy/GraSimply.Testy.csproj

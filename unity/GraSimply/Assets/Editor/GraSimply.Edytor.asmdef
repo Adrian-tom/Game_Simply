@@ -1,0 +1,20 @@
+{
+    "name": "GraSimply.Edytor",
+    "rootNamespace": "GraSimply.Edytor",
+    "references": [
+        "GraSimply.Logika",
+        "GraSimply.Grafika",
+        "GraSimply.Gra"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

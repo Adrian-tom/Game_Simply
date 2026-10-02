@@ -19,6 +19,11 @@ Cała grafika jest liczona w kodzie. Bez pygame gra startuje w trybie tekstowym 
 
 Architektura, pętle gry i liczby z symulacji balansu: **[ANALIZA.md](ANALIZA.md)**.
 
+> **Port na Unity** — w katalogu `unity/` powstaje wersja w C# i Unity: ten sam świat,
+> ten sam pixelart liczony w kodzie, ten sam seed daje tę samą mapę. Wersja pythonowa
+> zostaje jako wzorzec, do którego port porównuje się w testach — **piksel w piksel**.
+> Szczegóły i instrukcja uruchomienia: **[unity/README.md](unity/README.md)**.
+
 ---
 
 ## Uruchomienie
