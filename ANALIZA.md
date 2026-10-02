@@ -142,9 +142,11 @@ produkcja → rzemiosło → przedmioty bojowe → bossowie i obrona. Awans daje
 Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd odwołany).
 
 **Słabe.**
-- Grafikę mają mapa, walka i rozmowy; menu obozu, osady i handlu to wciąż tekst w konsoli okna.
+- Grafikę mają mapa, walka i portrety rozmówców; menu obozu, osady i handlu to wciąż tekst
+  w konsoli okna. **To największa pozostała dziura** — tam spędza się najwięcej czasu.
 - Mag i Druid słabiej radzą sobie z bossami (częściowo przez to, jak gra nimi bot).
-- Rozmów w nowym silniku jest 10; stare dialogi NPC (poza Grimboldem) działają w starym systemie.
+- Rozmów w nowym silniku jest 10; `dialogues.py` został warstwą danych, przez którą `rozmowy.py`
+  prowadzi wszystkich nazwanych NPC w nowym silniku.
 - Brak kampanii (świadomie).
 
 ---
@@ -152,10 +154,10 @@ Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd o
 ## 8. Co dalej
 
 1. **Kampania** — akty, finał, epilog zależny od karmy i osady (odłożona na osobną iterację).
-2. Przenieść pozostałe dialogi NPC do silnika rozmów (głosy, testy, myśli).
-3. Ekrany graficzne: obóz i osada jako scena, menu jako okna pixelart; lepsze portrety (twarze).
-4. Więcej spraw osady i myśli; wydarzenia sezonowe (powódź wiosną, pożar latem, zaraza).
-5. Osadnicy z imionami w rozmowach i relacjami między sobą.
+2. Ekrany graficzne: obóz i osada jako scena, menu jako okna pixelart.
+3. Więcej spraw osady i myśli; nowe wydarzenia sezonowe (powódź wiosną, pożar latem, zaraza).
+4. Osadnicy po imieniu w rozmowach — więzi z `wiezi.py` jako temat rozmowy
+   (poróżnieni proszą o rozsądzenie sporu, para o zgodę na chatę).
 
 ---
 

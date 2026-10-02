@@ -74,6 +74,7 @@ def _gracz_do_dict(gracz: Gracz) -> dict:
         "czas_wyjscia": int(getattr(gracz, "czas_wyjscia", 0) or 0),
         "chaty": int(getattr(gracz, "chaty", 0) or 0),
         "osadnicy": list(getattr(gracz, "osadnicy", []) or []),
+        "wiezi": dict(getattr(gracz, "wiezi", {}) or {}),
         "watki_npc": dict(getattr(gracz, "watki_npc", {}) or {}),
         "atrybuty": dict(getattr(gracz, "atrybuty", {}) or {}),
         "biegle_skille": list(getattr(gracz, "biegle_skille", []) or []),
@@ -159,6 +160,7 @@ def _dict_do_gracza(dane: dict) -> Gracz:
     gracz.czas_wyjscia = int(dane.get("czas_wyjscia", 0) or 0)
     gracz.chaty = int(dane.get("chaty", 0) or 0)
     gracz.osadnicy = list(dane.get("osadnicy") or [])
+    gracz.wiezi = {k: float(v) for k, v in (dane.get("wiezi") or {}).items()}
     gracz.watki_npc = dict(dane.get("watki_npc") or {})
     from game.atrybuty import zapewnij_atrybuty, startowe_atrybuty, biegle_skille_klasy
 

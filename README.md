@@ -57,6 +57,7 @@ w `%USERPROFILE%\.local\bin\`, a przy pierwszym starcie sam doinstalowuje pygame
 | **Przetrwanie** | Na wyprawę bierzesz prowiant (8 racji, +4 za poziom stajni). Bez jedzenia głód: −HP i słabszy atak. Zimą bez ciepłego odzienia mróz rani co dzień |
 | **Rany** | Ciężkie ciosy zostawiają rany (złamana ręka −20% ataku, głęboka rana −50% mikstur, zwichnięta noga, wstrząs). Goją się z czasem — szybciej przy odpoczynku, w lecznicy, po maści |
 | **Osadnicy** | Morale, cecha (pracowity, leniwy, żarłoczny, odważny, chorowity…), doświadczenie w zawodzie (★), choroby. Głodni i zmarznięci pracują gorzej, chorują i odchodzą |
+| **Więzi** | Osadnicy zaprzyjaźniają się i kłócą. Wspólna praca i zgodne charaktery zbliżają, sprzeczne cechy dzielą, a głód i zimno kłócą wszystkich. Przyjaciel obok podnosi morale, wróg ciągnie w dół. Para z więzią ≥ 80 jest wyłączna — nikt nie ma dwóch partnerów — i może doczekać się dziecka, jedynego darmowego osadnika w grze (potrzebna wolna chata, żywność, dobre morale i przerwa po poprzednim dziecku). Śmierć albo odejście bliskiego łamie tych, którzy go kochali |
 | **Zawody** | Drwal, kamieniarz, zielarz, myśliwy, rolnik, górnik, tracz, hutnik, handlarz, rzemieślnik, strażnik, uzdrowiciel |
 | **Łańcuchy produkcji** | Drewno → tartak → deski; ruda + drewno → huta → żelazo; żelazo → kuźnia → narzędzia (+25% pracy) i ulepszenia broni/zbroi |
 | **Budynki** | 16 budynków, każdy z poziomami i utrzymaniem: farma, spichlerz, tartak, huta, kuźnia, warsztat, laboratorium, lecznica, targ, karawanseraj, tawerna, palisada, wieża, stajnie, sklep, dom (+ chaty) |
@@ -107,6 +108,7 @@ Game_Simply/
 │   ├── kalendarz.py   # Pory roku
 │   ├── przetrwanie.py # Prowiant, głód, zimno, rany
 │   ├── osada.py       # Osadnicy, zawody, produkcja, morale, choroby, praca, targ
+│   ├── wiezi.py       # Relacje między osadnikami: przyjaźnie, waśnie, pary, narodziny
 │   ├── oboz.py        # Surowce, budynki z poziomami, zbieractwo na mapie
 │   ├── obrona.py      # Zagrożenie, najazdy, fale, herszt
 │   ├── rzemioslo.py   # Przepisy, odkrycia, zamówienia, ulepszenia, składniki

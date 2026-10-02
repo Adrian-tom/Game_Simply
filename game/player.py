@@ -126,6 +126,10 @@ class Gracz:
             {"imie": "Olek", "zajecie": "drwal", "morale": 60.0, "cecha": "pracowity", "dosw": {}, "chory": 0},
             {"imie": "Jagna", "zajecie": "mysliwy", "morale": 60.0, "cecha": "wesoly", "dosw": {}, "chory": 0},
         ]
+        # Relacje między osadnikami: {"Jagna|Olek": 42.0}. Klucz to para imion
+        # posortowana alfabetycznie, więc jedna wartość opisuje związek w obie
+        # strony. Olek i Jagna zaczynają jako znajomi — przeprowadzili się razem.
+        self.wiezi: dict[str, float] = {"Jagna|Olek": 20.0}
         self.watki_npc: dict[str, int] = {}
         # --- przetrwanie ---
         self.prowiant: int = 0

@@ -426,6 +426,13 @@ def dzien_osady(gracz: Gracz) -> tuple[list[str], list[str]]:
     # --- 6. morale, choroby, odejścia ---
     kronika += _morale_i_zdrowie(gracz, glodni, zimno, zaniedbanie, pilne)
 
+    # --- 6b. relacje między osadnikami ---
+    # Po morale, bo dryf więzi zależy od głodu i zimna, a przed wieścią o
+    # nowym osadniku — żeby dziecko z pary nie zderzyło się z przybyszem
+    # o tę samą wolną chatę.
+    from game import wiezi
+    kronika += wiezi.przelicz_dzien(gracz, glodni, zimno)
+
     # --- 7. wieść niesie się sama ---
     if talenty.ma(gracz, "legenda_osady") and wolne_chaty(gracz) > 0 and random.random() < 0.04:
         kronika.append("  🌟  " + zatrudnij_osadnika(gracz, "drwal", darmo=True).strip() + " Przyciągnęła go twoja sława.")
@@ -450,6 +457,8 @@ def _cel_morale(gracz: Gracz, o: dict, glodni: bool, zimno: bool, zaniedbanie: b
     cel += premia_morale(gracz)
     if o.get("chory", 0) > 0:
         cel -= 10
+    from game import wiezi
+    cel += wiezi.premia_morale(gracz, o)
     return max(0.0, min(100.0, cel))
 
 
@@ -464,9 +473,14 @@ def _morale_i_zdrowie(gracz: Gracz, glodni: bool, zimno: bool, zaniedbanie: bool
         if o.get("chory", 0) > 0:
             o["chory"] -= 1 + (1 if uzdrowiciele else 0)
             if (glodni or zimno) and random.random() < 0.04:
+                # Bliscy tracą morale ZANIM zmarły zniknie z listy — potem nie
+                # dałoby się już odczytać, kto był z nim związany.
+                from game import wiezi
+                zal = wiezi.po_stracie(gracz, o["imie"], "zmarl")
                 lista.remove(o)
                 gracz.flagi["morale_wydarzenia"] = gracz.flagi.get("morale_wydarzenia", 0) - 8
                 pilne.append(f"  ⚰  {o['imie']} umiera z choroby, głodu i zimna. Osada pogrąża się w żałobie.")
+                pilne.extend(zal)
                 continue
             if o["chory"] <= 0:
                 o["chory"] = 0
@@ -478,8 +492,11 @@ def _morale_i_zdrowie(gracz: Gracz, glodni: bool, zimno: bool, zaniedbanie: bool
                 o["chory"] = random.randint(3, 6)
                 msgs.append(f"  🤒  {o['imie']} zachorował(a) — nie pracuje przez kilka dni.")
         if o["morale"] < 20 and random.random() < 0.10:
+            from game import wiezi
+            zal = wiezi.po_stracie(gracz, o["imie"], "odeszl")
             lista.remove(o)
             pilne.append(f"  🚪  {o['imie']} ma dość (morale {o['morale']:.0f}) i odchodzi z osady.")
+            pilne.extend(zal)
     # wydarzenia wygasają
     mod = float(gracz.flagi.get("morale_wydarzenia", 0))
     if mod:
@@ -523,6 +540,10 @@ def _menu_zajec(gracz: Gracz, o: dict) -> None:
     )
     if doswiadczenie:
         print(f"  Doświadczenie: {doswiadczenie}")
+    from game import wiezi
+    print(f"  Relacje: {wiezi.opis_relacji(gracz, o['imie'])}")
+    if o.get("rodzice"):
+        print(f"  Urodzony(a) w osadzie — rodzice: {' i '.join(o['rodzice'])}")
     klucze = [z for z in ZAJECIA]
     for i, z in enumerate(klucze, 1):
         info = ZAJECIA[z]
@@ -533,9 +554,13 @@ def _menu_zajec(gracz: Gracz, o: dict) -> None:
     print("  [0] ↩ Wróć\n")
     wybor = input("  Nowe zajęcie: ").strip().lower()
     if wybor == "w":
+        from game import wiezi
+        zal = wiezi.po_stracie(gracz, o["imie"], "odeszl")
         osadnicy(gracz).remove(o)
         zmien_morale(gracz, -5)
         print(f"  {o['imie']} odchodzi. Inni patrzą na to niechętnie (−5 morale).")
+        for w in zal:
+            print(w)
     elif wybor.isdigit() and 1 <= int(wybor) <= len(klucze):
         print(ustaw_zajecie(gracz, o, klucze[int(wybor) - 1]))
     else:
@@ -564,12 +589,22 @@ def menu_osady(gracz: Gracz) -> None:
         print(f"  {linia_surowcow(gracz)}   Złoto: {gracz.zloto}\n")
         if not lista:
             print("  Nikt jeszcze nie mieszka w chatach. Zbuduj chatę ([11] w obozie) i zatrudnij osadnika.\n")
+        from game import wiezi
         for i, o in enumerate(lista, 1):
             info = ZAJECIA[o["zajecie"]]
             gwiazdki = "★" * poziom_doswiadczenia(o)
             chory = "  🤒 chory" if o.get("chory") else ""
+            # Znacznik relacji na liście: bez niego gracz musiałby wchodzić
+            # w kartę każdego osadnika, żeby zauważyć parę albo waśń.
+            znak = ""
+            if wiezi.partner(gracz, o["imie"]):
+                znak = "  💍"
+            elif wiezi.skonfliktowani(gracz, o["imie"]):
+                znak = "  💢"
+            elif wiezi.bliscy(gracz, o["imie"]):
+                znak = "  🤝"
             print(f"  [{i:>2}] {ikona_morale(o['morale'])} {o['imie']:8} {info['ikona']} {info['nazwa']} {gwiazdki}"
-                  f"  · {o['cecha']}  · morale {o['morale']:.0f}{chory}")
+                  f"  · {o['cecha']}  · morale {o['morale']:.0f}{chory}{znak}")
         print()
         print(f"  [N]  🤝  Zatrudnij osadnika ({CENA_OSADNIKA} zł, potrzebna wolna chata: {wolne_chaty(gracz)})")
         print("  [Z]  📋  Zamówienia dla rzemieślników")
