@@ -24,6 +24,15 @@ namespace GraSimply.Logika
 
         private readonly uint[] _mt = new uint[N];
         private int _mti = N + 1;
+        private int _zuzyte;
+
+        /// <summary>
+        /// Ile słów generator już oddał. Nie jest potrzebne grze, ale pozwala
+        /// testom sprawdzić rzecz, której inaczej nie widać: że dana akcja
+        /// zużywa dokładnie tyle losowań co w wersji pythonowej. Jedno losowanie
+        /// za dużo przesuwa cały dalszy świat przy tym samym seedzie.
+        /// </summary>
+        public int Zuzyte => _zuzyte;
 
         /// <summary>Jak <c>random.Random(seed)</c> dla nieujemnej liczby całkowitej.</summary>
         public Losowanie(long seed)
@@ -138,6 +147,7 @@ namespace GraSimply.Logika
                 _mti = 0;
             }
 
+            _zuzyte++;
             y = _mt[_mti++];
             y ^= y >> 11;
             y ^= (y << 7) & 0x9d2c5680u;

@@ -25,6 +25,14 @@ namespace GraSimply.Edytor
         [MenuItem("Gra Simply/Utwórz scenę gry", false, 10)]
         public static void Utworz()
         {
+            // Bez tego NewScene wyrzuciłoby niezapisane zmiany w otwartej scenie
+            // bez słowa ostrzeżenia. Dialog Unity daje Save / Don't Save / Cancel,
+            // a Cancel przerywa całą operację — zanim założymy katalog.
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                return;
+            }
+
             if (!AssetDatabase.IsValidFolder(Katalog))
             {
                 AssetDatabase.CreateFolder("Assets", "Scenes");

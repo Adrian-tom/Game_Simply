@@ -81,8 +81,9 @@ namespace GraSimply.Logika
                     Opis = "Ścieżka wspina się między skałami i daje szeroki widok na okolicę.",
                     Budynki = new Dictionary<string, string>
                     {
-                        { "kuźnia", "górska kuźnia" },
-                        { "jaskinia", "wejście do kopalni" },
+                        { "jaskinia", "kamienna strażnica" },
+                        { "karczma", "górski posterunek" },
+                        { "kuźnia", "kuźnia pod szczytem" },
                     },
                 }
             },
@@ -93,8 +94,8 @@ namespace GraSimply.Logika
                     Opis = "Czerwone ściany wąwozu odbijają każdy dźwięk twoich kroków.",
                     Budynki = new Dictionary<string, string>
                     {
-                        { "karczma", "obóz karawany" },
-                        { "jaskinia", "szczelina w skale" },
+                        { "jaskinia", "wykuta brama kopalni" },
+                        { "świątynia", "opuszczony magazyn kupców" },
                     },
                 }
             },
@@ -116,6 +117,24 @@ namespace GraSimply.Logika
             return szablon.Budynki.TryGetValue(punkt, out string nazwa)
                 ? nazwa
                 : Mapa.OpisPunktu(punkt);
+        }
+
+        /// <summary>
+        /// Budynek, który stoi na polu jako zwykła lokacja — albo null.
+        ///
+        /// Obóz, legowisko bossa, miasto i punkty mityczne mają własne wejścia
+        /// i własne sceny, więc nie liczą się jako „budynek na polu”. To
+        /// odpowiednik <c>_budynek_z_pola</c> z <c>game/world.py</c>, który
+        /// dla tych punktów zwraca None.
+        /// </summary>
+        public static string BudynekNaPolu(string biom, string punkt)
+        {
+            if (string.IsNullOrEmpty(punkt) || punkt == "obóz" || punkt == "boss"
+                || punkt == "miasto" || System.Array.IndexOf(Mapa.PunktyMityczne, punkt) >= 0)
+            {
+                return null;
+            }
+            return NazwaBudynku(biom, punkt);
         }
 
         /// <summary>

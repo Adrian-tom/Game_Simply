@@ -55,6 +55,11 @@ namespace GraSimply.Logika
             _gracz.CzasWyjscia = _gracz.Czas;
             Mapa.ZapewnijMape(_gracz);
             _konsola.Pisz(Przetrwanie.SpakujProwiant(_gracz));
+            if (Kalendarz.PoraGracza(_gracz).Klucz == "zima" && !Przetrwanie.MaOdzienie(_gracz))
+            {
+                _konsola.Pisz("  ❄  Zima, a ty bez ciepłego odzienia — mróz będzie ranił " +
+                              "co dzień (warsztat: ciepłe odzienie).");
+            }
             Utils.NacisnijEnter(_konsola);
 
             while (true)
@@ -69,7 +74,10 @@ namespace GraSimply.Logika
                 var kierunek = Mapa.Kierunki.FirstOrDefault(k => k.Klawisz == wybor);
                 if (kierunek.Klawisz != null)
                 {
-                    bool nowyRegion = Mapa.PrzesunGracza(_gracz, kierunek.Dx, kierunek.Dy);
+                    // Licznik regionów rośnie tylko wtedy, gdy świat wygenerował
+                    // nowy — to odróżnia odkrycie od powrotu w znane strony.
+                    int regionowPrzed = Mapa.LiczbaRegionow(_gracz);
+                    bool zmianaRegionu = Mapa.PrzesunGracza(_gracz, kierunek.Dx, kierunek.Dy);
                     foreach (string wiesc in Swiat.MinijDni(_gracz, _rng))
                     {
                         _konsola.Pisz(wiesc);
@@ -78,9 +86,9 @@ namespace GraSimply.Logika
                     {
                         return "przegrana";
                     }
-                    if (nowyRegion)
+                    if (zmianaRegionu)
                     {
-                        PokazZmianeRegionu(!CzyRegionOdwiedzony());
+                        PokazZmianeRegionu(Mapa.LiczbaRegionow(_gracz) > regionowPrzed);
                     }
                     PokazWejscieNaPole(kierunek.Nazwa);
                     continue;
@@ -108,18 +116,6 @@ namespace GraSimply.Logika
                     Utils.NacisnijEnter(_konsola);
                 }
             }
-        }
-
-        /// <summary>
-        /// Czy w regionie, w którym stoimy, odkryto już więcej niż jedno pole.
-        ///
-        /// Wejście na nowy region od razu odkrywa pole, na które wchodzimy,
-        /// więc „pierwszy raz tutaj” poznajemy po tym, że to jedyne odkryte
-        /// pole w całej siatce.
-        /// </summary>
-        private bool CzyRegionOdwiedzony()
-        {
-            return Mapa.LiczbaOdkrytych(_gracz) > 1;
         }
 
         private string ZakonczWyprawe()
@@ -324,10 +320,16 @@ namespace GraSimply.Logika
             {
                 _konsola.Pisz("\n  🏕  Widzisz znajome palenisko — to twój obóz.");
             }
-            else if (!string.IsNullOrEmpty(pole.Punkt))
+            else
             {
-                string nazwa = Swiat.NazwaBudynku(pole.Biom, pole.Punkt);
-                _konsola.Pisz($"\n  {Ikony.Punkt(pole.Punkt)}  Na polu stoi: {nazwa} ({pole.Punkt}).");
+                // Miasto i punkty mityczne mają własne wejścia, więc Python nie
+                // zapowiada ich jako „budynku na polu” — tutaj też nie zapowiadamy.
+                string nazwa = Swiat.BudynekNaPolu(pole.Biom, pole.Punkt);
+                if (nazwa != null)
+                {
+                    _konsola.Pisz($"\n  {Ikony.Punkt(pole.Punkt)}  Na polu stoi: {nazwa} " +
+                                  $"({pole.Punkt}).");
+                }
             }
             pole.Odwiedzone = true;
             Utils.NacisnijEnter(_konsola);

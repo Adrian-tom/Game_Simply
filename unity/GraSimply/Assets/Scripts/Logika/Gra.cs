@@ -220,20 +220,28 @@ namespace GraSimply.Logika
             }
         }
 
-        private void Odpoczynek(Gracz gracz)
+        /// <summary>
+        /// Dzień odpoczynku w obozie. Publiczna, bo testy sprawdzają samo
+        /// leczenie — bez przechodzenia całego menu obozu.
+        /// </summary>
+        public void Odpoczynek(Gracz gracz)
         {
             _konsola.Wyczysc();
             Utils.Linia(_konsola, '═');
             _konsola.Pisz("  🔥  ODPOCZYNEK");
             Utils.Linia(_konsola, '═');
-            int lecz = Math.Max(1, gracz.MaxHp / 4);
+            // Jak _leczenie_odpoczynku w main.py: baza 30, a dom i lecznica
+            // ją podnoszą. Bez tych budynków zostaje płaskie 30 — niezależnie
+            // od klasy i poziomu, więc Mag leczy tyle samo co Wojownik.
+            int lecz = 30 + 25 * gracz.PoziomBudynku("dom") + 15 * gracz.PoziomBudynku("lecznica");
             int przed = gracz.Hp;
             gracz.Hp = Math.Min(gracz.MaxHp, gracz.Hp + lecz);
+            _konsola.Pisz($"\n  😴  Odpoczywasz i odzyskujesz {gracz.Hp - przed} HP.");
             if (gracz.MaxMana > 0)
             {
                 gracz.Mana = gracz.MaxMana;
+                _konsola.Pisz($"  🔮  Mana uzupełniona do {gracz.MaxMana}!");
             }
-            _konsola.Pisz($"\n  Noc przy ogniu przywraca {gracz.Hp - przed} HP.");
             foreach (string wiesc in Swiat.MinijDni(gracz, _rng, 1, odpoczynek: true))
             {
                 _konsola.Pisz(wiesc);

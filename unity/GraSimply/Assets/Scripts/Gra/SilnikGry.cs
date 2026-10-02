@@ -80,6 +80,7 @@ namespace GraSimply.Gra
         private Migawka _migawka;
         private Migawka _tytulowa;
 
+        private bool _bladLogiki;
         private string _bufor = "";
         private int _przewiniecie;
         private int _ostatniaWersja = -1;
@@ -97,6 +98,10 @@ namespace GraSimply.Gra
 
         private void Awake()
         {
+            // Bez wyzerowania vSync Unity ignoruje targetFrameRate i rysuje
+            // z czestotliwoscia monitora — scena liczona na procesorze nie ma
+            // po co chodzic 144 razy na sekunde.
+            QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = Mathf.Max(15, KlatekNaSekunde);
             _pulpit = new Pulpit();
             _tekstura = new Texture2D(Pulpit.Szerokosc, Pulpit.Wysokosc, TextureFormat.RGBA32, false)
@@ -145,6 +150,9 @@ namespace GraSimply.Gra
                     _konsola.Pisz();
                     _konsola.Pisz($"  ‼  Błąd logiki gry: {e.GetType().Name}: {e.Message}");
                     _konsola.Pisz("  Szczegóły są w konsoli Unity.");
+                    // Po błędzie nie zamykamy gry od razu — inaczej ten komunikat
+                    // mignąłby na jedną klatkę i nikt by go nie przeczytał.
+                    _bladLogiki = true;
                 }
             });
         }
@@ -168,8 +176,13 @@ namespace GraSimply.Gra
             var skaler = kanwaObiekt.GetComponent<CanvasScaler>();
             skaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             skaler.referenceResolution = new Vector2(Pulpit.Szerokosc, Pulpit.Wysokosc);
-            skaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            skaler.matchWidthOrHeight = 0.5f;
+            // Expand, nie MatchWidthOrHeight: pulpit ma sztywne 1280x720 i ma byc
+            // widoczny w calosci. Przy dopasowaniu „w polowie szerokosc, w polowie
+            // wysokosc" kadr miesci sie tylko przy dokladnie 16:9, a na 16:10 czy
+            // 4:3 wychodzilby poza ekran razem z ramkami i koncowkami wierszy.
+            // Wzorzec robi to samo: pygame.SCALED wpisuje stala powierzchnie
+            // w okno z zachowaniem proporcji.
+            skaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
 
             // Korzeń o dokładnym rozmiarze pulpitu z punktem odniesienia
             // w lewym górnym rogu — wtedy pozycje z Grafiki przekładają się
@@ -314,9 +327,14 @@ namespace GraSimply.Gra
             Rysuj();
             if (_watekLogiki != null && _watekLogiki.IsCompleted && !_konsola.Zamknieta)
             {
-                // Logika doszła do końca (gracz wybrał wyjście) — zamykamy grę.
                 _watekLogiki = null;
-                Wyjdz();
+                if (!_bladLogiki)
+                {
+                    // Logika doszła do końca (gracz wybrał wyjście) — zamykamy grę.
+                    // Po błędzie zostajemy na ekranie z komunikatem, aż gracz
+                    // sam zamknie okno.
+                    Wyjdz();
+                }
             }
         }
 
