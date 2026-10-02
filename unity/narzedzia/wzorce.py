@@ -15,6 +15,7 @@ kafli trzeba je wygenerować ponownie i sprawdzić, czy port nadal się zgadza.
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import random
@@ -140,14 +141,20 @@ def wzorce_pikseli() -> dict:
 
 
 def _zrzut_powierzchni(pow_) -> dict:
-    """Powierzchnia pygame → lista pikseli RGBA, gotowa do porównania."""
+    """Powierzchnia pygame → piksele RGBA w base64, gotowe do porównania.
+
+    Pierwotnie szedł tu zwykły spis liczb, ale sam plik z kaflami urósł
+    wtedy do ćwierć megabajta — jeden piksel zajmował kilkanaście znaków.
+    Base64 surowych bajtów daje siedem razy mniej i czytelny diff:
+    zmiana w rysowaniu to jedna zmieniona linia, a nie tysiąc liczb.
+    """
     w, h = pow_.get_size()
-    piksele = []
+    bajty = bytearray()
     for y in range(h):
         for x in range(w):
             r, g, b, a = pow_.get_at((x, y))
-            piksele.extend((r, g, b, a))
-    return {"w": w, "h": h, "piksele": piksele}
+            bajty.extend((r, g, b, a))
+    return {"w": w, "h": h, "piksele_b64": base64.b64encode(bytes(bajty)).decode("ascii")}
 
 
 def wzorce_kafli() -> dict:

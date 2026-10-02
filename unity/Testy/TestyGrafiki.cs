@@ -226,8 +226,14 @@ namespace GraSimply.Testy
                                 $"jest {otrzymane.Szerokosc}×{otrzymane.Wysokosc})", false);
                 return;
             }
-            var piksele = wzorzec.GetProperty("piksele").EnumerateArray()
-                                 .Select(e => (byte)e.GetInt32()).ToArray();
+            byte[] piksele = Convert.FromBase64String(
+                wzorzec.GetProperty("piksele_b64").GetString());
+            if (piksele.Length != otrzymane.Dane.Length)
+            {
+                Harness.Sprawdz($"{opis}  (wzorzec ma {piksele.Length} bajtów, " +
+                                $"port {otrzymane.Dane.Length})", false);
+                return;
+            }
             int rozne = 0;
             string pierwszy = null;
             for (int i = 0; i < piksele.Length; i += 4)
