@@ -10,18 +10,25 @@ namespace GraSimply.Grafika
     /// Rysuje prosto z danych gry — nie trzyma własnej kopii świata. Zbuforowane
     /// są tylko obrazki kafli i dekoracji, kluczowane tym, co na polu widać,
     /// więc zmiana w grze (np. pokonany boss) odświeża się sama.
+    ///
+    /// Scena zna kolejność rysowania i światło; jak wyglądają kafle, obiekty
+    /// i postać, mówi jej generator aktywnego stylu (<see cref="IGeneratorTerenu"/>).
+    /// Generator jest brany przy tworzeniu sceny — po zmianie stylu trzeba
+    /// zbudować nową scenę, bo bufory kafli należą do starego.
     /// </summary>
     public sealed class ScenaMapy
     {
-        /// <summary>Rozdzielczość sceny w pikselach gry.</summary>
-        public const int Szer = 320;
-        public const int Wys = 240;
+        /// <summary>Szerokość sceny w aktywnym stylu — do przygotowania płótna.</summary>
+        public static int Szer => Styl.Aktywny.Generator.SzerSceny;
 
-        /// <summary>Ekranowa pozycja górnego wierzchołka pola (0, 0).</summary>
-        private const int X0 = Szer / 2;
-        private const int Y0 = 46;
+        /// <summary>Wysokość sceny w aktywnym stylu.</summary>
+        public static int Wys => Styl.Aktywny.Generator.WysSceny;
 
         public bool Zmierzch;
+
+        private readonly IGeneratorTerenu _gen;
+        private readonly Styl _styl;
+        private readonly int _x0;
 
         private readonly Dictionary<string, (int H, Plotno[] Warianty)> _kafle =
             new Dictionary<string, (int, Plotno[])>();
@@ -29,31 +36,38 @@ namespace GraSimply.Grafika
         private readonly Dictionary<string, List<Dekoracja>> _dekor =
             new Dictionary<string, List<Dekoracja>>();
         private readonly Dictionary<string, Plotno> _osady = new Dictionary<string, Plotno>();
-        private readonly Dictionary<string, Plotno> _spriteGracza = new Dictionary<string, Plotno>();
         private readonly Plotno _obwodka;
-        private readonly Plotno _cien;
-        private readonly Dictionary<bool, Plotno> _niebo;
+        private readonly Dictionary<bool, Plotno> _tlo;
         private readonly Plotno _winieta;
         private readonly Dictionary<string, Plotno> _blask;
 
         public ScenaMapy()
         {
-            _obwodka = Teren.Obwodka();
-            _cien = new Plotno(12, 5);
-            _cien.Elipsa(new Barwa(0, 0, 0, 90), 0, 0, 12, 5);
-            Styl s = Styl.Aktywny;
-            _niebo = new Dictionary<bool, Plotno>
+            _styl = Styl.Aktywny;
+            _gen = _styl.Generator;
+            _x0 = _gen.SzerSceny / 2;
+            _obwodka = _gen.Obwodka();
+            _tlo = new Dictionary<bool, Plotno>
             {
-                { false, Piksele.GradientNieba(Szer, Wys, s.NieboGora, s.NieboDol) },
-                { true, Piksele.GradientNieba(Szer, Wys, s.NieboGoraZmierzch, s.NieboDolZmierzch) },
+                { false, _gen.Tlo(false) },
+                { true, _gen.Tlo(true) },
             };
-            _winieta = Piksele.Winieta(Szer, Wys);
+            _winieta = _gen.Winieta();
             _blask = new Dictionary<string, Plotno>();
-            foreach (KeyValuePair<string, (int Promien, Barwa Kolor)> b in s.Blaski)
+            foreach (KeyValuePair<string, (int Promien, Barwa Kolor)> b in _styl.Blaski)
             {
                 _blask[b.Key] = Piksele.Poswiata(b.Value.Promien, b.Value.Kolor);
             }
         }
+
+        /// <summary>Styl, którym ta scena rysuje.</summary>
+        public Styl Styl => _styl;
+
+        public int SzerokoscSceny => _gen.SzerSceny;
+
+        public int WysokoscSceny => _gen.WysSceny;
+
+        public int SkalaSceny => _gen.SkalaSceny;
 
         // ------------------------------------------------------------------ //
         //  Bufory                                                             //
@@ -70,12 +84,12 @@ namespace GraSimply.Grafika
             if (!_kafle.TryGetValue(klucz, out (int H, Plotno[] Warianty) wpis))
             {
                 int s = Ziarno(region, x, y);
-                int h = Teren.WysokoscPola(biom, x, y, s);
-                int klatki = biom == "bagna" ? 3 : 1;
+                int h = _gen.WysokoscPola(biom, x, y, s);
+                int klatki = Math.Max(1, _gen.Klatki(biom));
                 var warianty = new Plotno[klatki];
                 for (int k = 0; k < klatki; k++)
                 {
-                    warianty[k] = Teren.Kafel(biom, h, s, k);
+                    warianty[k] = _gen.Kafel(biom, h, s, k);
                 }
                 wpis = (h, warianty);
                 _kafle[klucz] = wpis;
@@ -88,7 +102,7 @@ namespace GraSimply.Grafika
             string klucz = $"{region.X},{region.Y}|{x}|{y}|{biom}|{Zmierzch}";
             if (!_mgla.TryGetValue(klucz, out Plotno p))
             {
-                p = Teren.Zamglij(kafel, x, y, Zmierzch);
+                p = _gen.Zamglij(kafel, x, y, Zmierzch);
                 _mgla[klucz] = p;
             }
             return p;
@@ -99,7 +113,7 @@ namespace GraSimply.Grafika
             string klucz = $"{region.X},{region.Y}|{x}|{y}|{biom}|{punkt}";
             if (!_dekor.TryGetValue(klucz, out List<Dekoracja> lista))
             {
-                lista = Teren.Dekoracje(biom, punkt, Ziarno(region, x, y));
+                lista = _gen.Dekoracje(biom, punkt, Ziarno(region, x, y));
                 _dekor[klucz] = lista;
             }
             return lista;
@@ -110,19 +124,8 @@ namespace GraSimply.Grafika
             string klucz = $"{chaty}|{palisada}|{wieza}";
             if (!_osady.TryGetValue(klucz, out Plotno p))
             {
-                p = Teren.OsadaObozu(chaty, palisada, wieza);
+                p = _gen.OsadaObozu(chaty, palisada, wieza);
                 _osady[klucz] = p;
-            }
-            return p;
-        }
-
-        private Plotno SpriteGracza(string klasa)
-        {
-            string klucz = klasa ?? "";
-            if (!_spriteGracza.TryGetValue(klucz, out Plotno p))
-            {
-                p = Teren.SpriteGracza(klasa);
-                _spriteGracza[klucz] = p;
             }
             return p;
         }
@@ -131,15 +134,13 @@ namespace GraSimply.Grafika
         //  Rysowanie                                                          //
         // ------------------------------------------------------------------ //
 
-        /// <summary>
-        /// Rysuje region na płótnie Szer×Wys.
-        /// </summary>
-        /// <param name="cel">Płótno sceny (320×240).</param>
+        /// <summary>Rysuje region na płótnie o rozmiarze sceny tego stylu.</summary>
+        /// <param name="cel">Płótno sceny.</param>
         /// <param name="pola">Siatka pól regionu.</param>
         /// <param name="t">Czas w sekundach — animuje wodę, ogień i chód postaci.</param>
         /// <param name="region">Współrzędne regionu — wchodzą w ziarno kafli.</param>
         /// <param name="graczXy">Pole gracza albo null (ekran tytułowy).</param>
-        /// <param name="klasa">Klasa postaci — decyduje o barwach sprite'a.</param>
+        /// <param name="klasa">Klasa postaci — decyduje o wyglądzie sprite'a.</param>
         /// <param name="wszystkoOdkryte">Pomija mgłę wojny (ekran tytułowy).</param>
         /// <param name="osada">Chaty, palisada i wieża — obóz rośnie razem z osadą.</param>
         public void Rysuj(Plotno cel, PoleDoRysunku[][] pola, double t,
@@ -148,7 +149,9 @@ namespace GraSimply.Grafika
                           bool wszystkoOdkryte = false,
                           (int Chaty, int Palisada, int Wieza)? osada = null)
         {
-            cel.Nalóż(_niebo[Zmierzch], 0, 0);
+            int tw2 = _gen.TW / 2;
+            int th2 = _gen.TH / 2;
+            cel.Nalóż(_tlo[Zmierzch], 0, 0);
             var swiatla = new List<(string Rodzaj, int X, int Y)>();
             (int X, int Y)? pozycjaGracza = null;
             (int X, int Y)? karczowisko = null;
@@ -172,22 +175,22 @@ namespace GraSimply.Grafika
                     }
                     PoleDoRysunku pole = pola[y][x];
                     string biom = string.IsNullOrEmpty(pole.Biom) ? "równiny" : pole.Biom;
-                    int sx = X0 + (x - y) * (TW2);
-                    int sy = Y0 + (x + y) * (TH2);
+                    int sx = _x0 + (x - y) * tw2;
+                    int sy = _gen.Y0 + (x + y) * th2;
                     (int h, Plotno kafel) = Kafel(region, x, y, biom, klatka);
-                    (int X, int Y) srodek = (sx, sy - h + TH2);
+                    (int X, int Y) srodek = (sx, sy - h + th2);
 
                     if (!wszystkoOdkryte && !pole.Odkryte)
                     {
-                        cel.Nalóż(Zamglony(region, x, y, biom, kafel), sx - TW2, sy - h);
+                        cel.Nalóż(Zamglony(region, x, y, biom, kafel), sx - tw2, sy - h);
                         continue;
                     }
-                    cel.Nalóż(kafel, sx - TW2, sy - h);
+                    cel.Nalóż(kafel, sx - tw2, sy - h);
 
                     bool tuGracz = graczXy.HasValue && graczXy.Value.X == x && graczXy.Value.Y == y;
                     if (tuGracz)
                     {
-                        cel.Nalóż(_obwodka, sx - TW2, sy - h);
+                        cel.Nalóż(_obwodka, sx - tw2, sy - h);
                     }
 
                     string punkt = pole.Punkt;
@@ -202,7 +205,7 @@ namespace GraSimply.Grafika
                         && (osada.Value.Chaty != 0 || osada.Value.Palisada != 0 || osada.Value.Wieza != 0))
                     {
                         Plotno widok = Osada(osada.Value.Chaty, osada.Value.Palisada, osada.Value.Wieza);
-                        cel.Nalóż(widok, srodek.X - 26, srodek.Y - 30);
+                        cel.Nalóż(widok, srodek.X + _gen.KotwicaOsady.Dx, srodek.Y + _gen.KotwicaOsady.Dy);
                         dekoracje = dekoracje.FindAll(d => d.Sprite == null);
                     }
 
@@ -210,8 +213,8 @@ namespace GraSimply.Grafika
                     {
                         if (d.Sprite == null)
                         {
-                            Teren.Ognisko(cel, srodek.X + d.Dx, srodek.Y + d.Dy, t);
-                            swiatla.Add(("ogien", srodek.X + d.Dx, srodek.Y + d.Dy - 2));
+                            _gen.Ognisko(cel, srodek.X + d.Dx, srodek.Y + d.Dy, t);
+                            swiatla.Add(("ogien", srodek.X + d.Dx, srodek.Y + d.Dy + _gen.SwiatloOgniskaDy));
                         }
                         else
                         {
@@ -220,7 +223,7 @@ namespace GraSimply.Grafika
                     }
 
                     if (!string.IsNullOrEmpty(punkt)
-                        && Teren.SwiatlaPunktow.TryGetValue(punkt,
+                        && _gen.SwiatlaPunktow.TryGetValue(punkt,
                             out (string Rodzaj, int Dx, int Dy) sw))
                     {
                         swiatla.Add((sw.Rodzaj, srodek.X + sw.Dx, srodek.Y + sw.Dy));
@@ -228,10 +231,9 @@ namespace GraSimply.Grafika
 
                     if (tuGracz)
                     {
-                        bool naPunkcie = !string.IsNullOrEmpty(punkt);
-                        pozycjaGracza = (srodek.X - 4 + (naPunkcie ? 7 : 0),
-                                         srodek.Y - 11 + (naPunkcie ? 3 : 0));
-                        swiatla.Add(("latarnia", pozycjaGracza.Value.X + 4, pozycjaGracza.Value.Y + 6));
+                        pozycjaGracza = _gen.PozycjaGracza(srodek, !string.IsNullOrEmpty(punkt));
+                        swiatla.Add(("latarnia", pozycjaGracza.Value.X + _gen.SwiatloGracza.Dx,
+                                     pozycjaGracza.Value.Y + _gen.SwiatloGracza.Dy));
                     }
                 }
             }
@@ -240,20 +242,7 @@ namespace GraSimply.Grafika
             // niż ścisła głębia — w lesie inaczej ginie całkiem.
             if (pozycjaGracza.HasValue)
             {
-                int px = pozycjaGracza.Value.X;
-                int py = pozycjaGracza.Value.Y;
-                int bob = (int)(Math.Abs(Math.Sin(t * 3)) * 1.5);
-                cel.Nalóż(_cien, px - 1, py + 10);
-                cel.Nalóż(SpriteGracza(klasa), px, py - bob);
-                int my = py - 7 - (int)(Math.Abs(Math.Sin(t * 2.2)) * 2);
-                var szerokosci = new[] { 5, 3, 1 };
-                for (int i = 0; i < szerokosci.Length; i++)
-                {
-                    // złoty grot nad głową
-                    int szer = szerokosci[i];
-                    cel.Wypelnij(new Barwa(236, 200, 110), px + 4 - szer / 2, my + i, szer, 1);
-                }
-                cel.Wypelnij(new Barwa(120, 90, 40), px + 2, my - 1, 5, 1);
+                _gen.RysujGracza(cel, pozycjaGracza.Value.X, pozycjaGracza.Value.Y, klasa, t);
             }
 
             if (Zmierzch)
@@ -261,10 +250,8 @@ namespace GraSimply.Grafika
                 Oswietl(cel, swiatla, t);
             }
             cel.PomnozNa(_winieta, 0, 0);
+            _gen.Obrobka(cel, t);
         }
-
-        private const int TW2 = Teren.TW / 2;
-        private const int TH2 = Teren.TH / 2;
 
         private static (int X, int Y)? ZnajdzOboz(PoleDoRysunku[][] pola)
         {
@@ -288,7 +275,7 @@ namespace GraSimply.Grafika
         private void Oswietl(Plotno cel, List<(string Rodzaj, int X, int Y)> swiatla, double t)
         {
             var mapa = new Plotno(cel.Szerokosc, cel.Wysokosc, przezroczyste: false);
-            mapa.Wypelnij(Styl.Aktywny.SwiatloOtoczenia);
+            mapa.Wypelnij(_styl.SwiatloOtoczenia);
             foreach ((string rodzaj, int x, int y) in swiatla)
             {
                 Plotno b = _blask[rodzaj];

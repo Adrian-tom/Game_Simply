@@ -49,8 +49,6 @@ namespace GraSimply.Grafika
         public const int Szerokosc = 1280;
         public const int Wysokosc = 720;
 
-        /// <summary>Scena mapy jest rysowana w 320×240 i powiększana całkowitą krotnością.</summary>
-        public const int SkalaMapy = 2;
 
         // Barwy chromu bierzemy z aktywnego stylu — zmiana stylu ma przestawić
         // i scenę, i ramki, i tekst naraz, inaczej interfejs odstawałby od mapy.
@@ -61,8 +59,13 @@ namespace GraSimply.Grafika
         public static Barwa Tekst => Styl.Aktywny.Tekst;
         public static Barwa Przygaszony => Styl.Aktywny.Przygaszony;
 
-        private static readonly int MapaSzer = ScenaMapy.Szer * SkalaMapy;
-        private static readonly int MapaWys = ScenaMapy.Wys * SkalaMapy;
+        /// <summary>
+        /// Obszar mapy na pulpicie — w każdym stylu ten sam. Styl klasyczny
+        /// rysuje scenę 320×240 i powiększa ją ×2, styl szczegółowy rysuje
+        /// od razu 640×480; układ pulpitu się przez to nie zmienia.
+        /// </summary>
+        public const int MapaSzer = 640;
+        public const int MapaWys = 480;
 
         /// <summary>Prostokąt konsoli — warstwa Unity ustawia w nim wiersze tekstu.</summary>
         public static readonly (int X, int Y, int Szer, int Wys) ProstokatKonsoli =
@@ -72,12 +75,39 @@ namespace GraSimply.Grafika
             (8, MapaWys + 8, MapaSzer - 16, Wysokosc - MapaWys - 16);
 
         private readonly Plotno _plotno = new Plotno(Szerokosc, Wysokosc, przezroczyste: false);
-        private readonly Plotno _scena = new Plotno(ScenaMapy.Szer, ScenaMapy.Wys, przezroczyste: false);
+        private Plotno _scena;
+        private ScenaMapy _scenaMapy;
 
         /// <summary>Gotowa klatka w układzie RGBA32 — wprost do <c>Texture2D</c>.</summary>
         public Plotno Klatka => _plotno;
 
-        public ScenaMapy Scena { get; } = new ScenaMapy();
+        /// <summary>
+        /// Scena mapy w aktywnym stylu. Po zmianie stylu powstaje nowa — bufory
+        /// kafli starej należą do innego generatora i innej rozdzielczości.
+        /// Ustawienie zmierzchu przechodzi na nową scenę.
+        /// </summary>
+        public ScenaMapy Scena
+        {
+            get
+            {
+                if (_scenaMapy == null || _scenaMapy.Styl != Styl.Aktywny)
+                {
+                    bool zmierzch = _scenaMapy != null && _scenaMapy.Zmierzch;
+                    _scenaMapy = new ScenaMapy { Zmierzch = zmierzch };
+                    if (_scenaMapy.SzerokoscSceny * _scenaMapy.SkalaSceny != MapaSzer
+                        || _scenaMapy.WysokoscSceny * _scenaMapy.SkalaSceny != MapaWys)
+                    {
+                        throw new InvalidOperationException(
+                            $"Styl „{Styl.Aktywny.Nazwa}” daje scenę " +
+                            $"{_scenaMapy.SzerokoscSceny}×{_scenaMapy.WysokoscSceny} ×{_scenaMapy.SkalaSceny}, " +
+                            $"a pulpit ma na mapę {MapaSzer}×{MapaWys}.");
+                    }
+                    _scena = new Plotno(_scenaMapy.SzerokoscSceny, _scenaMapy.WysokoscSceny,
+                                        przezroczyste: false);
+                }
+                return _scenaMapy;
+            }
+        }
 
         /// <summary>
         /// Składa klatkę. Zwraca napisy do narysowania przez Unity w pikselach
@@ -90,9 +120,10 @@ namespace GraSimply.Grafika
                                 (int Chaty, int Palisada, int Wieza)? osada = null)
         {
             _plotno.Wypelnij(Tlo);
-            Scena.Rysuj(_scena, pola, t, region, graczXy, klasa, wszystkoOdkryte, osada);
+            ScenaMapy scena = Scena;
+            scena.Rysuj(_scena, pola, t, region, graczXy, klasa, wszystkoOdkryte, osada);
 
-            Plotno powiekszona = _scena.Skaluj(SkalaMapy);
+            Plotno powiekszona = scena.SkalaSceny == 1 ? _scena : _scena.Skaluj(scena.SkalaSceny);
             _plotno.Nalóż(powiekszona, 0, 0);
             _plotno.Obramowanie(RamkaJasna, 0, 0, MapaSzer, MapaWys, 2);
 

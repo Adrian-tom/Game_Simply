@@ -21,6 +21,9 @@ namespace GraSimply.Grafika
     {
         public string Nazwa;
 
+        /// <summary>Generator kafli, obiektów i postaci — „pędzel” tego stylu.</summary>
+        public IGeneratorTerenu Generator;
+
         // ---- teren ------------------------------------------------------- //
 
         /// <summary>Rampa czterech barw na biom, od cienia do światła.</summary>
@@ -114,6 +117,7 @@ namespace GraSimply.Grafika
         public static readonly Styl Klasyczny = new Styl
         {
             Nazwa = "klasyczny",
+            Generator = GeneratorKlasyczny.Instancja,
 
             Rampy = new Dictionary<string, Barwa[]>
             {
