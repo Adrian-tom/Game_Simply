@@ -41,21 +41,18 @@ namespace GraSimply.Grafika
             _obwodka = Teren.Obwodka();
             _cien = new Plotno(12, 5);
             _cien.Elipsa(new Barwa(0, 0, 0, 90), 0, 0, 12, 5);
+            Styl s = Styl.Aktywny;
             _niebo = new Dictionary<bool, Plotno>
             {
-                { false, Piksele.GradientNieba(Szer, Wys, new Barwa(120, 170, 210), new Barwa(196, 214, 222)) },
-                { true, Piksele.GradientNieba(Szer, Wys, new Barwa(30, 28, 58), new Barwa(86, 58, 84)) },
+                { false, Piksele.GradientNieba(Szer, Wys, s.NieboGora, s.NieboDol) },
+                { true, Piksele.GradientNieba(Szer, Wys, s.NieboGoraZmierzch, s.NieboDolZmierzch) },
             };
             _winieta = Piksele.Winieta(Szer, Wys);
-            _blask = new Dictionary<string, Plotno>
+            _blask = new Dictionary<string, Plotno>();
+            foreach (KeyValuePair<string, (int Promien, Barwa Kolor)> b in s.Blaski)
             {
-                { "ogien", Piksele.Poswiata(44, new Barwa(255, 150, 70)) },
-                { "okno", Piksele.Poswiata(20, new Barwa(255, 190, 110)) },
-                { "kuznia", Piksele.Poswiata(26, new Barwa(255, 120, 50)) },
-                { "magia", Piksele.Poswiata(30, new Barwa(170, 90, 255)) },
-                { "krew", Piksele.Poswiata(26, new Barwa(255, 60, 50)) },
-                { "latarnia", Piksele.Poswiata(30, new Barwa(220, 190, 140)) },
-            };
+                _blask[b.Key] = Piksele.Poswiata(b.Value.Promien, b.Value.Kolor);
+            }
         }
 
         // ------------------------------------------------------------------ //
@@ -291,7 +288,7 @@ namespace GraSimply.Grafika
         private void Oswietl(Plotno cel, List<(string Rodzaj, int X, int Y)> swiatla, double t)
         {
             var mapa = new Plotno(cel.Szerokosc, cel.Wysokosc, przezroczyste: false);
-            mapa.Wypelnij(new Barwa(112, 104, 168));
+            mapa.Wypelnij(Styl.Aktywny.SwiatloOtoczenia);
             foreach ((string rodzaj, int x, int y) in swiatla)
             {
                 Plotno b = _blask[rodzaj];

@@ -52,12 +52,14 @@ namespace GraSimply.Grafika
         /// <summary>Scena mapy jest rysowana w 320×240 i powiększana całkowitą krotnością.</summary>
         public const int SkalaMapy = 2;
 
-        public static readonly Barwa Tlo = new Barwa(14, 12, 20);
-        public static readonly Barwa RamkaJasna = new Barwa(150, 124, 86);
-        public static readonly Barwa RamkaCiemna = new Barwa(70, 56, 44);
-        public static readonly Barwa Zloty = new Barwa(232, 200, 130);
-        public static readonly Barwa Tekst = new Barwa(224, 216, 200);
-        public static readonly Barwa Przygaszony = new Barwa(150, 142, 132);
+        // Barwy chromu bierzemy z aktywnego stylu — zmiana stylu ma przestawić
+        // i scenę, i ramki, i tekst naraz, inaczej interfejs odstawałby od mapy.
+        public static Barwa Tlo => Styl.Aktywny.Tlo;
+        public static Barwa RamkaJasna => Styl.Aktywny.RamkaJasna;
+        public static Barwa RamkaCiemna => Styl.Aktywny.RamkaCiemna;
+        public static Barwa Zloty => Styl.Aktywny.Wyrozniony;
+        public static Barwa Tekst => Styl.Aktywny.Tekst;
+        public static Barwa Przygaszony => Styl.Aktywny.Przygaszony;
 
         private static readonly int MapaSzer = ScenaMapy.Szer * SkalaMapy;
         private static readonly int MapaWys = ScenaMapy.Wys * SkalaMapy;
@@ -112,7 +114,7 @@ namespace GraSimply.Grafika
         /// <summary>Pixelartowa ramka: dwie linie i ćwieki w narożnikach.</summary>
         private void Ramka((int X, int Y, int Szer, int Wys) r, Barwa? tlo = null)
         {
-            _plotno.Wypelnij(tlo ?? new Barwa(20, 17, 28), r.X, r.Y, r.Szer, r.Wys);
+            _plotno.Wypelnij(tlo ?? Styl.Aktywny.TloPanelu, r.X, r.Y, r.Szer, r.Wys);
             _plotno.Obramowanie(RamkaJasna, r.X, r.Y, r.Szer, r.Wys, 2);
             _plotno.Obramowanie(RamkaCiemna, r.X + 4, r.Y + 4, r.Szer - 8, r.Wys - 8, 2);
             var ćwieki = new[]
@@ -122,7 +124,7 @@ namespace GraSimply.Grafika
             };
             foreach ((int x, int y) in ćwieki)
             {
-                _plotno.Wypelnij(new Barwa(226, 196, 120), x, y, 6, 6);
+                _plotno.Wypelnij(Styl.Aktywny.Cwiek, x, y, 6, 6);
                 _plotno.Wypelnij(Tlo, x + 2, y + 2, 2, 2);
             }
         }
@@ -171,13 +173,13 @@ namespace GraSimply.Grafika
 
             y += 38;
             napisy.Add(new Napis("HP", x, y - 2, new Barwa(230, 190, 190)));
-            Pasek(x + 56, y, 300, h.Hp / (double)Math.Max(1, h.MaxHp), new Barwa(196, 52, 52));
+            Pasek(x + 56, y, 300, h.Hp / (double)Math.Max(1, h.MaxHp), Styl.Aktywny.PasekHp);
             napisy.Add(new Napis($"{h.Hp}/{h.MaxHp}", x + 368, y - 2, Tekst));
             if (h.MaxMana > 0)
             {
                 y += 24;
                 napisy.Add(new Napis("MANA", x, y - 2, new Barwa(190, 200, 240)));
-                Pasek(x + 56, y, 300, h.Mana / (double)Math.Max(1, h.MaxMana), new Barwa(70, 110, 220));
+                Pasek(x + 56, y, 300, h.Mana / (double)Math.Max(1, h.MaxMana), Styl.Aktywny.PasekMany);
                 napisy.Add(new Napis($"{h.Mana}/{h.MaxMana}", x + 368, y - 2, Tekst));
             }
 

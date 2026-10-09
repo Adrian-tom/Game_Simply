@@ -26,41 +26,18 @@ namespace GraSimply.Grafika
         public const int TW = 32;
         public const int TH = 16;
 
-        public static readonly Dictionary<string, Barwa[]> Rampy = new Dictionary<string, Barwa[]>
-        {
-            { "równiny", new[] { new Barwa(46, 78, 42), new Barwa(70, 112, 50), new Barwa(104, 148, 60), new Barwa(146, 180, 78) } },
-            { "las", new[] { new Barwa(26, 50, 36), new Barwa(38, 72, 44), new Barwa(56, 98, 52), new Barwa(82, 128, 62) } },
-            { "bagna", new[] { new Barwa(30, 48, 50), new Barwa(42, 66, 62), new Barwa(58, 88, 74), new Barwa(84, 114, 86) } },
-            { "wzgórza", new[] { new Barwa(66, 76, 60), new Barwa(94, 106, 76), new Barwa(124, 136, 92), new Barwa(160, 166, 116) } },
-            { "kanion", new[] { new Barwa(112, 58, 40), new Barwa(152, 86, 50), new Barwa(190, 120, 70), new Barwa(222, 164, 102) } },
-            { "ruiny", new[] { new Barwa(66, 64, 58), new Barwa(92, 88, 78), new Barwa(120, 114, 100), new Barwa(152, 146, 126) } },
-        };
+        /// <summary>Rampa czterech barw na biom — z aktywnego stylu.</summary>
+        public static Dictionary<string, Barwa[]> Rampy => Styl.Aktywny.Rampy;
 
-        private static readonly Dictionary<string, int> WysokosciBiomow = new Dictionary<string, int>
-        {
-            { "równiny", 4 }, { "las", 5 }, { "bagna", 1 },
-            { "wzgórza", 11 }, { "kanion", 8 }, { "ruiny", 4 },
-        };
+        private static Dictionary<string, int> WysokosciBiomow => Styl.Aktywny.WysokosciBiomow;
 
-        public static readonly Barwa[] Ziemia =
-        {
-            new Barwa(48, 34, 28), new Barwa(74, 52, 36), new Barwa(100, 72, 46), new Barwa(124, 92, 58),
-        };
+        public static Barwa[] Ziemia => Styl.Aktywny.Ziemia;
 
-        public static readonly Barwa[] Kamien =
-        {
-            new Barwa(52, 54, 60), new Barwa(80, 82, 88), new Barwa(110, 112, 116), new Barwa(146, 146, 146),
-        };
+        public static Barwa[] Kamien => Styl.Aktywny.Kamien;
 
-        public static readonly Barwa[] Czerwien =
-        {
-            new Barwa(90, 44, 34), new Barwa(128, 64, 42), new Barwa(164, 92, 56), new Barwa(196, 128, 80),
-        };
+        public static Barwa[] Czerwien => Styl.Aktywny.Czerwien;
 
-        public static readonly Barwa[] Woda =
-        {
-            new Barwa(22, 44, 58), new Barwa(32, 66, 82), new Barwa(52, 96, 110), new Barwa(120, 170, 176),
-        };
+        public static Barwa[] Woda => Styl.Aktywny.Woda;
 
         public static Barwa[] RampaBiomu(string biom)
         {
@@ -291,35 +268,15 @@ namespace GraSimply.Grafika
         //  Budynki i punkty                                                   //
         // ------------------------------------------------------------------ //
 
-        public static readonly Barwa[] Tynk =
-        {
-            new Barwa(120, 104, 86), new Barwa(164, 146, 120),
-            new Barwa(206, 190, 160), new Barwa(232, 222, 196),
-        };
+        public static Barwa[] Tynk => Styl.Aktywny.Tynk;
 
-        public static readonly Barwa[] Drewno =
-        {
-            new Barwa(70, 46, 32), new Barwa(104, 70, 44),
-            new Barwa(140, 98, 60), new Barwa(170, 126, 80),
-        };
+        public static Barwa[] Drewno => Styl.Aktywny.Drewno;
 
-        public static readonly Barwa[] Dachowka =
-        {
-            new Barwa(80, 34, 30), new Barwa(120, 52, 38),
-            new Barwa(160, 74, 48), new Barwa(196, 104, 66),
-        };
+        public static Barwa[] Dachowka => Styl.Aktywny.Dachowka;
 
-        public static readonly Barwa[] Lupek =
-        {
-            new Barwa(40, 46, 60), new Barwa(58, 66, 84),
-            new Barwa(80, 90, 110), new Barwa(110, 120, 138),
-        };
+        public static Barwa[] Lupek => Styl.Aktywny.Lupek;
 
-        public static readonly Barwa[] Zloto =
-        {
-            new Barwa(150, 120, 60), new Barwa(196, 160, 80),
-            new Barwa(228, 196, 110), new Barwa(250, 230, 160),
-        };
+        public static Barwa[] Zloto => Styl.Aktywny.Zloto;
 
         public static Plotno Namiot()
         {

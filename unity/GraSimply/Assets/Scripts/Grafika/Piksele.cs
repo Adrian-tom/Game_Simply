@@ -26,7 +26,7 @@ namespace GraSimply.Grafika
             new[] { 15, 7, 13, 5 },
         };
 
-        public static readonly Barwa Kontur = new Barwa(18, 16, 24);
+        public static Barwa Kontur => Styl.Aktywny.Kontur;
 
         /// <summary>
         /// Powtarzalny szum 0…1 — ten sam piksel zawsze dostaje tę samą wartość.
