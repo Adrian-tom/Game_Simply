@@ -17,12 +17,12 @@ namespace GraSimply.Grafika
     /// ale styl jest globalny z natury — alternatywą byłoby przepychanie go
     /// przez kilkadziesiąt funkcji rysujących, co nic nie daje.
     /// </summary>
-    public sealed class Styl
+    public sealed partial class Styl
     {
         public string Nazwa;
 
         /// <summary>Generator kafli, obiektów i postaci — „pędzel” tego stylu.</summary>
-        public IGeneratorTerenu Generator;
+        public IGeneratorSceny Generator;
 
         // ---- teren ------------------------------------------------------- //
 
@@ -73,6 +73,32 @@ namespace GraSimply.Grafika
         public Barwa Przygaszony;
         public Barwa PasekHp;
         public Barwa PasekMany;
+
+        /// <summary>Barwa linii ozdobnych w konsoli (═══, ───).</summary>
+        public Barwa Ozdobnik;
+
+        /// <summary>
+        /// Chrom z metalu w duchu Fallouta: płyta z nitami, wpuszczone ekrany
+        /// z liniami kineskopu, paski z segmentów. Bez tego — klasyczne ramki.
+        /// </summary>
+        public bool ChromMetalowy;
+
+        /// <summary>Płyta panelu (metal), tło ekranów i zgaszony segment paska — tylko w chromie metalowym.</summary>
+        public Barwa Plyta;
+        public Barwa Ekran;
+        public Barwa PasekWylaczony;
+
+        /// <summary>Czy pokazywać emoji z komunikatów gry. Pikselowy krój ich nie ma, a styl ich nie znosi.</summary>
+        public bool Emoji = true;
+
+        /// <summary>
+        /// Krój dołączony do gry (ścieżka w Resources, bez rozszerzenia) albo
+        /// null — wtedy czcionki systemowe.
+        /// </summary>
+        public string Kroj;
+
+        /// <summary>Szerokość znaku konsoli w pikselach pulpitu — do zawijania wierszy poza Unity.</summary>
+        public int SzerokoscZnaku = 9;
 
         // ---- obróbka końcowa --------------------------------------------- //
 
@@ -174,6 +200,7 @@ namespace GraSimply.Grafika
             Przygaszony = new Barwa(150, 142, 132),
             PasekHp = new Barwa(196, 52, 52),
             PasekMany = new Barwa(70, 110, 220),
+            Ozdobnik = new Barwa(150, 124, 86),
 
             PaletaGlowna = null,
             Ziarno = 0.0,

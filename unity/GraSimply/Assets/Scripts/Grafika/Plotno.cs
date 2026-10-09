@@ -19,12 +19,23 @@ namespace GraSimply.Grafika
             A = a;
         }
 
+        /// <summary>
+        /// Z liczb całkowitych — z obcięciem do 0…255. Rzut (byte) bez obcięcia
+        /// zawinąłby 260 do 4, więc piksel, który miał przygasnąć, zaświeciłby
+        /// jaskrawo; przy mieszaniu i przyciemnianiu wartości pośrednie
+        /// wychodzą poza zakres częściej, niż się wydaje.
+        /// </summary>
         public Barwa(int r, int g, int b, int a = 255)
         {
-            R = (byte)r;
-            G = (byte)g;
-            B = (byte)b;
-            A = (byte)a;
+            R = Obetnij(r);
+            G = Obetnij(g);
+            B = Obetnij(b);
+            A = Obetnij(a);
+        }
+
+        private static byte Obetnij(int v)
+        {
+            return (byte)(v < 0 ? 0 : v > 255 ? 255 : v);
         }
 
         public static readonly Barwa Pusta = new Barwa(0, 0, 0, 0);

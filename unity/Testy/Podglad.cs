@@ -16,7 +16,7 @@ namespace GraSimply.Testy
     /// przez <c>unity/narzedzia/podglad.py</c>, które ma pygame.
     ///
     /// Uruchomienie:
-    ///     dotnet run -- --podglad ../podglad
+    ///     dotnet run -- --podglad ../podglad [klasyczny|mroczny]
     /// </summary>
     public static class Podglad
     {

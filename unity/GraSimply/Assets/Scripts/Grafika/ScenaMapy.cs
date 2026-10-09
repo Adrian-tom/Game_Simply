@@ -27,6 +27,7 @@ namespace GraSimply.Grafika
         public bool Zmierzch;
 
         private readonly IGeneratorTerenu _gen;
+        private readonly IRysownikRegionu _rysownik;
         private readonly Styl _styl;
         private readonly int _x0;
 
@@ -44,7 +45,12 @@ namespace GraSimply.Grafika
         public ScenaMapy()
         {
             _styl = Styl.Aktywny;
-            _gen = _styl.Generator;
+            _rysownik = _styl.Generator as IRysownikRegionu;
+            if (_rysownik != null)
+            {
+                return; // styl składa region sam — bufory kafli są mu zbędne
+            }
+            _gen = (IGeneratorTerenu)_styl.Generator;
             _x0 = _gen.SzerSceny / 2;
             _obwodka = _gen.Obwodka();
             _tlo = new Dictionary<bool, Plotno>
@@ -63,11 +69,11 @@ namespace GraSimply.Grafika
         /// <summary>Styl, którym ta scena rysuje.</summary>
         public Styl Styl => _styl;
 
-        public int SzerokoscSceny => _gen.SzerSceny;
+        public int SzerokoscSceny => _styl.Generator.SzerSceny;
 
-        public int WysokoscSceny => _gen.WysSceny;
+        public int WysokoscSceny => _styl.Generator.WysSceny;
 
-        public int SkalaSceny => _gen.SkalaSceny;
+        public int SkalaSceny => _styl.Generator.SkalaSceny;
 
         // ------------------------------------------------------------------ //
         //  Bufory                                                             //
@@ -149,6 +155,11 @@ namespace GraSimply.Grafika
                           bool wszystkoOdkryte = false,
                           (int Chaty, int Palisada, int Wieza)? osada = null)
         {
+            if (_rysownik != null)
+            {
+                _rysownik.Rysuj(cel, pola, t, region, graczXy, klasa, wszystkoOdkryte, osada, Zmierzch);
+                return;
+            }
             int tw2 = _gen.TW / 2;
             int th2 = _gen.TH / 2;
             cel.Nalóż(_tlo[Zmierzch], 0, 0);

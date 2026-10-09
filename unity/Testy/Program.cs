@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using GraSimply.Grafika;
 
 namespace GraSimply.Testy
 {
@@ -16,10 +17,18 @@ namespace GraSimply.Testy
         {
             Console.OutputEncoding = Encoding.UTF8;
 
+            // Testy zgodności z Pythonem mówią o stylu klasycznym — przypinamy
+            // go jawnie, żeby zmiana domyślnego stylu gry ich nie przestawiła.
+            Styl.Aktywny = Styl.Klasyczny;
+
             if (argumenty.Length >= 1 && argumenty[0] == "--podglad")
             {
                 string cel = argumenty.Length >= 2 ? argumenty[1] : "podglad";
-                Console.WriteLine($"Renderuję klatki podglądu do {cel}…");
+                if (argumenty.Length >= 3)
+                {
+                    Styl.Aktywny = argumenty[2] == "mroczny" ? Styl.Mroczny : Styl.Klasyczny;
+                }
+                Console.WriteLine($"Renderuję klatki podglądu ({Styl.Aktywny.Nazwa}) do {cel}…");
                 return Podglad.Zapisz(cel);
             }
 

@@ -1,34 +1,51 @@
 using System.Collections.Generic;
+using GraSimply.Logika;
 
 namespace GraSimply.Grafika
 {
     /// <summary>
-    /// Wszystko, co scena mapy musi wiedzieć o stylu rysowania: jak duży jest
-    /// kafel, jak wygląda teren i obiekty, gdzie stoi postać, czym jest tło.
+    /// Wspólny mianownik stylów sceny: rozmiar obrazu i powiększenie. Iloczyn
+    /// rozmiaru i powiększenia daje zawsze 640×480 — układ pulpitu jest ten sam
+    /// w każdym stylu.
+    /// </summary>
+    public interface IGeneratorSceny
+    {
+        /// <summary>Rozdzielczość sceny w pikselach stylu.</summary>
+        int SzerSceny { get; }
+
+        int WysSceny { get; }
+
+        /// <summary>Ile razy scena jest powiększana na pulpicie.</summary>
+        int SkalaSceny { get; }
+    }
+
+    /// <summary>
+    /// Styl, który sam składa cały region — grunt ciągły zamiast kafli,
+    /// własne światło i obróbkę. Scena oddaje mu rysowanie w całości.
+    /// </summary>
+    public interface IRysownikRegionu : IGeneratorSceny
+    {
+        void Rysuj(Plotno cel, PoleDoRysunku[][] pola, double t, (int X, int Y) region,
+                   (int X, int Y)? graczXy, string klasa, bool wszystkoOdkryte,
+                   (int Chaty, int Palisada, int Wieza)? osada, bool zmierzch);
+    }
+
+    /// <summary>
+    /// Wszystko, co scena kafelkowa musi wiedzieć o stylu rysowania: jak duży
+    /// jest kafel, jak wygląda teren i obiekty, gdzie stoi postać, czym jest tło.
     ///
     /// Scena (<see cref="ScenaMapy"/>) zna tylko kolejność rysowania i światło —
     /// kafle, sprite'y i obróbkę bierze stąd. Dzięki temu drugi styl to osobny
     /// generator, a nie sieć warunków w środku sceny, i stary wygląd zostaje
     /// nietknięty co do bajtu.
     /// </summary>
-    public interface IGeneratorTerenu
+    public interface IGeneratorTerenu : IGeneratorSceny
     {
         /// <summary>Szerokość rombu kafla.</summary>
         int TW { get; }
 
         /// <summary>Wysokość rombu kafla.</summary>
         int TH { get; }
-
-        /// <summary>Rozdzielczość sceny w pikselach stylu.</summary>
-        int SzerSceny { get; }
-
-        int WysSceny { get; }
-
-        /// <summary>
-        /// Ile razy scena jest powiększana na pulpicie. Iloczyn z rozmiarem
-        /// sceny daje zawsze 640×480 — układ pulpitu jest ten sam w każdym stylu.
-        /// </summary>
-        int SkalaSceny { get; }
 
         /// <summary>Pionowa pozycja górnego wierzchołka pola (0, 0).</summary>
         int Y0 { get; }
