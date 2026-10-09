@@ -56,11 +56,14 @@ namespace GraSimply.Testy
                 File.WriteAllBytes(raw, pulpit.Klatka.Dane);
 
                 var opis = new StringBuilder();
-                opis.AppendLine($"{Pulpit.Szerokosc} {Pulpit.Wysokosc}");
+                // Trzecie pole nagłówka: krój stylu (ścieżka w Resources) albo „-”
+                // — podglad.py bierze wtedy ten sam plik co gra.
+                opis.AppendLine($"{Pulpit.Szerokosc} {Pulpit.Wysokosc} {Styl.Aktywny.Kroj ?? "-"}");
                 foreach (Napis n in napisy)
                 {
+                    string tekst = Styl.Aktywny.Emoji ? n.Tekst : Grafika.Konsola.BezEmoji(n.Tekst);
                     opis.AppendLine($"{n.X}\t{n.Y}\t{n.Krój}\t{n.Kolor.R},{n.Kolor.G}," +
-                                    $"{n.Kolor.B}\t{n.Tekst}");
+                                    $"{n.Kolor.B}\t{tekst}");
                 }
                 File.WriteAllText(Path.Combine(katalog, nazwa + ".napisy"), opis.ToString(),
                                   new UTF8Encoding(false));
@@ -91,7 +94,7 @@ namespace GraSimply.Testy
 
             (int kx, int ky, int kszer, int _) = Pulpit.ProstokatKonsoli;
             const int wysokoscWiersza = 19;
-            int znakow = (kszer - 40) / 9;
+            int znakow = (kszer - 40) / Styl.Aktywny.SzerokoscZnaku;
             int mieszczSie = (Pulpit.ProstokatKonsoli.Wys - 36) / wysokoscWiersza;
 
             // Ostatni ekran, nie cała historia — tak samo jak w grze po wyczyszczeniu.
@@ -109,7 +112,7 @@ namespace GraSimply.Testy
             {
                 WierszKonsoli w = widok[i];
                 Barwa kolor = w.Opcja != null ? Pulpit.Zloty
-                    : w.Ozdobnik ? Pulpit.RamkaJasna
+                    : w.Ozdobnik ? Pulpit.Ozdobnik
                     : Pulpit.Tekst;
                 napisy.Add(new Napis(w.Tekst, kx + 20, ky + 18 + (i + odstep) * wysokoscWiersza,
                                      kolor, "konsola"));

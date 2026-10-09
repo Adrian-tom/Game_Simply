@@ -83,7 +83,6 @@ namespace GraSimply.Grafika
                 return tekst;
             }
             var wynik = new System.Text.StringBuilder(tekst.Length);
-            bool wIkonie = false;
             bool zjedzSpacje = false;
             foreach (char c in tekst)
             {
@@ -96,18 +95,15 @@ namespace GraSimply.Grafika
                     // w tekście mniej więcej tyle co znak plus odstęp. Spacji
                     // przed ikoną nie ruszamy, bo z nich zrobione są wcięcia
                     // i kolumny menu (nazwa.PadRight), a te mają zostać równe.
-                    wIkonie = true;
                     zjedzSpacje = true;
                     continue;
                 }
                 if (zjedzSpacje && c == ' ')
                 {
                     zjedzSpacje = false;
-                    wIkonie = false;
                     continue;
                 }
                 zjedzSpacje = false;
-                wIkonie = false;
                 wynik.Append(c);
             }
             return wynik.ToString();

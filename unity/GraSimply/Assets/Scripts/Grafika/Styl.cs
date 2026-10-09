@@ -77,17 +77,6 @@ namespace GraSimply.Grafika
         /// <summary>Barwa linii ozdobnych w konsoli (═══, ───).</summary>
         public Barwa Ozdobnik;
 
-        /// <summary>
-        /// Chrom z metalu w duchu Fallouta: płyta z nitami, wpuszczone ekrany
-        /// z liniami kineskopu, paski z segmentów. Bez tego — klasyczne ramki.
-        /// </summary>
-        public bool ChromMetalowy;
-
-        /// <summary>Płyta panelu (metal), tło ekranów i zgaszony segment paska — tylko w chromie metalowym.</summary>
-        public Barwa Plyta;
-        public Barwa Ekran;
-        public Barwa PasekWylaczony;
-
         /// <summary>Czy pokazywać emoji z komunikatów gry. Pikselowy krój ich nie ma, a styl ich nie znosi.</summary>
         public bool Emoji = true;
 

@@ -58,6 +58,7 @@ namespace GraSimply.Grafika
         public static Barwa Zloty => Styl.Aktywny.Wyrozniony;
         public static Barwa Tekst => Styl.Aktywny.Tekst;
         public static Barwa Przygaszony => Styl.Aktywny.Przygaszony;
+        public static Barwa Ozdobnik => Styl.Aktywny.Ozdobnik;
 
         /// <summary>
         /// Obszar mapy na pulpicie — w każdym stylu ten sam. Styl klasyczny

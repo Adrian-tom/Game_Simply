@@ -9,8 +9,8 @@ namespace GraSimply.Grafika
         /// <summary>
         /// Mroczne fantasy w języku obrazu pierwszego Fallouta: ciągły grunt
         /// w rzucie trimetrycznym, prerenderowane bryły, ciemność poza mapą,
-        /// noc z mnożenia i jedna wspólna paleta. Chrom jak konsola z metalu:
-        /// szaro-zielone panele, mosiężne nity, bursztynowy tekst.
+        /// noc z mnożenia i jedna wspólna paleta. Interfejs fantasy: ciemne
+        /// drewno, złote okucia, pergamin i krój pikselowy z polskimi znakami.
         ///
         /// Leniwie, nie w inicjalizatorze pola: ta część klasy leży w innym
         /// pliku, a kolejność inicjalizacji pól statycznych między plikami
@@ -29,22 +29,19 @@ namespace GraSimply.Grafika
             s.NieboGora = s.NieboDol = s.NieboGoraZmierzch = s.NieboDolZmierzch = new Barwa(0, 0, 0);
             s.Kontur = new Barwa(12, 10, 8);
 
-            s.Tlo = Paleta.Siatka6(0x10, 0x0C, 0x08);
-            s.TloPanelu = Paleta.Siatka6(0x30, 0x28, 0x20);
-            s.RamkaJasna = Paleta.Siatka6(0x94, 0xA4, 0x94);
-            s.RamkaCiemna = Paleta.Siatka6(0x58, 0x68, 0x60);
-            s.Cwiek = Paleta.Siatka6(0x9C, 0x74, 0x34);
+            // Interfejs: ciemne drewno, złote okucia, tekst barwy pergaminu.
+            s.Tlo = Paleta.Siatka6(0x12, 0x0C, 0x08);
+            s.TloPanelu = Paleta.Siatka6(0x24, 0x18, 0x10);
+            s.RamkaJasna = Paleta.Siatka6(0xC8, 0xA0, 0x50);
+            s.RamkaCiemna = Paleta.Siatka6(0x6C, 0x4C, 0x24);
+            s.Cwiek = Paleta.Siatka6(0xE0, 0xB8, 0x60);
             s.Wyrozniony = Paleta.Siatka6(0xFC, 0xC4, 0x5C);
-            s.Tekst = Paleta.Siatka6(0xD0, 0xB8, 0x88);
-            s.Przygaszony = Paleta.Siatka6(0x98, 0x7C, 0x50);
-            s.PasekHp = Paleta.Siatka6(0xD4, 0x2C, 0x1C);
-            s.PasekMany = Paleta.Siatka6(0x48, 0x70, 0xE0);
-            s.Ozdobnik = Paleta.Siatka6(0x68, 0x58, 0x3C);
+            s.Tekst = Paleta.Siatka6(0xE4, 0xD4, 0xB0);
+            s.Przygaszony = Paleta.Siatka6(0xA0, 0x88, 0x60);
+            s.PasekHp = Paleta.Siatka6(0xB4, 0x24, 0x1C);
+            s.PasekMany = Paleta.Siatka6(0x40, 0x60, 0xC8);
+            s.Ozdobnik = Paleta.Siatka6(0x7C, 0x60, 0x38);
 
-            s.ChromMetalowy = true;
-            s.Plyta = Paleta.Siatka6(0x6C, 0x74, 0x6C);
-            s.Ekran = Paleta.Siatka6(0x16, 0x12, 0x0C);
-            s.PasekWylaczony = Paleta.Siatka6(0x28, 0x28, 0x28);
             s.Emoji = false;
             s.Kroj = "Kroje/DepartureMono-Regular";
             s.SzerokoscZnaku = 10;

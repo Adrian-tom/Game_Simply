@@ -53,8 +53,34 @@ def _czy_emoji(ch: str) -> bool:
     return (o >= 0x2300 and not 0x2500 <= o <= 0x25FF) or o in (0xFE0F, 0x200D)
 
 
-def rysuj_tekst(cel, tekst: str, x: int, y: int, rgb, rozmiar: int, pogrubiona: bool) -> None:
+# Kroje dołączone do gry leżą w Resources projektu Unity.
+ZASOBY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "GraSimply", "Assets", "Resources")
+
+
+def kroj_stylu(sciezka_zasobu: str, rozmiar: int):
+    """Krój z Resources (ten sam plik co w grze) albo None, gdy styl go nie ma."""
+    if not sciezka_zasobu or sciezka_zasobu == "-":
+        return None
+    klucz = ("zasob", sciezka_zasobu, rozmiar)
+    if klucz not in _pamiec:
+        katalog, nazwa = os.path.split(os.path.join(ZASOBY, sciezka_zasobu))
+        plik = None
+        if os.path.isdir(katalog):
+            for p in sorted(os.listdir(katalog)):
+                if os.path.splitext(p)[0] == nazwa and p.lower().endswith((".ttf", ".otf")):
+                    plik = os.path.join(katalog, p)
+                    break
+        _pamiec[klucz] = pygame.font.Font(plik, rozmiar) if plik else None
+    return _pamiec[klucz]
+
+
+def rysuj_tekst(cel, tekst: str, x: int, y: int, rgb, rozmiar: int, pogrubiona: bool,
+                wlasny=None) -> None:
     """Tekst krojem mono, emoji krojem z ikonami — inaczej byłyby prostokąty."""
+    if wlasny is not None:
+        # Krój stylu nie ma emoji — tekst przyszedł już bez nich.
+        cel.blit(wlasny.render(tekst, False, rgb), (x, y))
+        return
     mono = wczytaj_czcionke(KROJE, rozmiar, pogrubiona)
     emoji = wczytaj_czcionke(KROJE_EMOJI, max(10, rozmiar - 2))
     odcinki, biezacy, tryb = [], "", None
@@ -94,7 +120,9 @@ def zloz(katalog: str, nazwa: str) -> str:
     opis = os.path.join(katalog, nazwa + ".napisy")
     with open(opis, encoding="utf-8") as f:
         wiersze = f.read().splitlines()
-    szer, wys = (int(v) for v in wiersze[0].split())
+    naglowek = wiersze[0].split()
+    szer, wys = int(naglowek[0]), int(naglowek[1])
+    zasob = naglowek[2] if len(naglowek) > 2 else "-"
 
     with open(raw, "rb") as f:
         dane = f.read()
@@ -114,8 +142,9 @@ def zloz(katalog: str, nazwa: str) -> str:
         if not tekst:
             continue
         rgb = tuple(int(v) for v in kolor.split(","))
-        rysuj_tekst(powierzchnia, tekst, int(x), int(y), rgb,
-                    ROZMIARY.get(krój, 17), pogrubiona=(krój == "duzy"))
+        rozmiar = ROZMIARY.get(krój, 17)
+        rysuj_tekst(powierzchnia, tekst, int(x), int(y), rgb, rozmiar,
+                    pogrubiona=(krój == "duzy"), wlasny=kroj_stylu(zasob, rozmiar))
 
     png = os.path.join(katalog, nazwa + ".png")
     pygame.image.save(powierzchnia, png)

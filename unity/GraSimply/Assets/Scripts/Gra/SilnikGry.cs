@@ -24,10 +24,25 @@ namespace GraSimply.Gra
     [AddComponentMenu("Gra Simply/Silnik gry")]
     public sealed class SilnikGry : MonoBehaviour
     {
+        /// <summary>Styl grafiki do wyboru w inspektorze.</summary>
+        public enum WyborStylu
+        {
+            /// <summary>Mroczne fantasy: prerenderowane bryły, noc ze światłem, krój pikselowy.</summary>
+            Mroczny,
+
+            /// <summary>Wygląd jeden do jednego z wersji pythonowej.</summary>
+            Klasyczny,
+        }
+
+        [Header("Wygląd")]
+        [Tooltip("Mroczny — nowy styl w duchu Fallouta z motywem fantasy. " +
+                 "Klasyczny — pixelart z wersji pythonowej.")]
+        public WyborStylu StylGrafiki = WyborStylu.Mroczny;
+
         [Header("Krój pisma")]
-        [Tooltip("Czcionki o stałej szerokości, w kolejności prób. " +
-                 "Krój z emoji warto zostawić — bez niego ikony w tekście " +
-                 "pokażą się jako puste prostokąty.")]
+        [Tooltip("Czcionki systemowe o stałej szerokości, w kolejności prób — " +
+                 "dla stylu bez własnego kroju (klasyczny). Krój z emoji warto " +
+                 "zostawić, bez niego ikony pokażą się jako puste prostokąty.")]
         public string[] NazwyCzcionek =
         {
             "Consolas", "Segoe UI Emoji", "DejaVu Sans Mono",
@@ -47,7 +62,8 @@ namespace GraSimply.Gra
         public int RozmiarMaly = 14;
 
         [Tooltip("Wyłącz, jeśli zamiast ikon widzisz puste prostokąty — " +
-                 "tekst zostanie wtedy bez emoji, ale będzie czytelny.")]
+                 "tekst zostanie wtedy bez emoji, ale będzie czytelny. " +
+                 "Styl mroczny i tak ich nie pokazuje.")]
         public bool PokazujEmoji = true;
 
         [Header("Gra")]
@@ -103,6 +119,7 @@ namespace GraSimply.Gra
             // po co chodzic 144 razy na sekunde.
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = Mathf.Max(15, KlatekNaSekunde);
+            Styl.Aktywny = StylGrafiki == WyborStylu.Klasyczny ? Styl.Klasyczny : Styl.Mroczny;
             _pulpit = new Pulpit();
             _tekstura = new Texture2D(Pulpit.Szerokosc, Pulpit.Wysokosc, TextureFormat.RGBA32, false)
             {
@@ -251,6 +268,18 @@ namespace GraSimply.Gra
 
         private Font WczytajKroj(int rozmiar)
         {
+            // Styl z własnym krojem (pikselowy, z polskimi znakami) bierze go
+            // z Resources — wygląd nie zależy wtedy od czcionek w systemie.
+            string wlasny = Styl.Aktywny.Kroj;
+            if (!string.IsNullOrEmpty(wlasny))
+            {
+                Font f = Resources.Load<Font>(wlasny);
+                if (f != null)
+                {
+                    return f;
+                }
+                Debug.LogWarning($"Brak kroju {wlasny} w Resources — biorę czcionkę systemową.");
+            }
             try
             {
                 Font f = Font.CreateDynamicFontFromOSFont(NazwyCzcionek, rozmiar);
@@ -424,7 +453,7 @@ namespace GraSimply.Gra
                 }
                 WierszKonsoli w = widok[wIndeks];
                 t.text = Przytnij(w.Tekst);
-                t.color = Barwa2Kolor(w.Ozdobnik ? Pulpit.RamkaJasna : Pulpit.Tekst);
+                t.color = Barwa2Kolor(w.Ozdobnik ? Pulpit.Ozdobnik : Pulpit.Tekst);
                 if (w.Opcja != null)
                 {
                     int y = ky + 18 + i * _wysokoscWiersza;
@@ -442,7 +471,8 @@ namespace GraSimply.Gra
             {
                 return "";
             }
-            return PokazujEmoji ? tekst : Grafika.Konsola.BezEmoji(tekst);
+            // Styl bez emoji (krój pikselowy ich nie ma) wycina je niezależnie od przełącznika.
+            return PokazujEmoji && Styl.Aktywny.Emoji ? tekst : Grafika.Konsola.BezEmoji(tekst);
         }
 
         private static Color Barwa2Kolor(Barwa b)
