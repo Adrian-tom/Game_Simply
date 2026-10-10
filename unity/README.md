@@ -4,6 +4,26 @@ Przeniesienie gry z Pythona na Unity i C#. Wersja pythonowa w katalogu głównym
 **zostaje nietknięta** — służy jako wzorzec, do którego port się porównuje,
 i dalej jest grywalna (`python main.py`).
 
+![Styl mroczny: mapa na cały ekran, strzałki ruchu, kule życia i many](podglad/mroczny/dzien.png)
+
+Gra ma dwa style grafiki, do wyboru w inspektorze komponentu *Silnik gry*
+(pole **Styl grafiki**):
+
+* **Mroczny** (domyślny) — mroczne fantasy w języku obrazu pierwszego
+  Fallouta: ciągły grunt w rzucie skośnym, obiekty jako prerenderowane bryły
+  z cieniem, noc rozjaśniana tylko przez ogień i okna, jedna wspólna paleta.
+  Interfejs leży na mapie: strzałki ruchu wokół postaci, kule życia i many
+  z portretem, gasnący dziennik zdarzeń, opcje jako złote plakietki
+  (kliknij albo wpisz numer), a menu bez mapy w panelu na środku.
+* **Klasyczny** — pixelart jeden do jednego z wersji pythonowej: mapa
+  obok konsoli z tekstem.
+
+| Wybór klasy | Podróż (dziennik na mapie) | Noc |
+| --- | --- | --- |
+| ![](podglad/mroczny/klasa.png) | ![](podglad/mroczny/podroz.png) | ![](podglad/mroczny/zmierzch.png) |
+
+Styl klasyczny:
+
 ![Mapa regionu, HUD i konsola w dzień](podglad/dzien.png)
 
 ## Jak to uruchomić
@@ -81,7 +101,21 @@ migawkami.
 pythonowej: kafle, roślinność, budynki i sylwetki powstają z szumu, ramp
 kolorów i ditheringu Bayera. Nie ma żadnych PNG-ów do trzymania, a `Pulpit`
 składa całą klatkę 1280×720 i oddaje ją Unity jako jedną teksturę. Unity dokłada
-tylko tekst, bo własny krój bitmapowy nie udźwignąłby emoji z komunikatów gry.
+tylko tekst. W stylu mrocznym bryły (drzewa, budowle, postacie) to modele 3D
+z funkcji odległości, „fotografowane” raz w ustalonym świetle
+(`Grafika/Mroczny/Fotograf.cs`) — tak powstawały sprite'y Fallouta.
+
+**Tekst gry zostaje tekstem, interfejs go rozkłada.** Logika pisze do konsoli
+jak w terminalu. Styl klasyczny pokazuje to jako konsolę; styl mroczny
+(`PulpitFantasy`) rozkłada ekran na części (`EkranGry`): opcje ruchu stają się
+strzałkami na mapie, pozostałe — przyciskami, narracja — dziennikiem. Emoji
+zastępują pikselowe ikony surowców.
+
+**Krój pisma.** Styl mroczny używa kroju pikselowego
+[Departure Mono](https://departuremono.com) (Helena Zhang, SIL Open Font
+License 1.1) z polskimi znakami — plik i licencja leżą w
+`Assets/Resources/Kroje/`. Krój trzyma siatkę pikseli przy wielokrotnościach
+11 px, dlatego napisy mają 22 px. Styl klasyczny bierze czcionki systemowe.
 
 ## Testy
 
@@ -102,6 +136,9 @@ Testy porównują port z wersją pythonową — nie „mniej więcej”, tylko d
   w piksel**, bajt w bajt;
 * **postać**: progi EXP, statystyki startowe pięciu klas, dwanaście awansów
   każdej, kalendarz, karma, rany i głód;
+* **interfejs fantasy**: że ekrany prawdziwej gry rozkładają się na tytuł,
+  opcje, kierunki ruchu i pytania, a złożona klatka ma przycisk dla każdej
+  opcji; styl klasyczny pozostaje co do bajtu wersją pythonową;
 * **wątki**: że logika faktycznie się blokuje, że odpowiedź do niej dochodzi,
   że zamknięcie okna budzi ją wyjątkiem i że cała gra przechodzi na dwóch
   wątkach.
@@ -123,6 +160,10 @@ do pliku i obejrzeć:
 ```bash
 cd unity/Testy && dotnet run -- --podglad ../podglad && cd ../..
 python unity/narzedzia/podglad.py unity/podglad
+
+# styl mroczny — z ekranami imienia, wyboru klasy, karty postaci, obozu i podróży
+cd unity/Testy && dotnet run -- --podglad ../podglad/mroczny mroczny && cd ../..
+python unity/narzedzia/podglad.py unity/podglad/mroczny
 ```
 
 Obrazki lądują w `unity/podglad/`. Przydaje się, gdy zmieniasz coś w rysowaniu

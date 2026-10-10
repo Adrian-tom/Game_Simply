@@ -23,34 +23,54 @@ namespace GraSimply.Testy
         public static int Zapisz(string katalog)
         {
             Directory.CreateDirectory(katalog);
+            // Odpowiedzi prowadzą prawdziwą grę do ekranu, który klatka pokazuje.
+            var doEksploracji = new List<string> { "1", "Halina", "4", "", "1", "", "1", "" };
             var klatki = new List<(string Nazwa, bool Zmierzch, int Chaty, int Palisada,
-                                   int Wieza, double Czas, bool Tytul)>
+                                   int Wieza, double Czas, bool Tytul, List<string> Odpowiedzi)>
             {
-                ("tytul", false, 0, 0, 0, 0.0, true),
-                ("dzien", false, 2, 0, 0, 0.6, false),
-                ("zmierzch", true, 2, 0, 0, 1.4, false),
-                ("osada-rosnie", false, 6, 2, 1, 0.9, false),
+                ("tytul", false, 0, 0, 0, 0.0, true, new List<string>()),
+                ("dzien", false, 2, 0, 0, 0.6, false, doEksploracji),
+                ("zmierzch", true, 2, 0, 0, 1.4, false, doEksploracji),
+                ("osada-rosnie", false, 6, 2, 1, 0.9, false, doEksploracji),
             };
+            if (Styl.Aktywny.UkladFantasy)
+            {
+                // Układ fantasy pokazuje każdy rodzaj ekranu inaczej — podglądamy wszystkie.
+                klatki.Add(("imie", false, 0, 0, 0, 0.3, true, new List<string> { "1" }));
+                klatki.Add(("klasa", false, 0, 0, 0, 0.3, true, new List<string> { "1", "Halina" }));
+                klatki.Add(("karta-postaci", false, 2, 0, 0, 0.3, false, new List<string> { "1", "Halina", "4" }));
+                klatki.Add(("oboz", false, 2, 0, 0, 0.5, false, new List<string> { "1", "Halina", "4", "" }));
+                klatki.Add(("podroz", false, 2, 0, 0, 0.8, false,
+                            new List<string> { "1", "Halina", "4", "", "1", "", "1" }));
+            }
 
             foreach ((string nazwa, bool zmierzch, int chaty, int palisada, int wieza,
-                      double czas, bool tytul) in klatki)
+                      double czas, bool tytul, List<string> odpowiedzi) in klatki)
             {
                 var pulpit = new Pulpit();
                 pulpit.Scena.Zmierzch = zmierzch;
+                (List<string> linie, bool naEnter) = EkranKonsoli(odpowiedzi);
+                var konsola = new StanKonsoli
+                {
+                    Linie = linie, Pyta = true, CzekaNaEnter = naEnter, Wpisywane = "", Kursor = true,
+                };
                 List<Napis> napisy;
                 if (tytul)
                 {
                     Migawka m = Migawka.Tytulowa();
-                    napisy = pulpit.Zloz(m.Pola, czas, null, m.Region, null, null, true, null);
+                    napisy = pulpit.Zloz(m.Pola, czas, null, m.Region, null, null, true, null, konsola);
                 }
                 else
                 {
                     Migawka m = Scenka(chaty, palisada, wieza);
                     napisy = pulpit.Zloz(m.Pola, czas, m.Hud, m.Region, m.GraczXy, m.Klasa,
-                                         false, m.Osada);
+                                         false, m.Osada, konsola);
                 }
 
-                napisy.AddRange(NapisyKonsoli(tytul));
+                if (!pulpit.UkladFantasy)
+                {
+                    napisy.AddRange(NapisyKonsoli(linie));
+                }
 
                 string raw = Path.Combine(katalog, nazwa + ".raw");
                 File.WriteAllBytes(raw, pulpit.Klatka.Dane);
@@ -62,8 +82,9 @@ namespace GraSimply.Testy
                 foreach (Napis n in napisy)
                 {
                     string tekst = Styl.Aktywny.Emoji ? n.Tekst : Grafika.Konsola.BezEmoji(n.Tekst);
+                    string alfa = n.Kolor.A < 255 ? $",{n.Kolor.A}" : "";
                     opis.AppendLine($"{n.X}\t{n.Y}\t{n.Krój}\t{n.Kolor.R},{n.Kolor.G}," +
-                                    $"{n.Kolor.B}\t{tekst}");
+                                    $"{n.Kolor.B}{alfa}\t{tekst}");
                 }
                 File.WriteAllText(Path.Combine(katalog, nazwa + ".napisy"), opis.ToString(),
                                   new UTF8Encoding(false));
@@ -76,29 +97,34 @@ namespace GraSimply.Testy
         }
 
         /// <summary>
-        /// Treść prawej kolumny: prawdziwy tekst gry, nie atrapa.
-        ///
-        /// Przepuszczamy grę przez konsolę testową aż do menu eksploracji
-        /// (albo do ekranu tytułowego), bierzemy linie i układamy je tak, jak
-        /// zrobiłby to silnik w Unity. Dzięki temu podgląd pokazuje, jak
-        /// naprawdę komponuje się mapa z konsolą.
+        /// Przepuszcza prawdziwą grę przez konsolę testową, aż skończą się
+        /// odpowiedzi, i zwraca ostatni ekran: linie (ostatnia to zachęta)
+        /// i to, czy gra czeka tylko na Enter.
         /// </summary>
-        private static List<Napis> NapisyKonsoli(bool tytul)
+        private static (List<string> Linie, bool NaEnter) EkranKonsoli(List<string> odpowiedzi)
         {
-            var odpowiedzi = tytul
-                ? new List<string>()
-                : new List<string> { "1", "Halina", "4", "", "1", "", "1", "" };
             var konsola = new KonsolaTestowa(odpowiedzi);
             var gra = new Logika.Gra(konsola, new Ekran(), new Losowanie(2024));
             gra.Uruchom(); // kończy się wyjątkiem GraZamknieta, gdy zabraknie odpowiedzi
+            var linie = new List<string>(konsola.Ekran.TrimEnd('\n').Split('\n'));
+            string zacheta = konsola.Pytania.Count > 0 ? konsola.Pytania[konsola.Pytania.Count - 1] : "";
+            return (linie, zacheta.IndexOf("Enter", StringComparison.Ordinal) >= 0);
+        }
 
+        /// <summary>
+        /// Treść prawej kolumny: prawdziwy tekst gry, nie atrapa.
+        ///
+        /// Linie ostatniego ekranu gry układamy tak, jak zrobiłby to silnik
+        /// w Unity w układzie klasycznym. Dzięki temu podgląd pokazuje, jak
+        /// naprawdę komponuje się mapa z konsolą.
+        /// </summary>
+        private static List<Napis> NapisyKonsoli(List<string> linie)
+        {
             (int kx, int ky, int kszer, int _) = Pulpit.ProstokatKonsoli;
             const int wysokoscWiersza = 19;
             int znakow = (kszer - 40) / Styl.Aktywny.SzerokoscZnaku;
             int mieszczSie = (Pulpit.ProstokatKonsoli.Wys - 36) / wysokoscWiersza;
 
-            // Ostatni ekran, nie cała historia — tak samo jak w grze po wyczyszczeniu.
-            var linie = new List<string>(konsola.Ekran.Split('\n'));
             List<WierszKonsoli> widok = Grafika.Konsola.Widok(linie, znakow, mieszczSie, 0,
                                                               "", true, out int ileWyzej);
             var napisy = new List<Napis>();

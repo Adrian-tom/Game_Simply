@@ -78,6 +78,18 @@ namespace GraSimply.Grafika
         private readonly Plotno _plotno = new Plotno(Szerokosc, Wysokosc, przezroczyste: false);
         private Plotno _scena;
         private ScenaMapy _scenaMapy;
+        private PulpitFantasy _fantasy;
+        private static readonly List<Przycisk> BrakPrzyciskow = new List<Przycisk>();
+
+        /// <summary>
+        /// Czy aktywny styl układa ekran sam (mapa na cały ekran, opcje jako
+        /// przyciski) — wtedy warstwa Unity nie rysuje konsoli, tylko napisy
+        /// i przyciski z <see cref="Zloz"/>.
+        /// </summary>
+        public bool UkladFantasy => Styl.Aktywny.UkladFantasy;
+
+        /// <summary>Klikalne obszary z ostatniej klatki układu fantasy (piksele pulpitu).</summary>
+        public List<Przycisk> Przyciski => _fantasy != null && UkladFantasy ? _fantasy.Przyciski : BrakPrzyciskow;
 
         /// <summary>Gotowa klatka w układzie RGBA32 — wprost do <c>Texture2D</c>.</summary>
         public Plotno Klatka => _plotno;
@@ -95,13 +107,16 @@ namespace GraSimply.Grafika
                 {
                     bool zmierzch = _scenaMapy != null && _scenaMapy.Zmierzch;
                     _scenaMapy = new ScenaMapy { Zmierzch = zmierzch };
-                    if (_scenaMapy.SzerokoscSceny * _scenaMapy.SkalaSceny != MapaSzer
-                        || _scenaMapy.WysokoscSceny * _scenaMapy.SkalaSceny != MapaWys)
+                    // Układ fantasy kładzie mapę na cały pulpit, klasyczny — w lewy górny róg.
+                    int szer = Styl.Aktywny.UkladFantasy ? Szerokosc : MapaSzer;
+                    int wys = Styl.Aktywny.UkladFantasy ? Wysokosc : MapaWys;
+                    if (_scenaMapy.SzerokoscSceny * _scenaMapy.SkalaSceny != szer
+                        || _scenaMapy.WysokoscSceny * _scenaMapy.SkalaSceny != wys)
                     {
                         throw new InvalidOperationException(
                             $"Styl „{Styl.Aktywny.Nazwa}” daje scenę " +
                             $"{_scenaMapy.SzerokoscSceny}×{_scenaMapy.WysokoscSceny} ×{_scenaMapy.SkalaSceny}, " +
-                            $"a pulpit ma na mapę {MapaSzer}×{MapaWys}.");
+                            $"a pulpit ma na mapę {szer}×{wys}.");
                     }
                     _scena = new Plotno(_scenaMapy.SzerokoscSceny, _scenaMapy.WysokoscSceny,
                                         przezroczyste: false);
@@ -114,14 +129,23 @@ namespace GraSimply.Grafika
         /// Składa klatkę. Zwraca napisy do narysowania przez Unity w pikselach
         /// płótna (lewy górny róg to (0, 0)).
         /// </summary>
+        /// <param name="konsola">Treść konsoli — potrzebna tylko układowi fantasy, który sam ją rozkłada.</param>
+        /// <param name="mysz">Kursor w pikselach pulpitu — podświetla przycisk pod nim (układ fantasy).</param>
         public List<Napis> Zloz(PoleDoRysunku[][] pola, double t, StanHud hud,
                                 (int X, int Y) region = default,
                                 (int X, int Y)? graczXy = null, string klasa = null,
                                 bool wszystkoOdkryte = false,
-                                (int Chaty, int Palisada, int Wieza)? osada = null)
+                                (int Chaty, int Palisada, int Wieza)? osada = null,
+                                StanKonsoli konsola = default, (int X, int Y)? mysz = null)
         {
-            _plotno.Wypelnij(Tlo);
             ScenaMapy scena = Scena;
+            if (scena.Styl.UkladFantasy)
+            {
+                _fantasy = _fantasy ?? new PulpitFantasy();
+                scena.Rysuj(_fantasy.Natywne, pola, t, region, graczXy, klasa, wszystkoOdkryte, osada);
+                return _fantasy.Zloz(_plotno, hud, klasa, graczXy, konsola, mysz);
+            }
+            _plotno.Wypelnij(Tlo);
             scena.Rysuj(_scena, pola, t, region, graczXy, klasa, wszystkoOdkryte, osada);
 
             Plotno powiekszona = scena.SkalaSceny == 1 ? _scena : _scena.Skaluj(scena.SkalaSceny);

@@ -18,9 +18,12 @@ namespace GraSimply.Grafika.Mroczny
     /// </summary>
     public static class Rzut
     {
-        /// <summary>Kadr sceny — tyle widać naraz; kamera chodzi za postacią.</summary>
+        /// <summary>
+        /// Kadr sceny — tyle widać naraz; kamera chodzi za postacią. Na pulpicie
+        /// powiększony ×2 wypełnia cały ekran 1280×720, a interfejs leży na nim.
+        /// </summary>
         public const int SzerSceny = 640;
-        public const int WysSceny = 480;
+        public const int WysSceny = 360;
 
         /// <summary>
         /// Powiększenie rzutu. Przy 1 cały region mieści się w kadrze, ale

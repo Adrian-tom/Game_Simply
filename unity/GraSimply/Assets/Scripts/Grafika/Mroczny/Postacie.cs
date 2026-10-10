@@ -17,6 +17,9 @@ namespace GraSimply.Grafika.Mroczny
         /// <summary>Wzrost postaci w jednostkach świata (bok pola = 1).</summary>
         private const double S = 0.98;
 
+        /// <summary>Wysokość środka głowy nad ziemią — portret kadruje się na nią.</summary>
+        public const double WysokoscGlowy = 0.435 * S;
+
         private static Material Mat(Barwa[] rampa, double faktura = 0.10, double czest = 40, double jasnosc = 0) =>
             new Material(rampa, faktura, czest, jasnosc);
 

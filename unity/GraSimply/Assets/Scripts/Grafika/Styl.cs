@@ -86,6 +86,12 @@ namespace GraSimply.Grafika
         /// </summary>
         public string Kroj;
 
+        /// <summary>
+        /// Układ fantasy: mapa na cały ekran, strzałki ruchu, kule życia i many,
+        /// dziennik na mapie, opcje jako plakietki. Bez tego — mapa obok konsoli.
+        /// </summary>
+        public bool UkladFantasy;
+
         /// <summary>Szerokość znaku konsoli w pikselach pulpitu — do zawijania wierszy poza Unity.</summary>
         public int SzerokoscZnaku = 9;
 

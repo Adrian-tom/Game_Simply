@@ -29,6 +29,9 @@ namespace GraSimply.Logika
         public string Osada;
         public string Surowce;
         public string Podpowiedz;
+
+        /// <summary>Surowce jako liczby, w kolejności z <see cref="Oboz.Surowce"/> — do ikon zamiast emoji.</summary>
+        public List<KeyValuePair<string, int>> ListaSurowcow = new List<KeyValuePair<string, int>>();
     }
 
     /// <summary>
@@ -124,6 +127,10 @@ namespace GraSimply.Logika
                         Przetrwanie.OpisStanu(g),
                 Surowce = Oboz.LiniaSurowcow(g),
             };
+            foreach (KeyValuePair<string, OpisSurowca> para in Oboz.Surowce)
+            {
+                hud.ListaSurowcow.Add(new KeyValuePair<string, int>(para.Key, g.Surowce.Wez(para.Key)));
+            }
             return hud;
         }
     }

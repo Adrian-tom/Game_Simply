@@ -23,7 +23,19 @@ namespace GraSimply.Grafika.Mroczny
     {
         public int SzerSceny => Rzut.SzerSceny;
         public int WysSceny => Rzut.WysSceny;
-        public int SkalaSceny => 1;
+        public int SkalaSceny => 2;
+
+        private int _kx, _ky;
+
+        /// <summary>Gdzie w ostatnim kadrze stoi postać (podstawa) albo null, gdy jej nie było.</summary>
+        public (int X, int Y)? PozycjaPostaci { get; private set; }
+
+        /// <summary>Punkt świata w pikselach ostatniego kadru — interfejs stawia tam strzałki ruchu.</summary>
+        public (int X, int Y) NaKadr(double wx, double wy, double wz = 0)
+        {
+            (int sx, int sy) = Ekran(wx, wy, wz);
+            return (sx - _kx, sy - _ky);
+        }
 
         /// <summary>Ile klatek ma woda bagien — tyle wersji gruntu trzymamy.</summary>
         private const int KlatkiWody = 3;
@@ -72,6 +84,9 @@ namespace GraSimply.Grafika.Mroczny
                 postac = Ekran(gx + (naPunkcie ? 0.86 : 0.5), gy + (naPunkcie ? 0.92 : 0.55));
             }
             (int kx, int ky) = Kamera(postac, pola.Length, cel.Szerokosc, cel.Wysokosc);
+            _kx = kx;
+            _ky = ky;
+            PozycjaPostaci = postac.HasValue ? (postac.Value.X - kx, postac.Value.Y - ky) : ((int, int)?)null;
             Wytnij(sklad.Obraz, cel, kx, ky);
 
             foreach ((int x, int y) in sklad.Ogniska)

@@ -25,7 +25,7 @@ except ImportError:
 # Kroje o stałej szerokości, w kolejności prób — tak samo jak w silniku Unity.
 KROJE = ["consolas", "dejavusansmono", "liberationmono", "couriernew", "freemono"]
 KROJE_EMOJI = ["seguiemj", "notocoloremoji", "notoemoji", "symbola", "opensymbol"]
-ROZMIARY = {"maly": 14, "konsola": 16, "hud": 17, "duzy": 24}
+ROZMIARY = {"maly": 14, "konsola": 16, "hud": 17, "duzy": 24, "piks": 22}
 
 
 _pamiec: dict = {}
@@ -79,7 +79,10 @@ def rysuj_tekst(cel, tekst: str, x: int, y: int, rgb, rozmiar: int, pogrubiona: 
     """Tekst krojem mono, emoji krojem z ikonami — inaczej byłyby prostokąty."""
     if wlasny is not None:
         # Krój stylu nie ma emoji — tekst przyszedł już bez nich.
-        cel.blit(wlasny.render(tekst, False, rgb), (x, y))
+        obraz = wlasny.render(tekst, False, rgb[:3])
+        if len(rgb) > 3:
+            obraz.set_alpha(rgb[3])
+        cel.blit(obraz, (x, y))
         return
     mono = wczytaj_czcionke(KROJE, rozmiar, pogrubiona)
     emoji = wczytaj_czcionke(KROJE_EMOJI, max(10, rozmiar - 2))
@@ -98,7 +101,7 @@ def rysuj_tekst(cel, tekst: str, x: int, y: int, rgb, rozmiar: int, pogrubiona: 
             kawalek = kawalek.replace("\ufe0f", "")
             if not kawalek:
                 continue
-            obraz = emoji.render(kawalek, True, rgb)
+            obraz = emoji.render(kawalek, True, rgb[:3])
             # Kolorowe kroje emoji (CBDT) mają bitmapy o stałym rozmiarze
             # i ignorują rozmiar podany przy wczytaniu — trzeba je zmniejszyć
             # samemu, inaczej jedna ikona zasłoniłaby pół ekranu.
@@ -109,7 +112,7 @@ def rysuj_tekst(cel, tekst: str, x: int, y: int, rgb, rozmiar: int, pogrubiona: 
                     obraz, (max(1, int(obraz.get_width() * skala)), docelowa))
             cel.blit(obraz, (x, y + (mono.get_linesize() - obraz.get_height()) // 2))
         else:
-            obraz = mono.render(kawalek, True, rgb)
+            obraz = mono.render(kawalek, True, rgb[:3])
             cel.blit(obraz, (x, y))
         x += obraz.get_width()
 

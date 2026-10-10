@@ -40,6 +40,7 @@ namespace GraSimply.Testy
             TestyPostaci.Uruchom(Wczytaj(katalog, "postac.json"));
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
+            TestyInterfejsu.Uruchom();
 
             string piksele = Path.Combine(katalog, "piksele.json");
             if (File.Exists(piksele))

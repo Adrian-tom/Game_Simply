@@ -61,6 +61,10 @@ namespace GraSimply.Gra
         [Tooltip("Rozmiar drobnych linii HUD (data, surowce, podpowiedzi).")]
         public int RozmiarMaly = 14;
 
+        [Tooltip("Rozmiar kroju pikselowego w układzie fantasy. 22 = dwukrotność " +
+                 "natywnych 11 px kroju — tylko wielokrotności 11 trzymają siatkę pikseli.")]
+        public int RozmiarPikselowy = 22;
+
         [Tooltip("Wyłącz, jeśli zamiast ikon widzisz puste prostokąty — " +
                  "tekst zostanie wtedy bez emoji, ale będzie czytelny. " +
                  "Styl mroczny i tak ich nie pokazuje.")]
@@ -376,13 +380,56 @@ namespace GraSimply.Gra
                 m = _tytulowa;
             }
 
+            StanKonsoli konsola = default;
+            (int X, int Y)? mysz = null;
+            if (_pulpit.UkladFantasy)
+            {
+                // Układ fantasy sam rozkłada tekst konsoli na przyciski, strzałki i dziennik.
+                bool pyta = _konsola.CzekaNaWejscie;
+                konsola = new StanKonsoli
+                {
+                    Linie = _konsola.Linie(),
+                    Pyta = pyta,
+                    CzekaNaEnter = _konsola.CzekaNaEnter,
+                    Wpisywane = pyta ? _bufor : null,
+                    Kursor = pyta && (int)(_czas * 2) % 2 == 0,
+                };
+                if (PozycjaMyszy(out Vector2 p))
+                {
+                    mysz = ((int)p.x, (int)p.y);
+                }
+            }
+
             List<Napis> napisy = _pulpit.Zloz(m.Pola, _czas, m.Hud, m.Region, m.GraczXy,
-                                              m.Klasa, m.WszystkoOdkryte, m.Osada);
+                                              m.Klasa, m.WszystkoOdkryte, m.Osada, konsola, mysz);
             _tekstura.LoadRawTextureData(_pulpit.Klatka.Dane);
             _tekstura.Apply(false);
 
             PokazNapisyHud(napisy);
-            PokazKonsole();
+            if (_pulpit.UkladFantasy)
+            {
+                UkryjKonsole();
+            }
+            else
+            {
+                PokazKonsole();
+            }
+        }
+
+        /// <summary>Wiersze konsoli są w układzie fantasy zbędne — tekst idzie w napisach pulpitu.</summary>
+        private void UkryjKonsole()
+        {
+            if (_ostatniaWersja == -2)
+            {
+                return;
+            }
+            foreach (Text t in _wiersze)
+            {
+                t.text = "";
+            }
+            _znacznikGory.text = "";
+            _klikalne.Clear();
+            _ostatniaWersja = -2; // po powrocie do układu klasycznego konsola przebuduje się od nowa
         }
 
         private void PokazNapisyHud(List<Napis> napisy)
@@ -402,13 +449,14 @@ namespace GraSimply.Gra
                 Napis n = napisy[i];
                 bool duzy = n.Krój == "duzy";
                 bool maly = n.Krój == "maly";
+                bool piks = n.Krój == "piks";
                 t.font = duzy ? _krojDuzy : maly ? _krojMaly : _krojHud;
-                t.fontSize = duzy ? RozmiarDuzy : maly ? RozmiarMaly : RozmiarHud;
+                t.fontSize = piks ? RozmiarPikselowy : duzy ? RozmiarDuzy : maly ? RozmiarMaly : RozmiarHud;
                 t.fontStyle = duzy ? FontStyle.Bold : FontStyle.Normal;
                 t.color = Barwa2Kolor(n.Kolor);
                 t.text = Przytnij(n.Tekst);
-                Rozciagnij(t.rectTransform, n.X, n.Y, Pulpit.Szerokosc - n.X,
-                           duzy ? RozmiarDuzy + 8 : _wysokoscWiersza);
+                int wys = piks ? RozmiarPikselowy * 14 / 11 : duzy ? RozmiarDuzy + 8 : _wysokoscWiersza;
+                Rozciagnij(t.rectTransform, n.X, n.Y, Pulpit.Szerokosc - n.X, wys);
             }
         }
 
@@ -577,18 +625,41 @@ namespace GraSimply.Gra
             return false;
         }
 
+        /// <summary>Kursor w pikselach pulpitu (lewy górny róg to (0, 0)).</summary>
+        private bool PozycjaMyszy(out Vector2 punkt)
+        {
+            punkt = default;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    _korzen, Input.mousePosition, null, out Vector2 lokalna))
+            {
+                return false;
+            }
+            punkt = new Vector2(lokalna.x, -lokalna.y);
+            return true;
+        }
+
         private void SprawdzKlikniecie()
         {
             if (!Input.GetMouseButtonDown(0))
             {
                 return;
             }
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    _korzen, Input.mousePosition, null, out Vector2 lokalna))
+            if (!PozycjaMyszy(out Vector2 punkt))
             {
                 return;
             }
-            var punkt = new Vector2(lokalna.x, -lokalna.y);
+            if (_pulpit.UkladFantasy)
+            {
+                foreach (Przycisk p in _pulpit.Przyciski)
+                {
+                    if (p.Zawiera(punkt.x, punkt.y))
+                    {
+                        Odpowiedz(p.Klawisz);
+                        return;
+                    }
+                }
+                return;
+            }
             foreach ((Rect obszar, string klawisz) in _klikalne)
             {
                 if (obszar.Contains(punkt))

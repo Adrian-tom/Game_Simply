@@ -44,7 +44,8 @@ namespace GraSimply.Grafika
 
             s.Emoji = false;
             s.Kroj = "Kroje/DepartureMono-Regular";
-            s.SzerokoscZnaku = 10;
+            s.SzerokoscZnaku = 14;
+            s.UkladFantasy = true;
             return s;
         }
     }
