@@ -1,0 +1,16 @@
+{
+    "name": "GraSimply.Grafika",
+    "rootNamespace": "GraSimply.Grafika",
+    "references": [
+        "GraSimply.Logika"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

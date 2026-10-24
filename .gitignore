@@ -12,3 +12,8 @@ venv/
 .env
 .idea/
 .vscode/
+
+# Paczki robione doraźnie, gdy push nie przechodzi — to tylko kopia pracy
+# do przeniesienia na inną maszynę, nie treść projektu.
+*.bundle
+*.zip

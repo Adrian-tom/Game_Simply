@@ -1,0 +1,923 @@
+{
+ "progi_exp": [
+  0,
+  100,
+  250,
+  450,
+  700,
+  1000,
+  1400,
+  1900,
+  2500,
+  3200,
+  4000,
+  4850,
+  5700,
+  6550,
+  7400,
+  8250,
+  9100,
+  9950,
+  10800,
+  11650
+ ],
+ "start": {
+  "Wojownik": {
+   "max_hp": 120,
+   "atak": 18,
+   "obrona": 8,
+   "max_mana": 0,
+   "mikstury": 2,
+   "mikstury_many": 0,
+   "zloto": 30,
+   "atrybuty": [
+    16,
+    12,
+    15,
+    8,
+    10,
+    10
+   ],
+   "biegle": [
+    "atletyka",
+    "zastraszanie"
+   ]
+  },
+  "Mag": {
+   "max_hp": 70,
+   "atak": 10,
+   "obrona": 2,
+   "max_mana": 50,
+   "mikstury": 3,
+   "mikstury_many": 1,
+   "zloto": 30,
+   "atrybuty": [
+    8,
+    12,
+    12,
+    16,
+    13,
+    10
+   ],
+   "biegle": [
+    "spostrzegawczosc",
+    "perswazja"
+   ]
+  },
+  "Lotrzyk": {
+   "max_hp": 90,
+   "atak": 14,
+   "obrona": 5,
+   "max_mana": 0,
+   "mikstury": 2,
+   "mikstury_many": 0,
+   "zloto": 30,
+   "atrybuty": [
+    8,
+    16,
+    12,
+    12,
+    10,
+    14
+   ],
+   "biegle": [
+    "zwinne_palce",
+    "akrobatyka",
+    "oszustwo"
+   ]
+  },
+  "Druid": {
+   "max_hp": 92,
+   "atak": 13,
+   "obrona": 4,
+   "max_mana": 55,
+   "mikstury": 3,
+   "mikstury_many": 1,
+   "zloto": 30,
+   "atrybuty": [
+    10,
+    12,
+    13,
+    10,
+    16,
+    10
+   ],
+   "biegle": [
+    "przetrwanie",
+    "spostrzegawczosc"
+   ]
+  },
+  "Nekromanta": {
+   "max_hp": 75,
+   "atak": 12,
+   "obrona": 3,
+   "max_mana": 60,
+   "mikstury": 2,
+   "mikstury_many": 1,
+   "zloto": 30,
+   "atrybuty": [
+    8,
+    12,
+    12,
+    16,
+    10,
+    13
+   ],
+   "biegle": [
+    "zastraszanie",
+    "oszustwo"
+   ]
+  }
+ },
+ "awanse": {
+  "Wojownik": [
+   {
+    "poziom": 2,
+    "max_hp": 145,
+    "atak": 24,
+    "obrona": 11,
+    "max_mana": 0,
+    "pkt_atr": 3,
+    "pkt_um": 1,
+    "pkt_tal": 1
+   },
+   {
+    "poziom": 3,
+    "max_hp": 170,
+    "atak": 30,
+    "obrona": 14,
+    "max_mana": 0,
+    "pkt_atr": 4,
+    "pkt_um": 2,
+    "pkt_tal": 2
+   },
+   {
+    "poziom": 4,
+    "max_hp": 195,
+    "atak": 36,
+    "obrona": 17,
+    "max_mana": 0,
+    "pkt_atr": 5,
+    "pkt_um": 3,
+    "pkt_tal": 3
+   },
+   {
+    "poziom": 5,
+    "max_hp": 220,
+    "atak": 42,
+    "obrona": 20,
+    "max_mana": 0,
+    "pkt_atr": 7,
+    "pkt_um": 5,
+    "pkt_tal": 4
+   },
+   {
+    "poziom": 6,
+    "max_hp": 245,
+    "atak": 48,
+    "obrona": 23,
+    "max_mana": 0,
+    "pkt_atr": 8,
+    "pkt_um": 6,
+    "pkt_tal": 5
+   },
+   {
+    "poziom": 7,
+    "max_hp": 270,
+    "atak": 54,
+    "obrona": 26,
+    "max_mana": 0,
+    "pkt_atr": 9,
+    "pkt_um": 7,
+    "pkt_tal": 6
+   },
+   {
+    "poziom": 8,
+    "max_hp": 295,
+    "atak": 60,
+    "obrona": 29,
+    "max_mana": 0,
+    "pkt_atr": 10,
+    "pkt_um": 8,
+    "pkt_tal": 7
+   },
+   {
+    "poziom": 9,
+    "max_hp": 320,
+    "atak": 66,
+    "obrona": 32,
+    "max_mana": 0,
+    "pkt_atr": 11,
+    "pkt_um": 9,
+    "pkt_tal": 8
+   },
+   {
+    "poziom": 10,
+    "max_hp": 345,
+    "atak": 72,
+    "obrona": 35,
+    "max_mana": 0,
+    "pkt_atr": 13,
+    "pkt_um": 11,
+    "pkt_tal": 9
+   },
+   {
+    "poziom": 11,
+    "max_hp": 370,
+    "atak": 78,
+    "obrona": 38,
+    "max_mana": 0,
+    "pkt_atr": 14,
+    "pkt_um": 12,
+    "pkt_tal": 10
+   },
+   {
+    "poziom": 12,
+    "max_hp": 395,
+    "atak": 84,
+    "obrona": 41,
+    "max_mana": 0,
+    "pkt_atr": 15,
+    "pkt_um": 13,
+    "pkt_tal": 11
+   },
+   {
+    "poziom": 13,
+    "max_hp": 420,
+    "atak": 90,
+    "obrona": 44,
+    "max_mana": 0,
+    "pkt_atr": 16,
+    "pkt_um": 14,
+    "pkt_tal": 12
+   }
+  ],
+  "Mag": [
+   {
+    "poziom": 2,
+    "max_hp": 80,
+    "atak": 13,
+    "obrona": 3,
+    "max_mana": 60,
+    "pkt_atr": 3,
+    "pkt_um": 1,
+    "pkt_tal": 1
+   },
+   {
+    "poziom": 3,
+    "max_hp": 90,
+    "atak": 16,
+    "obrona": 4,
+    "max_mana": 70,
+    "pkt_atr": 4,
+    "pkt_um": 2,
+    "pkt_tal": 2
+   },
+   {
+    "poziom": 4,
+    "max_hp": 100,
+    "atak": 19,
+    "obrona": 5,
+    "max_mana": 80,
+    "pkt_atr": 5,
+    "pkt_um": 3,
+    "pkt_tal": 3
+   },
+   {
+    "poziom": 5,
+    "max_hp": 110,
+    "atak": 22,
+    "obrona": 6,
+    "max_mana": 90,
+    "pkt_atr": 7,
+    "pkt_um": 5,
+    "pkt_tal": 4
+   },
+   {
+    "poziom": 6,
+    "max_hp": 120,
+    "atak": 25,
+    "obrona": 7,
+    "max_mana": 100,
+    "pkt_atr": 8,
+    "pkt_um": 6,
+    "pkt_tal": 5
+   },
+   {
+    "poziom": 7,
+    "max_hp": 130,
+    "atak": 28,
+    "obrona": 8,
+    "max_mana": 110,
+    "pkt_atr": 9,
+    "pkt_um": 7,
+    "pkt_tal": 6
+   },
+   {
+    "poziom": 8,
+    "max_hp": 140,
+    "atak": 31,
+    "obrona": 9,
+    "max_mana": 120,
+    "pkt_atr": 10,
+    "pkt_um": 8,
+    "pkt_tal": 7
+   },
+   {
+    "poziom": 9,
+    "max_hp": 150,
+    "atak": 34,
+    "obrona": 10,
+    "max_mana": 130,
+    "pkt_atr": 11,
+    "pkt_um": 9,
+    "pkt_tal": 8
+   },
+   {
+    "poziom": 10,
+    "max_hp": 160,
+    "atak": 37,
+    "obrona": 11,
+    "max_mana": 140,
+    "pkt_atr": 13,
+    "pkt_um": 11,
+    "pkt_tal": 9
+   },
+   {
+    "poziom": 11,
+    "max_hp": 170,
+    "atak": 40,
+    "obrona": 12,
+    "max_mana": 150,
+    "pkt_atr": 14,
+    "pkt_um": 12,
+    "pkt_tal": 10
+   },
+   {
+    "poziom": 12,
+    "max_hp": 180,
+    "atak": 43,
+    "obrona": 13,
+    "max_mana": 160,
+    "pkt_atr": 15,
+    "pkt_um": 13,
+    "pkt_tal": 11
+   },
+   {
+    "poziom": 13,
+    "max_hp": 190,
+    "atak": 46,
+    "obrona": 14,
+    "max_mana": 170,
+    "pkt_atr": 16,
+    "pkt_um": 14,
+    "pkt_tal": 12
+   }
+  ],
+  "Lotrzyk": [
+   {
+    "poziom": 2,
+    "max_hp": 105,
+    "atak": 19,
+    "obrona": 7,
+    "max_mana": 0,
+    "pkt_atr": 3,
+    "pkt_um": 1,
+    "pkt_tal": 1
+   },
+   {
+    "poziom": 3,
+    "max_hp": 120,
+    "atak": 24,
+    "obrona": 9,
+    "max_mana": 0,
+    "pkt_atr": 4,
+    "pkt_um": 2,
+    "pkt_tal": 2
+   },
+   {
+    "poziom": 4,
+    "max_hp": 135,
+    "atak": 29,
+    "obrona": 11,
+    "max_mana": 0,
+    "pkt_atr": 5,
+    "pkt_um": 3,
+    "pkt_tal": 3
+   },
+   {
+    "poziom": 5,
+    "max_hp": 150,
+    "atak": 34,
+    "obrona": 13,
+    "max_mana": 0,
+    "pkt_atr": 7,
+    "pkt_um": 5,
+    "pkt_tal": 4
+   },
+   {
+    "poziom": 6,
+    "max_hp": 165,
+    "atak": 39,
+    "obrona": 15,
+    "max_mana": 0,
+    "pkt_atr": 8,
+    "pkt_um": 6,
+    "pkt_tal": 5
+   },
+   {
+    "poziom": 7,
+    "max_hp": 180,
+    "atak": 44,
+    "obrona": 17,
+    "max_mana": 0,
+    "pkt_atr": 9,
+    "pkt_um": 7,
+    "pkt_tal": 6
+   },
+   {
+    "poziom": 8,
+    "max_hp": 195,
+    "atak": 49,
+    "obrona": 19,
+    "max_mana": 0,
+    "pkt_atr": 10,
+    "pkt_um": 8,
+    "pkt_tal": 7
+   },
+   {
+    "poziom": 9,
+    "max_hp": 210,
+    "atak": 54,
+    "obrona": 21,
+    "max_mana": 0,
+    "pkt_atr": 11,
+    "pkt_um": 9,
+    "pkt_tal": 8
+   },
+   {
+    "poziom": 10,
+    "max_hp": 225,
+    "atak": 59,
+    "obrona": 23,
+    "max_mana": 0,
+    "pkt_atr": 13,
+    "pkt_um": 11,
+    "pkt_tal": 9
+   },
+   {
+    "poziom": 11,
+    "max_hp": 240,
+    "atak": 64,
+    "obrona": 25,
+    "max_mana": 0,
+    "pkt_atr": 14,
+    "pkt_um": 12,
+    "pkt_tal": 10
+   },
+   {
+    "poziom": 12,
+    "max_hp": 255,
+    "atak": 69,
+    "obrona": 27,
+    "max_mana": 0,
+    "pkt_atr": 15,
+    "pkt_um": 13,
+    "pkt_tal": 11
+   },
+   {
+    "poziom": 13,
+    "max_hp": 270,
+    "atak": 74,
+    "obrona": 29,
+    "max_mana": 0,
+    "pkt_atr": 16,
+    "pkt_um": 14,
+    "pkt_tal": 12
+   }
+  ],
+  "Druid": [
+   {
+    "poziom": 2,
+    "max_hp": 104,
+    "atak": 16,
+    "obrona": 6,
+    "max_mana": 65,
+    "pkt_atr": 3,
+    "pkt_um": 1,
+    "pkt_tal": 1
+   },
+   {
+    "poziom": 3,
+    "max_hp": 116,
+    "atak": 19,
+    "obrona": 8,
+    "max_mana": 75,
+    "pkt_atr": 4,
+    "pkt_um": 2,
+    "pkt_tal": 2
+   },
+   {
+    "poziom": 4,
+    "max_hp": 128,
+    "atak": 22,
+    "obrona": 10,
+    "max_mana": 85,
+    "pkt_atr": 5,
+    "pkt_um": 3,
+    "pkt_tal": 3
+   },
+   {
+    "poziom": 5,
+    "max_hp": 140,
+    "atak": 25,
+    "obrona": 12,
+    "max_mana": 95,
+    "pkt_atr": 7,
+    "pkt_um": 5,
+    "pkt_tal": 4
+   },
+   {
+    "poziom": 6,
+    "max_hp": 152,
+    "atak": 28,
+    "obrona": 14,
+    "max_mana": 105,
+    "pkt_atr": 8,
+    "pkt_um": 6,
+    "pkt_tal": 5
+   },
+   {
+    "poziom": 7,
+    "max_hp": 164,
+    "atak": 31,
+    "obrona": 16,
+    "max_mana": 115,
+    "pkt_atr": 9,
+    "pkt_um": 7,
+    "pkt_tal": 6
+   },
+   {
+    "poziom": 8,
+    "max_hp": 176,
+    "atak": 34,
+    "obrona": 18,
+    "max_mana": 125,
+    "pkt_atr": 10,
+    "pkt_um": 8,
+    "pkt_tal": 7
+   },
+   {
+    "poziom": 9,
+    "max_hp": 188,
+    "atak": 37,
+    "obrona": 20,
+    "max_mana": 135,
+    "pkt_atr": 11,
+    "pkt_um": 9,
+    "pkt_tal": 8
+   },
+   {
+    "poziom": 10,
+    "max_hp": 200,
+    "atak": 40,
+    "obrona": 22,
+    "max_mana": 145,
+    "pkt_atr": 13,
+    "pkt_um": 11,
+    "pkt_tal": 9
+   },
+   {
+    "poziom": 11,
+    "max_hp": 212,
+    "atak": 43,
+    "obrona": 24,
+    "max_mana": 155,
+    "pkt_atr": 14,
+    "pkt_um": 12,
+    "pkt_tal": 10
+   },
+   {
+    "poziom": 12,
+    "max_hp": 224,
+    "atak": 46,
+    "obrona": 26,
+    "max_mana": 165,
+    "pkt_atr": 15,
+    "pkt_um": 13,
+    "pkt_tal": 11
+   },
+   {
+    "poziom": 13,
+    "max_hp": 236,
+    "atak": 49,
+    "obrona": 28,
+    "max_mana": 175,
+    "pkt_atr": 16,
+    "pkt_um": 14,
+    "pkt_tal": 12
+   }
+  ],
+  "Nekromanta": [
+   {
+    "poziom": 2,
+    "max_hp": 86,
+    "atak": 16,
+    "obrona": 4,
+    "max_mana": 70,
+    "pkt_atr": 3,
+    "pkt_um": 1,
+    "pkt_tal": 1
+   },
+   {
+    "poziom": 3,
+    "max_hp": 97,
+    "atak": 20,
+    "obrona": 5,
+    "max_mana": 80,
+    "pkt_atr": 4,
+    "pkt_um": 2,
+    "pkt_tal": 2
+   },
+   {
+    "poziom": 4,
+    "max_hp": 108,
+    "atak": 24,
+    "obrona": 6,
+    "max_mana": 90,
+    "pkt_atr": 5,
+    "pkt_um": 3,
+    "pkt_tal": 3
+   },
+   {
+    "poziom": 5,
+    "max_hp": 119,
+    "atak": 28,
+    "obrona": 7,
+    "max_mana": 100,
+    "pkt_atr": 7,
+    "pkt_um": 5,
+    "pkt_tal": 4
+   },
+   {
+    "poziom": 6,
+    "max_hp": 130,
+    "atak": 32,
+    "obrona": 8,
+    "max_mana": 110,
+    "pkt_atr": 8,
+    "pkt_um": 6,
+    "pkt_tal": 5
+   },
+   {
+    "poziom": 7,
+    "max_hp": 141,
+    "atak": 36,
+    "obrona": 9,
+    "max_mana": 120,
+    "pkt_atr": 9,
+    "pkt_um": 7,
+    "pkt_tal": 6
+   },
+   {
+    "poziom": 8,
+    "max_hp": 152,
+    "atak": 40,
+    "obrona": 10,
+    "max_mana": 130,
+    "pkt_atr": 10,
+    "pkt_um": 8,
+    "pkt_tal": 7
+   },
+   {
+    "poziom": 9,
+    "max_hp": 163,
+    "atak": 44,
+    "obrona": 11,
+    "max_mana": 140,
+    "pkt_atr": 11,
+    "pkt_um": 9,
+    "pkt_tal": 8
+   },
+   {
+    "poziom": 10,
+    "max_hp": 174,
+    "atak": 48,
+    "obrona": 12,
+    "max_mana": 150,
+    "pkt_atr": 13,
+    "pkt_um": 11,
+    "pkt_tal": 9
+   },
+   {
+    "poziom": 11,
+    "max_hp": 185,
+    "atak": 52,
+    "obrona": 13,
+    "max_mana": 160,
+    "pkt_atr": 14,
+    "pkt_um": 12,
+    "pkt_tal": 10
+   },
+   {
+    "poziom": 12,
+    "max_hp": 196,
+    "atak": 56,
+    "obrona": 14,
+    "max_mana": 170,
+    "pkt_atr": 15,
+    "pkt_um": 13,
+    "pkt_tal": 11
+   },
+   {
+    "poziom": 13,
+    "max_hp": 207,
+    "atak": 60,
+    "obrona": 15,
+    "max_mana": 180,
+    "pkt_atr": 16,
+    "pkt_um": 14,
+    "pkt_tal": 12
+   }
+  ]
+ },
+ "kalendarz": [
+  {
+   "dzien": 0,
+   "pora": "wiosna",
+   "rok": 1,
+   "dzien_pory": 1,
+   "do_zimy": 90
+  },
+  {
+   "dzien": 1,
+   "pora": "wiosna",
+   "rok": 1,
+   "dzien_pory": 2,
+   "do_zimy": 89
+  },
+  {
+   "dzien": 29,
+   "pora": "wiosna",
+   "rok": 1,
+   "dzien_pory": 30,
+   "do_zimy": 61
+  },
+  {
+   "dzien": 30,
+   "pora": "lato",
+   "rok": 1,
+   "dzien_pory": 1,
+   "do_zimy": 60
+  },
+  {
+   "dzien": 59,
+   "pora": "lato",
+   "rok": 1,
+   "dzien_pory": 30,
+   "do_zimy": 31
+  },
+  {
+   "dzien": 60,
+   "pora": "jesien",
+   "rok": 1,
+   "dzien_pory": 1,
+   "do_zimy": 30
+  },
+  {
+   "dzien": 89,
+   "pora": "jesien",
+   "rok": 1,
+   "dzien_pory": 30,
+   "do_zimy": 1
+  },
+  {
+   "dzien": 90,
+   "pora": "zima",
+   "rok": 1,
+   "dzien_pory": 1,
+   "do_zimy": 0
+  },
+  {
+   "dzien": 119,
+   "pora": "zima",
+   "rok": 1,
+   "dzien_pory": 30,
+   "do_zimy": 0
+  },
+  {
+   "dzien": 120,
+   "pora": "wiosna",
+   "rok": 2,
+   "dzien_pory": 1,
+   "do_zimy": 90
+  },
+  {
+   "dzien": 121,
+   "pora": "wiosna",
+   "rok": 2,
+   "dzien_pory": 2,
+   "do_zimy": 89
+  },
+  {
+   "dzien": 365,
+   "pora": "wiosna",
+   "rok": 4,
+   "dzien_pory": 6,
+   "do_zimy": 85
+  },
+  {
+   "dzien": 480,
+   "pora": "wiosna",
+   "rok": 5,
+   "dzien_pory": 1,
+   "do_zimy": 90
+  }
+ ],
+ "karma": [
+  {
+   "karma": -30,
+   "poziom": "okrutny",
+   "mnoznik_cen": 1.15,
+   "rekrutacja": 3,
+   "swiatynia": -20
+  },
+  {
+   "karma": -12,
+   "poziom": "okrutny",
+   "mnoznik_cen": 1.12,
+   "rekrutacja": 3,
+   "swiatynia": -20
+  },
+  {
+   "karma": -11,
+   "poziom": "podejrzany",
+   "mnoznik_cen": 1.1099999999999999,
+   "rekrutacja": 1,
+   "swiatynia": -10
+  },
+  {
+   "karma": -10,
+   "poziom": "podejrzany",
+   "mnoznik_cen": 1.1,
+   "rekrutacja": 1,
+   "swiatynia": -10
+  },
+  {
+   "karma": -5,
+   "poziom": "podejrzany",
+   "mnoznik_cen": 1.05,
+   "rekrutacja": 1,
+   "swiatynia": -10
+  },
+  {
+   "karma": -4,
+   "poziom": "neutralny",
+   "mnoznik_cen": 1.04,
+   "rekrutacja": 0,
+   "swiatynia": 0
+  },
+  {
+   "karma": 0,
+   "poziom": "neutralny",
+   "mnoznik_cen": 1.0,
+   "rekrutacja": 0,
+   "swiatynia": 0
+  },
+  {
+   "karma": 4,
+   "poziom": "neutralny",
+   "mnoznik_cen": 0.96,
+   "rekrutacja": 0,
+   "swiatynia": 0
+  },
+  {
+   "karma": 5,
+   "poziom": "prawy",
+   "mnoznik_cen": 0.95,
+   "rekrutacja": -1,
+   "swiatynia": 10
+  },
+  {
+   "karma": 11,
+   "poziom": "prawy",
+   "mnoznik_cen": 0.89,
+   "rekrutacja": -1,
+   "swiatynia": 10
+  },
+  {
+   "karma": 12,
+   "poziom": "swiety",
+   "mnoznik_cen": 0.88,
+   "rekrutacja": -3,
+   "swiatynia": 25
+  },
+  {
+   "karma": 30,
+   "poziom": "swiety",
+   "mnoznik_cen": 0.85,
+   "rekrutacja": -3,
+   "swiatynia": 25
+  }
+ ]
+}

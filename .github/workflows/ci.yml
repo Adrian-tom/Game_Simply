@@ -39,3 +39,40 @@ jobs:
         env:
           SDL_VIDEODRIVER: dummy
         run: python -m unittest discover -s tests -v
+
+  # Port na Unity. Warstwy Logika i Grafika są czystym C# bez UnityEngine,
+  # więc dają się zbudować i przetestować zwykłym dotnetem — bez edytora.
+  # Wzorce generujemy na świeżo z wersji pythonowej, żeby test naprawdę
+  # porównywał port z oryginałem, a nie z zapisanym kiedyś wynikiem.
+  port-unity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ustaw Pythona
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Ustaw .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Zainstaluj grafikę (pygame-ce)
+        run: python -m pip install -r requirements.txt
+
+      - name: Zrzuć wzorce z wersji pythonowej
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python unity/narzedzia/wzorce.py
+
+      - name: Testy portu (zgodność z Pythonem co do piksela i co do seeda)
+        run: dotnet run --project unity/Testy
+
+      # Wzorce powstały przed chwilą z tego samego drzewa, więc gdyby port
+      # i Python się rozjechały, poprzedni krok już by to zgłosił. Tu pilnujemy
+      # czegoś innego: że zapisane w repozytorium wzorce są aktualne.
+      - name: Sprawdź, czy wzorce w repozytorium są aktualne
+        run: git diff --exit-code -- unity/Testy/wzorce
