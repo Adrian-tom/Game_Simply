@@ -56,6 +56,21 @@ Jeśli scena nie chce się otworzyć (zdarza się przy dużej różnicy wersji
 edytora), użyj menu **Gra Simply → Utwórz scenę gry** — zapisze świeżą scenę
 tym Unity, które masz, i doda ją do ustawień budowania.
 
+### Zwykła gra, bez Unity
+
+Żeby grać jak w każdą inną grę — podwójne kliknięcie i okno z grą, bez Huba,
+bez edytora, bez czekania na import — zbuduj paczkę:
+
+**Gra Simply → Zbuduj grę (Windows)**
+
+Gotowa gra ląduje w `Build/Windows/GraSimply.exe` (~92 MB, budowanie trwało
+u nas 88 s). Tę paczkę odpalasz już bez Unity i możesz ją przenieść na inny
+komputer z Windows — Unity nie jest tam potrzebne. Katalog `Build/` nie wchodzi
+do repozytorium: odtwarza się z kodu jednym kliknięciem.
+
+Edytora potrzebujesz więc tylko wtedy, gdy zmieniasz grę. Samo granie go nie
+wymaga.
+
 ### Sterowanie
 
 | Klawisz | Działa |
