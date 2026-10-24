@@ -38,14 +38,19 @@ ustawień (`ProjectSettings/*.asset`, `Packages/manifest.json`) Unity dorobi
 samo przy pierwszym otwarciu; w repozytorium jest tylko tyle, ile potrzebuje
 Hub, żeby rozpoznać katalog.
 
-Projekt deklaruje wersję **2022.3.0f1** w `ProjectSettings/ProjectVersion.txt`.
-Jeśli masz inną, Hub zapyta, czy otworzyć swoją — zgódź się, to normalne
+Projekt deklaruje wersję **6000.6.0f1** (Unity 6) w
+`ProjectSettings/ProjectVersion.txt`; działa też na 2022.3 i nowszych. Jeśli
+masz inną, Hub zapyta, czy otworzyć swoją — zgódź się, to normalne
 i bezpieczne. Żeby pytał rzadziej, wpisz tam swoją wersję (dokładnie tak,
-jak pokazuje ją Hub, np. `6000.0.23f1`):
+jak pokazuje ją Hub):
 
 ```
-m_EditorVersion: 2022.3.0f1
+m_EditorVersion: 6000.6.0f1
 ```
+
+Gra czyta klawiaturę starym `Input`. Gdyby Unity zgłaszało błąd o *Input
+System*, ustaw **Edit → Project Settings → Player → Active Input Handling**
+na **Both**.
 
 Jeśli scena nie chce się otworzyć (zdarza się przy dużej różnicy wersji
 edytora), użyj menu **Gra Simply → Utwórz scenę gry** — zapisze świeżą scenę
