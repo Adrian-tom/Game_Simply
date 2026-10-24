@@ -203,6 +203,28 @@ namespace GraSimply.Logika
             return premia;
         }
 
+        /// <summary>
+        /// +2% krytyka za każdy punkt premii ze Zręczności.
+        /// W wersji pythonowej dochodzą tu jeszcze cechy pochodzenia
+        /// (<c>suma_flagi(gracz, "kryt")</c>) — pochodzenia nie ma w porcie.
+        /// </summary>
+        public static double SzansaKrytaZrecznosc(Gracz gracz)
+        {
+            return 0.02 * Math.Max(0, Modyfikator(gracz, "zrecznosc"));
+        }
+
+        /// <summary>Pasywny unik: 3% × premia ZRĘ, biegłość w akrobatyce +4%, maks. 28%.</summary>
+        public static double SzansaUnikuZrecznosc(Gracz gracz)
+        {
+            double baza = 0.03 * Math.Max(0, Modyfikator(gracz, "zrecznosc"));
+            if (CzyBiegly(gracz, "akrobatyka"))
+            {
+                baza += 0.04;
+            }
+
+            return Math.Min(0.28, baza);
+        }
+
         /// <summary>ST rośnie lekko z numerem regionu.</summary>
         public static int Trudnosc(Gracz gracz, int baza)
         {

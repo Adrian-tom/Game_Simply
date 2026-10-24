@@ -66,7 +66,12 @@ namespace GraSimply.Edytor
                 $"Gra zbudowana: {opcje.locationPathName}\n" +
                 $"Rozmiar {megabajty:0.0} MB, czas {podsumowanie.totalTime.TotalSeconds:0} s. " +
                 "Odpala się podwójnym kliknięciem.");
-            EditorUtility.RevealInFinder(opcje.locationPathName);
+            // W trybie wsadowym (budowanie z wiersza poleceń) nie ma komu
+            // patrzeć na Eksploratora — otwieramy go tylko z edytora.
+            if (!Application.isBatchMode)
+            {
+                EditorUtility.RevealInFinder(opcje.locationPathName);
+            }
         }
 
         /// <summary>Wstawia scenę gry do ustawień budowania, jeśli jej tam nie ma.</summary>

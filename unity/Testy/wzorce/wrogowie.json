@@ -1,0 +1,414 @@
+{
+ "losowani": [
+  {
+   "seed": 1,
+   "mapa_gen": 1,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Wilk cienia",
+   "poziom": 1,
+   "max_hp": 72,
+   "atak": 18,
+   "obrona": 4,
+   "exp": 55,
+   "zloto": 11
+  },
+  {
+   "seed": 1,
+   "mapa_gen": 1,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Wilk cienia",
+   "poziom": 1,
+   "max_hp": 86,
+   "atak": 21,
+   "obrona": 5,
+   "exp": 55,
+   "zloto": 24
+  },
+  {
+   "seed": 1,
+   "mapa_gen": 3,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Wiedźma",
+   "poziom": 5,
+   "max_hp": 109,
+   "atak": 43,
+   "obrona": 5,
+   "exp": 144,
+   "zloto": 65
+  },
+  {
+   "seed": 1,
+   "mapa_gen": 3,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Wiedźma",
+   "poziom": 5,
+   "max_hp": 131,
+   "atak": 52,
+   "obrona": 6,
+   "exp": 144,
+   "zloto": 49
+  },
+  {
+   "seed": 1,
+   "mapa_gen": 5,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Wiedźma",
+   "poziom": 9,
+   "max_hp": 146,
+   "atak": 58,
+   "obrona": 6,
+   "exp": 198,
+   "zloto": 55
+  },
+  {
+   "seed": 1,
+   "mapa_gen": 5,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Wiedźma",
+   "poziom": 9,
+   "max_hp": 176,
+   "atak": 70,
+   "obrona": 8,
+   "exp": 198,
+   "zloto": 109
+  },
+  {
+   "seed": 7,
+   "mapa_gen": 1,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Szkielet",
+   "poziom": 2,
+   "max_hp": 74,
+   "atak": 16,
+   "obrona": 4,
+   "exp": 51,
+   "zloto": 15
+  },
+  {
+   "seed": 7,
+   "mapa_gen": 1,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Szkielet",
+   "poziom": 2,
+   "max_hp": 89,
+   "atak": 19,
+   "obrona": 5,
+   "exp": 51,
+   "zloto": 16
+  },
+  {
+   "seed": 7,
+   "mapa_gen": 3,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Szkielet",
+   "poziom": 6,
+   "max_hp": 108,
+   "atak": 23,
+   "obrona": 7,
+   "exp": 78,
+   "zloto": 25
+  },
+  {
+   "seed": 7,
+   "mapa_gen": 3,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Szkielet",
+   "poziom": 6,
+   "max_hp": 130,
+   "atak": 28,
+   "obrona": 8,
+   "exp": 78,
+   "zloto": 27
+  },
+  {
+   "seed": 7,
+   "mapa_gen": 5,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Szkielet",
+   "poziom": 10,
+   "max_hp": 143,
+   "atak": 31,
+   "obrona": 9,
+   "exp": 105,
+   "zloto": 29
+  },
+  {
+   "seed": 7,
+   "mapa_gen": 5,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Szkielet",
+   "poziom": 10,
+   "max_hp": 171,
+   "atak": 37,
+   "obrona": 11,
+   "exp": 105,
+   "zloto": 32
+  },
+  {
+   "seed": 2026,
+   "mapa_gen": 1,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Szkielet",
+   "poziom": 1,
+   "max_hp": 66,
+   "atak": 14,
+   "obrona": 4,
+   "exp": 45,
+   "zloto": 16
+  },
+  {
+   "seed": 2026,
+   "mapa_gen": 1,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Szkielet",
+   "poziom": 1,
+   "max_hp": 79,
+   "atak": 17,
+   "obrona": 5,
+   "exp": 45,
+   "zloto": 17
+  },
+  {
+   "seed": 2026,
+   "mapa_gen": 3,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Ork",
+   "poziom": 5,
+   "max_hp": 145,
+   "atak": 31,
+   "obrona": 10,
+   "exp": 112,
+   "zloto": 38
+  },
+  {
+   "seed": 2026,
+   "mapa_gen": 3,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Ork",
+   "poziom": 5,
+   "max_hp": 175,
+   "atak": 37,
+   "obrona": 12,
+   "exp": 112,
+   "zloto": 43
+  },
+  {
+   "seed": 2026,
+   "mapa_gen": 5,
+   "tryb": "normalny",
+   "biom": "las",
+   "nazwa": "Ork",
+   "poziom": 9,
+   "max_hp": 195,
+   "atak": 42,
+   "obrona": 13,
+   "exp": 154,
+   "zloto": 36
+  },
+  {
+   "seed": 2026,
+   "mapa_gen": 5,
+   "tryb": "hardcore",
+   "biom": "las",
+   "nazwa": "Ork",
+   "poziom": 9,
+   "max_hp": 235,
+   "atak": 50,
+   "obrona": 16,
+   "exp": 154,
+   "zloto": 68
+  }
+ ],
+ "bossowie": [
+  {
+   "seed": 3,
+   "mapa_gen": 1,
+   "nazwa": "Licz Prawieczny",
+   "poziom": 3,
+   "max_hp": 130,
+   "atak": 25,
+   "obrona": 7,
+   "exp": 624
+  },
+  {
+   "seed": 3,
+   "mapa_gen": 4,
+   "nazwa": "Licz Prawieczny",
+   "poziom": 9,
+   "max_hp": 208,
+   "atak": 40,
+   "obrona": 11,
+   "exp": 1056
+  },
+  {
+   "seed": 11,
+   "mapa_gen": 1,
+   "nazwa": "Arcydemon Khaor",
+   "poziom": 3,
+   "max_hp": 136,
+   "atak": 29,
+   "obrona": 7,
+   "exp": 728
+  },
+  {
+   "seed": 11,
+   "mapa_gen": 4,
+   "nazwa": "Arcydemon Khaor",
+   "poziom": 9,
+   "max_hp": 218,
+   "atak": 47,
+   "obrona": 12,
+   "exp": 1232
+  }
+ ],
+ "mityczni": [
+  {
+   "typ": "latajaca_wyspa",
+   "nazwa": "Gryf Niebios",
+   "poziom": 6,
+   "max_hp": 185,
+   "atak": 36,
+   "obrona": 10
+  },
+  {
+   "typ": "leze_smoka",
+   "nazwa": "Stary smok Ashkaryx",
+   "poziom": 6,
+   "max_hp": 228,
+   "atak": 38,
+   "obrona": 12
+  },
+  {
+   "typ": "portal",
+   "nazwa": "Strażnik Otchłani",
+   "poziom": 6,
+   "max_hp": 177,
+   "atak": 35,
+   "obrona": 10
+  }
+ ],
+ "zdolnosci": {
+  "Goblin": {
+   "zapowiedzi": {},
+   "slabosci": [
+    "ogien"
+   ],
+   "odpornosci": [],
+   "regeneracja": 0.0
+  },
+  "Szkielet": {
+   "zapowiedzi": {},
+   "slabosci": [
+    "swiete"
+   ],
+   "odpornosci": [
+    "trucizna"
+   ],
+   "regeneracja": 0.0
+  },
+  "Trolle": {
+   "zapowiedzi": {
+    "ciezki_cios": 0.2
+   },
+   "slabosci": [
+    "ogien"
+   ],
+   "odpornosci": [],
+   "regeneracja": 0.05
+  },
+  "Krol Trolli": {
+   "zapowiedzi": {
+    "ciezki_cios": 0.2
+   },
+   "slabosci": [
+    "ogien"
+   ],
+   "odpornosci": [],
+   "regeneracja": 0.05
+  },
+  "Krol trolli": {
+   "zapowiedzi": {
+    "ciezki_cios": 0.2
+   },
+   "slabosci": [
+    "ogien"
+   ],
+   "odpornosci": [],
+   "regeneracja": 0.05
+  },
+  "Arcydemon Khaor": {
+   "zapowiedzi": {
+    "ciezki_cios": 0.2,
+    "ogien": 0.25
+   },
+   "slabosci": [
+    "swiete"
+   ],
+   "odpornosci": [
+    "ogien"
+   ],
+   "regeneracja": 0.0
+  },
+  "Mlody smok": {
+   "zapowiedzi": {
+    "ogien": 0.34
+   },
+   "slabosci": [],
+   "odpornosci": [
+    "ogien"
+   ],
+   "regeneracja": 0.0
+  },
+  "Straznik Otchlani": {
+   "zapowiedzi": {},
+   "slabosci": [],
+   "odpornosci": [],
+   "regeneracja": 0.0
+  },
+  "Nieznany stwor": {
+   "zapowiedzi": {},
+   "slabosci": [],
+   "odpornosci": [],
+   "regeneracja": 0.0
+  }
+ },
+ "herszty": [
+  {
+   "sila": 10,
+   "nazwa": "Herszt bandy",
+   "poziom": 1,
+   "max_hp": 114,
+   "atak": 22
+  },
+  {
+   "sila": 100,
+   "nazwa": "Herszt bandy",
+   "poziom": 4,
+   "max_hp": 158,
+   "atak": 30
+  },
+  {
+   "sila": 400,
+   "nazwa": "Herszt bandy",
+   "poziom": 14,
+   "max_hp": 306,
+   "atak": 59
+  }
+ ]
+}

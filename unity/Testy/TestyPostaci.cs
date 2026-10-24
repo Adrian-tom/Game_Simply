@@ -197,9 +197,12 @@ namespace GraSimply.Testy
                 "0",            // zakończ grę
                 "0",            // wyjście z menu głównego
             };
+            // Seed dobrany tak, żeby pierwszy ruch nie wpadł w losową zasadzkę:
+            // ten test pilnuje przejścia całej pętli, a nie walki. Walka ma własne,
+            // dedykowane testy w TestyWalki — tam długość starcia nie psuje scenariusza.
             var konsola = new KonsolaTestowa(odpowiedzi);
             var ekran = new Ekran();
-            var gra = new Gra(konsola, ekran, new Losowanie(2024));
+            var gra = new Gra(konsola, ekran, new Losowanie(99));
             gra.Uruchom();
 
             string wyjscie = konsola.Wyjscie;

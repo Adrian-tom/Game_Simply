@@ -12,9 +12,10 @@ namespace GraSimply.Logika
     /// bo w Unity logika chodzi na osobnym wątku i może sobie pozwolić
     /// na blokowanie dokładnie tak jak w terminalu.
     ///
-    /// Czego tu jeszcze nie ma względem wersji pythonowej: walki, zdarzeń
-    /// narracyjnych, budynków do wejścia i rozmów. To etap 2 — miejsca,
-    /// w których się wpinają, są oznaczone w kodzie.
+    /// Walki już tu są: zasadzka po wejściu na puste pole, boss na swoim polu
+    /// i napaść przy zbieraniu. Czego jeszcze nie ma względem wersji pythonowej:
+    /// zdarzeń narracyjnych, budynków do wejścia i rozmów — miejsca, w których
+    /// się wpinają, są oznaczone w kodzie.
     /// </summary>
     public sealed class Eksploracja
     {
@@ -90,7 +91,10 @@ namespace GraSimply.Logika
                     {
                         PokazZmianeRegionu(Mapa.LiczbaRegionow(_gracz) > regionowPrzed);
                     }
-                    PokazWejscieNaPole(kierunek.Nazwa);
+                    if (PokazWejscieNaPole(kierunek.Nazwa) == "przegrana")
+                    {
+                        return "przegrana";
+                    }
                     continue;
                 }
 
@@ -109,10 +113,17 @@ namespace GraSimply.Logika
                     string wynik = Oboz.ZbierzNaPolu(_gracz, _konsola, _rng);
                     if (wynik == "walka")
                     {
-                        // Etap 2: tutaj wchodzi przeprowadz_walke() z combat.py.
-                        _konsola.Pisz("\n  ⚔️  Przy zbieraniu ktoś cię zaskoczył! " +
-                                      "(walka dojdzie w kolejnym etapie portu)");
+                        _konsola.Pisz("\n  ⚔️  Przy zbieraniu ktoś cię zaskoczył!");
+                        Utils.NacisnijEnter(_konsola);
+                        string biomPola = Mapa.PoleGracza(_gracz).Biom;
+                        if (Walka.PrzeprowadzWalke(_gracz, _konsola, _rng, biomPola) == "przegrana")
+                        {
+                            return "przegrana";
+                        }
+
+                        continue;
                     }
+
                     Utils.NacisnijEnter(_konsola);
                 }
             }
@@ -301,7 +312,7 @@ namespace GraSimply.Logika
             Utils.NacisnijEnter(_konsola);
         }
 
-        private void PokazWejscieNaPole(string nazwaKierunku)
+        private string PokazWejscieNaPole(string nazwaKierunku)
         {
             Pole pole = Mapa.PoleGracza(_gracz);
             Biom biom = Swiat.SzablonBiomu(pole.Biom);
@@ -331,8 +342,68 @@ namespace GraSimply.Logika
                                   $"({pole.Punkt}).");
                 }
             }
+            bool pierwsze = !pole.Odwiedzone;
             pole.Odwiedzone = true;
             Utils.NacisnijEnter(_konsola);
+            return PoWejsciuNaPole(pole, pierwsze);
+        }
+
+        /// <summary>
+        /// Co czeka na polu po wejściu: boss albo zasadzka.
+        /// Zwraca „przegrana”, gdy bohater padł, w innym razie null.
+        ///
+        /// Szanse jak w <c>_po_wejsciu_na_pole()</c> z <c>world.py</c>: 22% na
+        /// świeżym polu, 8% na znanym, połowa tego z talentem „szósty zmysł”.
+        /// </summary>
+        private string PoWejsciuNaPole(Pole pole, bool pierwsze)
+        {
+            if (pole.Punkt == "boss")
+            {
+                _konsola.Wyczysc();
+                Utils.Linia(_konsola, '═');
+                _konsola.Pisz("  ⚠  LEGENDARNY BOSS");
+                Utils.Linia(_konsola, '═');
+                _konsola.Pisz("\n  Wkraczasz w samo serce jego domeny...");
+                Utils.NacisnijEnter(_konsola);
+                string wynikBossa = Walka.PrzeprowadzWalke(_gracz, _konsola, _rng, pole.Biom,
+                                                           jestBoss: true);
+                if (wynikBossa == "wygrana")
+                {
+                    pole.Punkt = null;
+                }
+
+                return wynikBossa == "przegrana" ? "przegrana" : null;
+            }
+
+            // Na polach z budynkiem, obozem, miastem i punktami mitycznymi
+            // zasadzki nie ma — tam dzieją się własne zdarzenia.
+            if (!string.IsNullOrEmpty(pole.Punkt))
+            {
+                return null;
+            }
+
+            double szansa = pierwsze ? 0.22 : 0.08;
+            if (_gracz.MaTalent("szosty_zmysl"))
+            {
+                szansa /= 2;
+            }
+
+            if (_rng.Losowa() >= szansa)
+            {
+                return null;
+            }
+
+            // W wersji pythonowej 55% takich spotkań zaczyna się rozmową
+            // (_konfrontacja_przed_walka) — rozmów nie ma jeszcze w porcie,
+            // więc losowanie zostaje, a scena schodzi do zwykłej zasadzki.
+            _rng.Losowa();
+
+            _konsola.Wyczysc();
+            Utils.Linia(_konsola);
+            _konsola.Pisz($"  ⚔️  Zasadzka w biomie: {pole.Biom}!");
+            Utils.NacisnijEnter(_konsola);
+            string wynik = Walka.PrzeprowadzWalke(_gracz, _konsola, _rng, pole.Biom);
+            return wynik == "przegrana" ? "przegrana" : null;
         }
 
         /// <summary>

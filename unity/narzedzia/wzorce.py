@@ -272,11 +272,89 @@ def wzorce_postaci() -> dict:
     }
 
 
+# ------------------------------------------------------------------ #
+#  Wrogowie i walka                                                    #
+# ------------------------------------------------------------------ #
+
+def wzorce_wrogow() -> dict:
+    """Losowani przeciwnicy, bossowie i zdolnosci wyliczane z nazwy.
+
+    Port ma z tego samego seeda dostac tego samego wroga z ta sama statystyka —
+    inaczej ta sama wyprawa bylaby w Unity latwiejsza albo trudniejsza niz
+    w Pythonie. Sprawdzamy tez kolejnosc losowan: wrog, a potem jego zloto.
+    """
+    from game import enemy
+
+    losowani = []
+    for seed in (1, 7, 2026):
+        for mapa_gen in (1, 3, 5):
+            for tryb in ("normalny", "hardcore"):
+                random.seed(seed)
+                w = enemy.losuj_przeciwnika(1, "las", mapa_gen, tryb)
+                losowani.append({
+                    "seed": seed, "mapa_gen": mapa_gen, "tryb": tryb, "biom": "las",
+                    "nazwa": w.nazwa, "poziom": w.poziom, "max_hp": w.max_hp,
+                    "atak": w.atak, "obrona": w.obrona, "exp": w.exp_nagroda,
+                    "zloto": w.losowe_zloto(),
+                })
+
+    bossowie = []
+    for seed in (3, 11):
+        for mapa_gen in (1, 4):
+            random.seed(seed)
+            b = enemy.losuj_bossa(1, mapa_gen)
+            bossowie.append({
+                "seed": seed, "mapa_gen": mapa_gen, "nazwa": b.nazwa,
+                "poziom": b.poziom, "max_hp": b.max_hp, "atak": b.atak,
+                "obrona": b.obrona, "exp": b.exp_nagroda,
+            })
+
+    mityczni = []
+    for typ in sorted(enemy._MITYCZNI):
+        random.seed(5)
+        m = enemy.losuj_mitycznego(typ, 1, 2)
+        mityczni.append({
+            "typ": typ, "nazwa": m.nazwa, "poziom": m.poziom,
+            "max_hp": m.max_hp, "atak": m.atak, "obrona": m.obrona,
+        })
+
+    nazwy = ["Goblin", "Szkielet", "Trolle", "Krol Trolli", "Krol trolli",
+             "Arcydemon Khaor", "Mlody smok", "Straznik Otchlani", "Nieznany stwor"]
+    zdolnosci = {}
+    for nazwa in nazwy:
+        z = enemy.zdolnosci_wroga(nazwa)
+        zdolnosci[nazwa] = {
+            "zapowiedzi": {k: round(v, 4) for k, v in sorted(z["zapowiedzi"].items())},
+            "slabosci": sorted(z["slabosci"]),
+            "odpornosci": sorted(z["odpornosci"]),
+            "regeneracja": round(z["regeneracja"], 4),
+        }
+
+    herszty = [
+        {"sila": sila, **{k: v for k, v in (
+            ("nazwa", enemy.herszt_najazdu(sila).nazwa),
+            ("poziom", enemy.herszt_najazdu(sila).poziom),
+            ("max_hp", enemy.herszt_najazdu(sila).max_hp),
+            ("atak", enemy.herszt_najazdu(sila).atak),
+        )}}
+        for sila in (10, 100, 400)
+    ]
+
+    return {
+        "losowani": losowani,
+        "bossowie": bossowie,
+        "mityczni": mityczni,
+        "zdolnosci": zdolnosci,
+        "herszty": herszty,
+    }
+
+
 def main() -> int:
     print("Zrzucam wzorce dla portu na C#…")
     zapisz("losowanie.json", wzorce_losowania())
     zapisz("mapa.json", wzorce_mapy())
     zapisz("postac.json", wzorce_postaci())
+    zapisz("wrogowie.json", wzorce_wrogow())
     try:
         import pygame  # noqa: F401
     except ImportError:

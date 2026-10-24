@@ -93,6 +93,20 @@ Trzy warstwy, każda w osobnej bibliotece (`asmdef`):
 | Warstwa | Katalog | Zależności |
 | --- | --- | --- |
 | **Logika** | `Assets/Scripts/Logika` | brak — nie zna nawet UnityEngine |
+
+### Co z zawartości jest już przeniesione
+
+Walka turowa i bestiariusz (`combat.py` i `enemy.py` → `Walka.cs`, `Wrogowie.cs`):
+obrażenia z trafieniem krytycznym, zapowiadane ruchy wroga (ciężki cios, ogień,
+klątwa) z gardą i kontrą, ogień przerywający regenerację, szał bossa, trucizna,
+krwawienie i ogłuszenie, uniki ze Zręczności, ucieczka, mikstury oraz nagrody
+za wygraną. Wrogowie losują się tak samo jak w Pythonie — pilnuje tego
+`unity/Testy` przez wzorce z `wrogowie.json`.
+
+Czego w walce jeszcze nie ma: umiejętności klasowych (`skills.py`), przedmiotów
+bojowych i łupów (`items.py`, `rzemioslo.py`), towarzyszy (`rekruci.py`), zadań
+(`quests.py`) i cech pochodzenia (`pochodzenie.py`). Miejsca styku są oznaczone
+komentarzem w `Walka.cs`.
 | **Grafika** | `Assets/Scripts/Grafika` | tylko Logika; rysuje do bufora pikseli |
 | **Gra** | `Assets/Scripts/Gra` | Unity; jeden `MonoBehaviour` spinający całość |
 

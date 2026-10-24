@@ -38,6 +38,20 @@ namespace GraSimply.Logika
                 new KeyValuePair<string, string>("miasto", "🏙"),
             };
 
+        private static readonly Dictionary<string, string> IkonyWrog =
+            new Dictionary<string, string>
+            {
+                { "Goblin", "👺" }, { "Szkielet", "💀" }, { "Ork", "🟢" },
+                { "Trolle", "👹" }, { "Wiedźma", "🧙" }, { "Młody smok", "🐲" },
+                { "Hiena stepowa", "🐺" }, { "Strażnik ruin", "🗿" },
+                { "Wilk cienia", "🐺" }, { "Topielec", "💧" },
+                { "Harpii zwiadowca", "🦅" }, { "Skalny skorpion", "🦂" },
+                { "Smok Cienia", "🐉" }, { "Licz Prawieczny", "☠" },
+                { "Król Trolli", "👑" }, { "Arcydemon Khaor", "😈" },
+                { "Strażniczka Wieczności", "⏳" }, { "Strażnik Otchłani", "🌀" },
+                { "Stary smok Ashkaryx", "🔥" }, { "Gryf Niebios", "🦅" },
+            };
+
         private static readonly Dictionary<string, string> Kierunki =
             new Dictionary<string, string>
             {
@@ -74,6 +88,18 @@ namespace GraSimply.Logika
                 }
             }
             return "📍";
+        }
+
+        /// <summary>Ikona przeciwnika; nieznany wróg dostaje „👾”.</summary>
+        public static string Wrog(string nazwa)
+        {
+            string ikona;
+            if (nazwa != null && IkonyWrog.TryGetValue(nazwa, out ikona))
+            {
+                return ikona;
+            }
+
+            return "👾";
         }
 
         public static string Kierunek(string nazwa)
