@@ -176,5 +176,142 @@ class TestRysowania(unittest.TestCase):
         self.assertEqual(len(podpisy), MAX_CHATY)
 
 
+@unittest.skipIf(pygame is None, "brak pygame-ce")
+class TestRuchuWScenie(unittest.TestCase):
+    """Osadnicy chodzą po placu, a scena ma dzień i noc."""
+
+    @classmethod
+    def setUpClass(cls):
+        pygame.init()
+        pygame.display.set_mode((64, 64))
+
+    def setUp(self):
+        from grafika.scena import SZER, WYS
+        from grafika.widok_osady import WidokOsady
+        self.widok = WidokOsady()
+        self.pow = pygame.Surface((SZER, WYS))
+        self.gracz = _gracz(4, {"kuznia": 1, "tawerna": 1, "farma": 1, "tartak": 1, "palisada": 1},
+                            [("Jagna", "rolnik"), ("Olek", "tracz"), ("Wit", "straznik"),
+                             ("Hela", "drwal")])
+
+    def _pozycje(self):
+        return {o["imie"]: self.widok._ruch.pozycja(o["imie"]) for o in self.gracz.osadnicy}
+
+    def _przewin(self, od: float, do: float, krok: float = 0.05):
+        t = od
+        while t < do:
+            self.widok.rysuj(self.pow, self.gracz, "osada", t)
+            t += krok
+        return t
+
+    def test_osadnik_nie_teleportuje_sie_miedzy_klatkami(self):
+        from game.ruch import PREDKOSC
+        self.widok.rysuj(self.pow, self.gracz, "osada", 0.0)
+        przed = self._pozycje()
+        t = 0.05
+        for _ in range(200):
+            self.widok.rysuj(self.pow, self.gracz, "osada", t)
+            po = self._pozycje()
+            for imie, (x, y) in po.items():
+                px, py = przed[imie]
+                # Klatka trwa 0,05 s, więc przesunięcie nie może przekroczyć drogi z prędkości.
+                self.assertLessEqual(((x - px) ** 2 + (y - py) ** 2) ** 0.5,
+                                     PREDKOSC * 0.05 + 1e-6, imie)
+            przed = po
+            t += 0.05
+
+    def test_nikt_nie_wchodzi_w_budynek_ani_w_ognisko(self):
+        zablok = self.widok._zablokowane(self.widok._rozklad(self.gracz), 1)
+        t = 0.0
+        for _ in range(900):
+            self.widok.rysuj(self.pow, self.gracz, "osada", t)
+            for x, y in self._pozycje().values():
+                for bx, by in zablok:
+                    self.assertFalse(abs(x - bx) < 0.45 and abs(y - by) < 0.45, (t, x, y))
+            t += 0.1
+
+    def test_osadnicy_zmieniaja_miejsce_w_ciagu_doby(self):
+        from game.ruch import DLUGOSC_DNIA
+        miejsca = set()
+        t = 0.0
+        while t < DLUGOSC_DNIA:
+            self.widok.rysuj(self.pow, self.gracz, "osada", t)
+            miejsca.add(tuple(round(c) for c in self.widok._ruch.pozycja("Olek")))
+            t += 0.5
+        # Praca, ognisko albo tawerna i chata to co najmniej trzy różne miejsca.
+        self.assertGreaterEqual(len(miejsca), 3, miejsca)
+
+    def test_chory_nie_idzie_do_pracy(self):
+        self.gracz.osadnicy[1]["chory"] = 5     # Olek
+        domy = self.widok._domy(self.widok._rozklad(self.gracz))
+        t = 0.0
+        for _ in range(300):
+            self.widok.rysuj(self.pow, self.gracz, "osada", t)
+            t += 0.1
+        px, py = self.widok._ruch.postacie["Olek"].pole
+        # Stoi przy domu (sąsiednie pole), a nie przy tartaku.
+        blisko = min(max(abs(px - d[0]), abs(py - d[1])) for d in domy)
+        self.assertLessEqual(blisko, 1)
+
+    def test_przybysz_wchodzi_brama(self):
+        from grafika.widok_osady import BRAMA
+        self.widok.rysuj(self.pow, self.gracz, "osada", 0.0)
+        self.widok.rysuj(self.pow, self.gracz, "osada", 0.05)
+        self.gracz.osadnicy.append(osada._zapewnij_osadnika(
+            {"imie": "Nowy", "zajecie": "drwal", "morale": 60.0, "cecha": "pracowity"}))
+        self.widok.rysuj(self.pow, self.gracz, "osada", 0.1)
+        x, y = self.widok._ruch.pozycja("Nowy")
+        # Brama bywa zajęta (strażnik), więc przybysz staje na sąsiednim polu.
+        self.assertLess(((x - BRAMA[0]) ** 2 + (y - BRAMA[1]) ** 2) ** 0.5, 2.0)
+        self.assertGreater(y, 4.5)          # a nie w środku placu
+
+    def test_odejscie_osadnika_znika_ze_sceny(self):
+        self.widok.rysuj(self.pow, self.gracz, "osada", 0.0)
+        self.gracz.osadnicy = [o for o in self.gracz.osadnicy if o["imie"] != "Hela"]
+        self.widok.rysuj(self.pow, self.gracz, "osada", 0.1)
+        self.assertNotIn("Hela", self.widok._ruch.postacie)
+
+    def test_po_dlugiej_przerwie_scena_nadrabia_ruch(self):
+        # Gracz siedział w innym widoku: po powrocie jest już inna pora doby
+        # (t = 70 to noc, a zaczynaliśmy w pracy), więc ludzie nie mogą stać
+        # w starych miejscach — muszą być w drodze do chat albo już przy nich.
+        self.widok.rysuj(self.pow, self.gracz, "osada", 0.0)
+        przed = self._pozycje()
+        self.widok.rysuj(self.pow, self.gracz, "osada", 70.0)
+        po = self._pozycje()
+        self.assertNotEqual(przed, po)
+
+    def test_cofniecie_zegara_nie_psuje_sceny(self):
+        self.widok.rysuj(self.pow, self.gracz, "osada", 10.0)
+        przed = self._pozycje()
+        self.widok.rysuj(self.pow, self.gracz, "osada", 2.0)    # zegar okna wystartował od nowa
+        self.assertEqual(przed, self._pozycje())
+
+    def test_noc_jest_ciemniejsza_od_dnia(self):
+        from game.ruch import DLUGOSC_DNIA
+        from grafika.widok_osady import PRZESUNIECIE_DNIA
+
+        def srednia(czas_dnia):
+            t = czas_dnia - PRZESUNIECIE_DNIA
+            powierzchnia = pygame.Surface(self.pow.get_size())
+            widok = type(self.widok)()
+            widok.rysuj(powierzchnia, self.gracz, "osada", t)
+            return pygame.transform.average_color(powierzchnia)[:3]
+
+        poludnie = sum(srednia(DLUGOSC_DNIA * 0.4))
+        polnoc = sum(srednia(DLUGOSC_DNIA * 0.92))
+        self.assertGreater(poludnie, polnoc * 1.5)
+
+    def test_ognisko_swieci_w_nocy_jasniej_niz_otoczenie(self):
+        from game.ruch import DLUGOSC_DNIA
+        from grafika.widok_osady import OGNISKO, PRZESUNIECIE_DNIA, _srodek
+        t = DLUGOSC_DNIA * 0.92 - PRZESUNIECIE_DNIA
+        self.widok.rysuj(self.pow, self.gracz, "osada", t)
+        sx, sy = _srodek(*OGNISKO)
+        przy_ogniu = sum(self.pow.get_at((sx, sy - 3))[:3])
+        daleko = sum(self.pow.get_at((sx + 120, sy + 60))[:3])
+        self.assertGreater(przy_ogniu, daleko + 60)
+
+
 if __name__ == "__main__":
     unittest.main()

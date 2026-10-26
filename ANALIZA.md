@@ -67,8 +67,12 @@ w rzucie izometrycznym, a obóz rośnie razem z osadą (chaty, palisada, wieża,
 Okno wybiera widok po stanie w `game.ekran`: walka → arena, rozmowa → portret, `ekran.widok` →
 scena osady, inaczej mapa regionu. Menu obozu i osady wchodzą w `ekran.widok_osady(...)` —
 to menedżer kontekstu, więc zagnieżdżone menu i wyjście wyjątkiem same oddają poprzedni widok.
-Scena (`grafika.widok_osady`) czyta stan gry na żywo: postawiony budynek widać od razu, osadnicy
-kręcą się przy warsztatach swojego zajęcia, a imiona rysuje okno, bo czcionki żyją w warstwie UI.
+Scena (`grafika.widok_osady`) czyta stan gry na żywo: postawiony budynek widać od razu, a imiona
+rysuje okno, bo czcionki żyją w warstwie UI. Osadnicy **naprawdę chodzą** (`game.ruch`: siatka 7×7,
+ścieżki A*, rezerwacje pól, każdy ma własne miejsce przy celu): rano idą do stanowisk, wieczorem
+siadają przy ogniu albo idą do tawerny, w nocy śpią przy chatach (leżą), chorzy zostają w domu.
+Doba sceny (90 s) jest osobna od dnia świata. Scena ma dzień i noc: barwa światła mnoży cały obraz,
+a ognisko, okna i kuźnia świecą po nałożeniu światła — pixelart z oświetleniem w duchu stylu Mroczny.
 
 ---
 

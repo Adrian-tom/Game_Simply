@@ -129,6 +129,7 @@ Game_Simply/
 │   ├── atrybuty.py    # Atrybuty i testy k20
 │   ├── world.py, mapa.py, miasto.py, mityczne.py   # Świat i eksploracja
 │   ├── skills.py, items.py, shop.py, quests.py, rekruci.py, dialogues.py, karma.py, pochodzenie.py
+│   ├── ruch.py        # Chodzenie osadników po placu: siatka, A*, rezerwacje pól, rytm doby
 │   ├── savegame.py    # Zapis JSON (z migracją starych zapisów)
 │   └── ekran.py, ikony.py, utils.py
 ├── grafika/           # Okno pixelart (pygame-ce) — logika gry nic stąd nie importuje
@@ -137,11 +138,11 @@ Game_Simply/
 │   ├── arena.py       # Ekran walki
 │   ├── potwory.py     # Sprite'y wrogów z brył
 │   ├── portret.py     # Widok rozmowy
-│   ├── widok_osady.py # Scena obozu i osady z bliska
+│   ├── widok_osady.py # Scena obozu i osady z bliska: chodzący osadnicy, dzień i noc
 │   ├── twarze.py      # Rysy twarzy rozmówców
 │   ├── teren.py       # Kafle, roślinność, budynki, sprite gracza
 │   └── piksele.py     # Prymitywy pixelartu
-└── tests/             # 151 testów unittest
+└── tests/             # 189 testów unittest
 ```
 
 ---

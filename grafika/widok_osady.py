@@ -16,6 +16,7 @@ import random
 
 import pygame
 
+from game import ruch
 from grafika import teren
 from grafika.piksele import (ciemniej, gradient_nieba, obrys, poswiata, sprite_z_tekstu,
                             winieta)
@@ -112,6 +113,38 @@ _OSADNIK = [
     "..o.o..",
 ]
 
+# Druga klatka marszu: nogi rozstawione. Razem z podskokiem daje kroki bez
+# osobnych rysunków na każdy kierunek — ludzik jest symetryczny.
+_OSADNIK_KROK = _OSADNIK[:8] + [
+    ".c...c.",
+    ".b...b.",
+    ".o...o.",
+]
+
+# Gdzie stoi ognisko, gdzie brama od frontu i przez które pole przechodzi bohater.
+OGNISKO = (3, 3)
+BRAMA = (SIATKA // 2, SIATKA - 1)
+POLE_BOHATERA = (3, 4)
+
+# Siła poświaty w dzień (jak dawniej, ledwie muśnięcie) — w nocy rośnie do pełnej.
+SILA_BLASKU: dict[str, float] = {
+    "ogien": 0.45, "okno": 0.35, "kuznia": 0.5, "magia": 0.45, "latarnia": 0.3,
+}
+KOLOR_BLASKU: dict[str, tuple[int, int, int]] = {
+    "ogien": (255, 150, 70), "okno": (255, 190, 110), "kuznia": (255, 120, 50),
+    "magia": (170, 90, 255), "latarnia": (220, 190, 140),
+}
+PROMIEN_BLASKU: dict[str, int] = {
+    "ogien": 34, "okno": 14, "kuznia": 18, "magia": 16, "latarnia": 14,
+}
+
+# Barwa światła: noc chłodna i granatowa, dzień biały, w przejściu cieplej.
+KOLOR_NOCY = (64, 74, 124)
+KOLOR_DNIA = (255, 255, 255)
+KOLOR_ZMIERZCHU = (255, 196, 140)
+PRZESUNIECIE_DNIA = 0.2 * ruch.DLUGOSC_DNIA   # scena zaczyna rano, nie w ciemności
+NADROBIENIE = 12.0              # tyle sekund ruchu nadrabiamy po przerwie w oglądaniu sceny
+
 
 def _ekran(x: float, y: float) -> tuple[int, int]:
     """Kafel (x, y) → piksel górnego wierzchołka jego wierzchu."""
@@ -147,13 +180,11 @@ class WidokOsady:
         self._osadnik: dict = {}
         self._niebo: dict = {}
         self._winieta = winieta(SZER, WYS)
-        self._blask = {
-            "ogien": _przygasz(poswiata(34, (255, 150, 70)), 0.45),
-            "okno": _przygasz(poswiata(14, (255, 190, 110)), 0.35),
-            "kuznia": _przygasz(poswiata(18, (255, 120, 50)), 0.5),
-            "magia": _przygasz(poswiata(16, (170, 90, 255)), 0.45),
-            "latarnia": _przygasz(poswiata(14, (220, 190, 140)), 0.3),
-        }
+        self._blask_baza = {n: poswiata(PROMIEN_BLASKU[n], KOLOR_BLASKU[n]) for n in KOLOR_BLASKU}
+        self._blask_pamiec: dict = {}
+        self._swiecenia: list[tuple[str, int, int]] = []   # co świeci w tej klatce
+        self._ruch = ruch.Ruch()
+        self._ostatni_t: float | None = None
         self._cien = pygame.Surface((12, 5), pygame.SRCALPHA)
         pygame.draw.ellipse(self._cien, (0, 0, 0, 90), self._cien.get_rect())
 
@@ -202,8 +233,9 @@ class WidokOsady:
         self._budynki[pamiec] = obrys(pow_)
         return self._budynki[pamiec]
 
-    def _sprite_osadnika(self, zajecie: str, chory: bool) -> pygame.Surface:
-        klucz = (zajecie, chory)
+    def _sprite_osadnika(self, zajecie: str, chory: bool, krok: int = 0,
+                         lezy: bool = False) -> pygame.Surface:
+        klucz = (zajecie, chory, krok, lezy)
         if klucz not in self._osadnik:
             koszula = KOLORY_ZAJEC.get(zajecie, KOLORY_ZAJEC["bezczynny"])
             skora = (168, 196, 150) if chory else (228, 176, 134)
@@ -211,8 +243,18 @@ class WidokOsady:
                 "o": (22, 18, 28), "h": (94, 66, 44), "s": skora,
                 "c": koszula, "b": (74, 52, 40),
             }
-            self._osadnik[klucz] = sprite_z_tekstu(_OSADNIK, paleta)
+            spr = sprite_z_tekstu(_OSADNIK_KROK if krok else _OSADNIK, paleta)
+            self._osadnik[klucz] = pygame.transform.rotate(spr, 90) if lezy else spr
         return self._osadnik[klucz]
+
+    def _blask(self, nazwa: str, ciemnosc: float) -> pygame.Surface:
+        """Poświata o sile zależnej od pory: w dzień muśnięcie, w nocy pełny blask."""
+        dzien = SILA_BLASKU[nazwa]
+        sila = dzien + (1.0 - dzien) * ciemnosc
+        klucz = (nazwa, round(sila * 12))
+        if klucz not in self._blask_pamiec:
+            self._blask_pamiec[klucz] = _przygasz(self._blask_baza[nazwa].copy(), klucz[1] / 12)
+        return self._blask_pamiec[klucz]
 
     # -------------------------------------------------------------- #
     #  Układ placu                                                     #
@@ -274,13 +316,17 @@ class WidokOsady:
         poziom_palisady = poziom_budynku(gracz, "palisada")
         self._plac(cel, zima, plan, poziom_palisady)
 
+        czas_dnia = t + PRZESUNIECIE_DNIA
+        self._ruszaj(gracz, plan, poziom_palisady, t, czas_dnia)
+        self._swiecenia = []
+
         rzeczy: list[tuple[float, str, object]] = []
         for pole, wpis in plan.items():
             rzeczy.append((pole[0] + pole[1], "plan", (pole, wpis)))
         for pole in self._pola_palisady(gracz):
             rzeczy.append((pole[0] + pole[1] - 0.1, "slup", pole))
         for o in osadnicy(gracz):
-            x, y = self._pozycja_osadnika(o, plan, t)
+            x, y = self._ruch.pozycja(o["imie"])
             rzeczy.append((x + y + 0.5, "osadnik", (o, x, y)))
         rzeczy.append((3 + 3.8 + 0.4, "gracz", None))
 
@@ -292,17 +338,34 @@ class WidokOsady:
                 self._slup(cel, dane, poziom_palisady)
             elif rodzaj == "osadnik":
                 o, x, y = dane
-                px, py = self._figurka(cel, o, x, y)
+                px, py = self._figurka(cel, o, x, y, t)
                 podpisy.append((px, py, f"{ikona_morale(o['morale'])} {o['imie']}",
                                 (240, 228, 206)))
             else:
                 self._gracz(cel, gracz)
 
-        self._palenisko(cel, t)
+        # Światło dnia nakładamy na całą scenę, a dopiero potem dodajemy to, co
+        # świeci samo — ognisko, okna, kuźnię. Dlatego noc jest ciemna, a ogień
+        # jedyny jasny (jak w stylu Mroczny), choć wszystko jest pixelartem.
+        jasnosc = ruch.swiatlo(czas_dnia)
+        cel.fill(self._barwa_swiatla(jasnosc), special_flags=pygame.BLEND_RGB_MULT)
+        ciemnosc = 1.0 - jasnosc
+        for nazwa, bx, by in self._swiecenia:
+            p = self._blask(nazwa, ciemnosc)
+            cel.blit(p, (bx - p.get_width() // 2, by - p.get_height() // 2),
+                     special_flags=pygame.BLEND_RGB_ADD)
+        self._palenisko(cel, t, ciemnosc)
         if zima:
             self._snieg(cel, t)
         cel.blit(self._winieta, (0, 0), special_flags=pygame.BLEND_RGB_MULT)
         return {"podpisy": podpisy}
+
+    @staticmethod
+    def _barwa_swiatla(jasnosc: float) -> tuple[int, int, int]:
+        """Mnożnik koloru sceny: od granatowej nocy przez ciepły zmierzch do białego dnia."""
+        baza = [KOLOR_NOCY[i] + (KOLOR_DNIA[i] - KOLOR_NOCY[i]) * jasnosc for i in range(3)]
+        cieplo = 4.0 * jasnosc * (1.0 - jasnosc) * 0.35      # najmocniej w połowie przejścia
+        return tuple(int(baza[i] + (KOLOR_ZMIERZCHU[i] - baza[i]) * cieplo) for i in range(3))
 
     def _ziemia(self, cel: pygame.Surface, biom: str, zima: bool) -> None:
         """Sam wierzch kafli, rozlany po całym kadrze.
@@ -410,11 +473,9 @@ class WidokOsady:
         cel.blit(spr, (sx - spr.get_width() // 2, sy - spr.get_height() + 3))
         blask = BLASK.get(klucz)
         if blask:
-            # W dzień to tylko ciepły akcent nad kuźnią czy oknem — pełna poświata
-            # wypalała dziurę w scenie, bo tu nie ma nocy jak na mapie.
-            p = self._blask[blask]
-            cel.blit(p, (sx - p.get_width() // 2, sy - spr.get_height() // 2 - p.get_height() // 2),
-                     special_flags=pygame.BLEND_RGB_ADD)
+            # Poświata idzie na listę i trafia na scenę dopiero po nałożeniu
+            # światła dnia — inaczej noc przyciemniłaby także ogień.
+            self._swiecenia.append((blask, sx, sy - spr.get_height() // 2))
 
     def _namiot(self) -> pygame.Surface:
         if "namiot" not in self._budynki:
@@ -444,21 +505,86 @@ class WidokOsady:
             for i in range(-4, 5, 3):
                 cel.set_at((sx + i, sy - 4), (206, 192, 110))
 
-    def _pozycja_osadnika(self, o: dict, plan: dict, t: float) -> tuple[float, float]:
-        """Osadnik krąży wokół swojego stanowiska — osada ma żyć, nie pozować."""
-        bx, by = self._stanowisko(o, plan)
-        r = random.Random(o["imie"])
-        faza = r.random() * math.tau
-        tempo = 0.25 + r.random() * 0.2
-        promien = 0.3 if o.get("chory") else 0.5
-        return (bx + math.cos(faza + t * tempo) * promien,
-                by + math.sin(faza + t * tempo * 0.8) * promien)
+    # -------------------------------------------------------------- #
+    #  Ruch osadników                                                  #
+    # -------------------------------------------------------------- #
 
-    def _figurka(self, cel: pygame.Surface, o: dict, x: float, y: float) -> tuple[int, int]:
-        spr = self._sprite_osadnika(o.get("zajecie") or "bezczynny", bool(o.get("chory")))
+    def _zablokowane(self, plan: dict, palisada: int) -> set[tuple[int, int]]:
+        """Pola, przez które nie da się przejść: budynki, ognisko, bohater i obwód placu.
+
+        Pole uprawne jest płaskie — po zagonach się chodzi. Obwód zostaje
+        otwarty tylko w bramie od frontu.
+        """
+        zablokowane = {pole for pole, w in plan.items() if w[0] in ("budynek", "chata", "namiot")}
+        zablokowane |= {OGNISKO, POLE_BOHATERA}
+        for i in range(SIATKA):
+            zablokowane |= {(i, 0), (i, SIATKA - 1), (0, i), (SIATKA - 1, i)}
+        zablokowane.discard(BRAMA)
+        return zablokowane
+
+    def _domy(self, plan: dict) -> list[tuple[int, int]]:
+        """Pola, w których osadnicy śpią: chaty, a bez nich dom lub namiot."""
+        chaty = sorted(p for p, w in plan.items() if w[0] == "chata")
+        if chaty:
+            return chaty
+        pod_dachem = sorted(p for p, w in plan.items() if w[1] in ("dom", "namiot"))
+        return pod_dachem or [OGNISKO]
+
+    def _ruszaj(self, gracz, plan: dict, palisada: int, t: float, czas_dnia: float) -> None:
+        """Wyznacz osadnikom cele wg pory doby i przesuń ich o czas, który upłynął."""
+        from game.osada import osadnicy
+
+        ludzie = osadnicy(gracz)
+        self._ruch.przebuduj(self._zablokowane(plan, palisada))
+        pierwsza = self._ostatni_t is None
+        imiona = {o["imie"] for o in ludzie}
+        for imie in [i for i in self._ruch.postacie if i not in imiona]:
+            self._ruch.usun(imie)
+
+        pora = ruch.faza(czas_dnia)
+        domy = self._domy(plan)
+        tawerna = next((p for p, w in plan.items() if w[1] == "tawerna"), None)
+        for i, o in enumerate(ludzie):
+            cel, czynnosc = ruch.zadanie(o, self._stanowisko(o, plan), domy[i % len(domy)],
+                                         OGNISKO, tawerna, pora)
+            if o["imie"] not in self._ruch.postacie:
+                # Przy pierwszym obrazie osada już żyje; później przybysz wchodzi bramą.
+                self._ruch.dodaj(o["imie"], cel if pierwsza else BRAMA)
+            self._ruch.ustaw_cel(o["imie"], cel, czynnosc)
+
+        # Scena stoi, gdy gracz siedzi w menu innego widoku. Po powrocie nie
+        # zaczynamy od zera: nadrabiamy kilka sekund, żeby ludzie byli w drodze
+        # albo na miejscu, a nie rozsypani po starych pozycjach.
+        if pierwsza:
+            uplynelo = NADROBIENIE
+        else:
+            uplynelo = max(0.0, t - self._ostatni_t)
+            # Zwykła klatka to ułamek sekundy (chwilowe zacięcie ucinamy do 0,1 s);
+            # dłuższa przerwa znaczy „sceny nie było widać” — wtedy nadrabiamy.
+            uplynelo = min(uplynelo, NADROBIENIE if uplynelo > 0.5 else 0.1)
+        self._ostatni_t = t
+        while uplynelo > 1e-9:
+            krok = min(0.1, uplynelo)
+            self._ruch.aktualizuj(krok)
+            uplynelo -= krok
+
+    def _figurka(self, cel: pygame.Surface, o: dict, x: float, y: float,
+                 t: float = 0.0) -> tuple[int, int]:
+        post = self._ruch.postacie.get(o["imie"])
+        idzie = bool(post and post.idzie)
+        sen = bool(post and not idzie and post.czynnosc == "sen" and self._ruch.dotarl(o["imie"]))
+        krok = 1 if idzie and int(post.dystans * 2.4) % 2 else 0
+        spr = self._sprite_osadnika(o.get("zajecie") or "bezczynny", bool(o.get("chory")),
+                                    krok, sen)
+        odbicie = 0
+        if idzie and int(post.dystans * 4.8) % 2:
+            odbicie = 1                       # podskok na każdym kroku
+        elif post and post.czynnosc == "praca" and not idzie:
+            # Pracujący kołysze się jak przy młocie; faza z imienia, żeby nie pracowali chórem.
+            odbicie = 1 if int((t + ruch.los_imienia(o["imie"]) % 7) * 2.6) % 2 else 0
         sx, sy = _srodek(x, y)
         cel.blit(self._cien, (sx - 6, sy - 1))
-        cel.blit(spr, (sx - spr.get_width() // 2, sy - spr.get_height()))
+        cel.blit(spr, (sx - spr.get_width() // 2, sy - spr.get_height() - odbicie))
         return (sx, sy - spr.get_height())
 
     def _gracz(self, cel: pygame.Surface, gracz) -> None:
@@ -467,16 +593,17 @@ class WidokOsady:
         cel.blit(self._cien, (sx - 6, sy - 1))
         cel.blit(spr, (sx - spr.get_width() // 2, sy - spr.get_height()))
 
-    def _palenisko(self, cel: pygame.Surface, t: float) -> None:
+    def _palenisko(self, cel: pygame.Surface, t: float, ciemnosc: float = 0.0) -> None:
         """Ognisko z mapy to kilka pikseli; tu jest środkiem osady, więc dostaje
-        obmurowanie i własny blask."""
-        sx, sy = _srodek(3, 3)
+        obmurowanie i własny blask. Rysowane po nałożeniu światła dnia: ogień
+        świeci sam, więc noc go nie przyciemnia."""
+        sx, sy = _srodek(*OGNISKO)
         for k in range(10):
             kat = k / 10 * math.tau
             kx = sx + int(math.cos(kat) * 7)
             ky = sy + int(math.sin(kat) * 3.5)
             cel.fill((96, 92, 88) if k % 2 else (72, 68, 66), (kx - 1, ky - 1, 3, 2))
-        p = self._blask["ogien"]
+        p = self._blask("ogien", ciemnosc)
         cel.blit(p, (sx - p.get_width() // 2, sy - p.get_height() // 2 - 4),
                  special_flags=pygame.BLEND_RGB_ADD)
         for dx in (-3, 0, 3):
