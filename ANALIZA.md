@@ -171,6 +171,10 @@ Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd o
 3. Więcej spraw osady i myśli; nowe wydarzenia sezonowe (powódź wiosną, pożar latem, zaraza).
 4. Osadnicy po imieniu w rozmowach — więzi z `wiezi.py` jako temat rozmowy
    (poróżnieni proszą o rozsądzenie sporu, para o zgodę na chatę).
+5. **Mechaniki z RimWorlda** — katalog i 12 etapów przeniesienia w `RIMWORLD-MECHANIKI.md`
+   (myśli i nastrój osadnika, storyteller z punktami zagrożenia i adaptacją, umiejętności
+   z pasjami, priorytety pracy, zdrowie jako hediffy…). Najpierw wersja pythonowa z testami,
+   potem port Unity. Kolejność wybiera właściciel projektu.
 
 ---
 
