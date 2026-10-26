@@ -146,6 +146,14 @@ namespace GraSimply.Grafika
                 Dziennik(true);
                 StosPrzyciskow(new List<OpcjaEkranu> { new OpcjaEkranu { Klawisz = "", Tekst = "Dalej »" } }, null, false);
             }
+            else if (podpisy != null && konsola.Pyta && !ekran.CzekaNaTekst && !ekran.CzekaNaEnter
+                     && ekran.Opcje.Count > 0)
+            {
+                // Plac osady jest sceną, a nie tłem: menu obozu nie może go przykryć
+                // panelem na środku. Treść idzie do rogu, opcje do plakietek z boku.
+                InfoObozu(ekran);
+                OpcjeObozu(ekran.Opcje, konsola.Wpisywane, konsola.Kursor);
+            }
             else if (konsola.Pyta)
             {
                 Panel(ekran, konsola);
@@ -492,6 +500,115 @@ namespace GraSimply.Grafika
             {
                 string pole = "› " + wpisywane + (kursor ? "▌" : " ");
                 Plakietka(pole, W - 6 - (pole.Length * Znak + 10), y, Styl.Aktywny.Wyrozniony, false);
+            }
+        }
+
+        // ------------------------------------------------------------------ //
+        //  Menu obozu na placu osady: z boku, żeby nie zasłaniać sceny         //
+        // ------------------------------------------------------------------ //
+
+        /// <summary>Szerokość kolumny informacji obozu w znakach — mieści się nad skrajem placu.</summary>
+        private const int ZnakowInfoObozu = 26;
+
+        /// <summary>Ile wierszy informacji obozu pokazujemy — reszta zasłoniłaby plac.</summary>
+        private const int WierszyInfoObozu = 5;
+
+        /// <summary>Tytuł i krótkie podsumowanie obozu w lewym górnym rogu, na ciemnej plakietce.</summary>
+        private void InfoObozu(EkranGry e)
+        {
+            var wiersze = new List<string>();
+            foreach (string l in e.Tresc)
+            {
+                // Uwagi w nawiasach („dojdą w kolejnym etapie”) to przypisy dla grającego
+                // w konsolę — na placu zajęłyby tylko miejsce.
+                if (l.TrimStart().StartsWith("(", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                foreach (string w in Konsola.Zawin(l, ZnakowInfoObozu))
+                {
+                    string c = w.Trim();
+                    if (c.Length > 0)
+                    {
+                        wiersze.Add(c);
+                    }
+                }
+            }
+            if (wiersze.Count > WierszyInfoObozu)
+            {
+                wiersze.RemoveRange(WierszyInfoObozu, wiersze.Count - WierszyInfoObozu);
+            }
+            bool tytul = e.Tytul.Length > 0;
+            if (wiersze.Count == 0 && !tytul)
+            {
+                return;
+            }
+            int znakow = tytul ? e.Tytul.Length : 0;
+            foreach (string w in wiersze)
+            {
+                znakow = Math.Max(znakow, w.Length);
+            }
+            int wys = (wiersze.Count + (tytul ? 1 : 0)) * Wiersz + 8;
+            Przyciemnij(4, 42, znakow * Znak + 14, wys, 170);
+            int y = 46;
+            if (tytul)
+            {
+                Tekst(e.Tytul.ToUpperInvariant(), 10, y, Styl.Aktywny.Wyrozniony);
+                y += Wiersz;
+            }
+            foreach (string w in wiersze)
+            {
+                Tekst(w, 10, y, Styl.Aktywny.Tekst);
+                y += Wiersz;
+            }
+        }
+
+        /// <summary>
+        /// Plakietki opcji obozu w prawym górnym rogu, od góry w dół — to wolny kąt
+        /// sceny (lustrzany do informacji po lewej); dół zajmuje dziedziniec, na którym
+        /// czekają osadnicy. Przy dłuższej liście kolejne kolumny idą w lewo.
+        /// </summary>
+        private void OpcjeObozu(List<OpcjaEkranu> opcje, string wpisywane, bool kursor)
+        {
+            const int naKolumne = 9;
+            const int gora = 46;
+            int kolumn = (opcje.Count + naKolumne - 1) / naKolumne;
+            int x = W - 6;
+            int dolPierwszej = gora;
+            for (int c = 0; c < kolumn; c++)
+            {
+                int od = c * naKolumne;
+                int ile = Math.Min(naKolumne, opcje.Count - od);
+                int szer = 0;
+                var napisy = new string[ile];
+                for (int i = 0; i < ile; i++)
+                {
+                    OpcjaEkranu o = opcje[od + i];
+                    string napis = string.IsNullOrEmpty(o.Klawisz) ? o.Tekst : $"{o.Klawisz} {o.Tekst}";
+                    if (napis.Length > 38)
+                    {
+                        napis = napis.Substring(0, 37) + "…";
+                    }
+                    napisy[i] = napis;
+                    szer = Math.Max(szer, napis.Length * Znak + 10);
+                }
+                x -= szer;
+                int y = gora;
+                for (int i = 0; i < ile; i++)
+                {
+                    Plakietka(napisy[i], x, y, Styl.Aktywny.Tekst, true, opcje[od + i].Klawisz ?? "", szer);
+                    y += 19;
+                }
+                if (c == 0)
+                {
+                    dolPierwszej = y;
+                }
+                x -= 6;
+            }
+            if (!string.IsNullOrEmpty(wpisywane))
+            {
+                string pole = "› " + wpisywane + (kursor ? "▌" : " ");
+                Plakietka(pole, W - 6 - (pole.Length * Znak + 10), dolPierwszej, Styl.Aktywny.Wyrozniony, false);
             }
         }
 

@@ -150,6 +150,12 @@ namespace GraSimply.Testy
                 ("osada-obozek", 0.35, 5, 1, male, 2, false),
                 ("osada-f2", 0.35, 40, 4, srednie, 7, true),
             };
+            // Menu obozu z prawdziwej gry — tak jak widzi je gracz na placu.
+            (List<string> liniaObozu, bool naEnterObozu) = EkranKonsoli(new List<string> { "1", "Halina", "4", "" });
+            var menuObozu = new StanKonsoli
+            {
+                Linie = liniaObozu, Pyta = true, CzekaNaEnter = naEnterObozu, Wpisywane = "", Kursor = true,
+            };
             foreach ((string nazwa, double u, int czasGry, int chaty, Dictionary<string, int> budynki,
                       int ludzi, bool zmierzch) in klatki)
             {
@@ -162,13 +168,13 @@ namespace GraSimply.Testy
                 for (double t = cel - 48; t <= cel + 1e-9; t += 12)
                 {
                     napisy = pulpit.Zloz(m.Pola, t, m.Hud, m.Region, m.GraczXy, m.Klasa, false, m.Osada,
-                                         default, null, m.Plac);
+                                         menuObozu, null, m.Plac);
                 }
                 // Ostatnie kilka klatek zwykłym tempem — ruch bez skoku.
                 for (int i = 1; i <= 6; i++)
                 {
                     napisy = pulpit.Zloz(m.Pola, cel + i * 0.05, m.Hud, m.Region, m.GraczXy, m.Klasa, false,
-                                         m.Osada, default, null, m.Plac);
+                                         m.Osada, menuObozu, null, m.Plac);
                 }
                 ZapiszKlatke(katalog, nazwa, pulpit, napisy);
             }

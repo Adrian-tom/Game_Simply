@@ -354,6 +354,27 @@ namespace GraSimply.Testy
                             obozMigawka.Klasa, false, obozMigawka.Osada, default, null, obozMigawka.Plac);
                 Harness.Sprawdz("obóz rysuje plac zamiast mapy", !zMapa.SequenceEqual(pulpit.Klatka.Dane));
 
+                // Menu obozu z prawdziwej gry nie może przykryć sceny: środek placu wygląda
+                // tak samo z menu i bez niego, a opcje są klikalnymi plakietkami z boku.
+                var konsolaObozu = new Konsola_();
+                var bezMenu = new Pulpit();
+                bezMenu.Zloz(obozMigawka.Pola, 1.0, obozMigawka.Hud, obozMigawka.Region, obozMigawka.GraczXy,
+                             obozMigawka.Klasa, false, obozMigawka.Osada, default, null, obozMigawka.Plac);
+                byte[] srodekBezMenu = Wytnij(bezMenu.Klatka, 520, 260, 340, 250);
+                var zMenu = new Pulpit();
+                zMenu.Zloz(obozMigawka.Pola, 1.0, obozMigawka.Hud, obozMigawka.Region, obozMigawka.GraczXy,
+                           obozMigawka.Klasa, false, obozMigawka.Osada, konsolaObozu.Stan, null, obozMigawka.Plac);
+                Harness.Sprawdz("menu obozu nie zasłania środka placu",
+                                srodekBezMenu.SequenceEqual(Wytnij(zMenu.Klatka, 520, 260, 340, 250)));
+                Harness.Sprawdz("menu obozu zmienia obraz (jest narysowane)",
+                                !bezMenu.Klatka.Dane.SequenceEqual(zMenu.Klatka.Dane));
+                Harness.Rowne("każda opcja obozu to przycisk", konsolaObozu.OpcjiMenu, zMenu.Przyciski.Count);
+                Harness.Sprawdz("przyciski mieszczą się na ekranie",
+                                zMenu.Przyciski.All(b => b.X >= 0 && b.Y >= 0 && b.X + b.Szer <= Pulpit.Szerokosc
+                                                         && b.Y + b.Wys <= Pulpit.Wysokosc));
+                Harness.Sprawdz("przyciski nie wchodzą na środek placu",
+                                zMenu.Przyciski.All(b => b.Y + b.Wys <= 260 || b.X >= 860 || b.X + b.Szer <= 520));
+
                 var napisy = pulpit.Zloz(obozMigawka.Pola, 1.0, obozMigawka.Hud, obozMigawka.Region, obozMigawka.GraczXy,
                                          obozMigawka.Klasa, false, obozMigawka.Osada, default, null, obozMigawka.Plac);
                 foreach (OsadnikDoRysunku o in obozMigawka.Plac.Osadnicy)
@@ -373,6 +394,38 @@ namespace GraSimply.Testy
             finally
             {
                 Styl.Aktywny = poprzedni;
+            }
+        }
+
+        /// <summary>Wycinek klatki pulpitu — do porównań fragmentów obrazu.</summary>
+        private static byte[] Wytnij(Plotno p, int x0, int y0, int szer, int wys)
+        {
+            var wynik = new byte[szer * wys * 4];
+            for (int y = 0; y < wys; y++)
+            {
+                Buffer.BlockCopy(p.Dane, ((y0 + y) * p.Szerokosc + x0) * 4, wynik, y * szer * 4, szer * 4);
+            }
+            return wynik;
+        }
+
+        /// <summary>Menu obozu z prawdziwej gry, przepuszczonej przez konsolę testową.</summary>
+        private sealed class Konsola_
+        {
+            public readonly StanKonsoli Stan;
+            public readonly int OpcjiMenu;
+
+            public Konsola_()
+            {
+                var konsola = new KonsolaTestowa(new[] { "1", "Halina", "4", "" });
+                new Logika.Gra(konsola, new Ekran(), new Losowanie(2024)).Uruchom();
+                var linie = new List<string>(konsola.Ekran.TrimEnd('\n').Split('\n'));
+                string zacheta = konsola.Pytania.Count > 0 ? konsola.Pytania[konsola.Pytania.Count - 1] : "";
+                Stan = new StanKonsoli
+                {
+                    Linie = linie, Pyta = true, Wpisywane = "", Kursor = true,
+                    CzekaNaEnter = zacheta.IndexOf("Enter", StringComparison.Ordinal) >= 0,
+                };
+                OpcjiMenu = EkranGry.Z(linie, true, Stan.CzekaNaEnter).Opcje.Count;
             }
         }
 
