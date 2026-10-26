@@ -274,6 +274,8 @@ class TestDziedzictwa(unittest.TestCase):
         self.assertIsNotNone(dziedzic)
         self.assertIsNot(dziedzic, g)
         self.assertIn("farma", dziedzic.budynki)
+        self.assertEqual(dziedzic.badania, g.badania)
+        self.assertEqual(dziedzic.budowy, g.budowy)
         self.assertEqual(dziedzic.pokolenie, 2)
         self.assertEqual(len(dziedzic.osadnicy), 1)  # dziedzic odszedł z chaty do domu wodza
         self.assertEqual(dziedzic.zloto, 100)

@@ -90,12 +90,37 @@ je i płaci. Wieści zwykłe trafiają do kroniki (pokazywanej w obozie), pilne 
 Rany: 18% szans po ciosie ≥22% max HP albo przy HP <20% (+12% boss), skutki w walce i testach.
 
 **Osadnicy.** Morale dąży do celu (55 ± jedzenie, zimno, tawerna, karma, cecha, talenty, myśli,
-wydarzenia) o 25% dziennie. Wydajność = 0,6 + morale/125 × cecha × doświadczenie (+10%/★)
-× narzędzia (+25%). Morale <20 → 10% dziennie na odejście. Choroby 0,6%/dzień (×2 głód, ×2 zimno,
+wydarzenia, pasja przy ulubionej pracy +4/+8) o 25% dziennie. Wydajność = (0,6 + morale/125) × cecha
+× umiejętność zawodu (0,8 + 0,05 × poziom, czyli 0,8–1,8) × premia z badań × narzędzia (+25%).
+Morale <20 → 10% dziennie na odejście. Choroby 0,6%/dzień (×2 głód, ×2 zimno,
 ×0,5 lecznica), chory + głód/zimno → 4% dziennie na śmierć. Zadowoleni płacą dziesięcinę 0,5 zł.
 
-**Budynki.** 16 typów, poziom n kosztuje koszt × n (od 2. poziomu także deski i żelazo),
-utrzymanie w złocie dziennie. Brak złota na utrzymanie = spadek morale.
+**Umiejętności i pasje** (`game/kompetencje.py`). Dziesięć umiejętności na poziomach 0–20 (budowa,
+górnictwo, uprawa, zbieractwo, łowiectwo, rzemiosło, handel, medycyna, walka, wiedza). Start losowany
+z imienia osadnika (stałe w każdym zapisie): dwa talenty i 1–2 pasje (🔥 mała, 🔥🔥 duża). Dzień pracy
+daje 60 XP × mnożnik pasji (brak ×0,35, mała ×1, duża ×1,5); XP do kolejnego poziomu rośnie od 40
+do 400 (poz. 9) i 1200 (poz. 19) — krzywa RimWorlda podzielona przez 25. Stare gwiazdki z zapisów
+(★★★) przechodzą w poziom 3 × liczba gwiazdek.
+
+**Budynki.** 17 typów, poziom n kosztuje koszt × n (od 2. poziomu także deski i żelazo; pola i
+palisada dostają żelazo dopiero od 3. poziomu, żeby epoka I nie wymagała metalu), utrzymanie
+w złocie dziennie. Brak złota na utrzymanie = spadek morale.
+
+**Budowa w czasie** (`game/budowa.py`). Zlecenie w `[11]` od razu pobiera materiały i zakłada plan
+(maks. 4 naraz); budynek staje po zebraniu „dni pracy” (baza 2–5 × poziom, chata 2). Pracują
+budowniczowie (pełna moc × umiejętność Budowa), bezczynni (35%) i reszta „po godzinach” (10%);
+jeden plan przyjmuje dziennie najwyżej 2,5 pracy. Bohater może poświęcić dzień (≈1,5 + premia
+z Siły). Anulowanie zwraca 100% bez prac, do 50% przy prawie skończonym. W scenie osady plan
+to rosnący szkielet z desek na polu budynku (rozbudowa: rusztowanie na budynku).
+
+**Badania** (`game/badania.py`). Nowa osada umie: dom, pola, palisadę i skryptorium na poz. 1 oraz
+4 chaty. Resztę — tartak, kuźnię, targ, wyższe poziomy, więcej chat — poznaje się w skryptorium:
+badacze (1 na poziom) dają ~5 pkt wiedzy dziennie × skryptorium (+35%/poziom) × wydajność.
+27 projektów w trzech epokach (I Drewno i kamień, II Żelazo i rzemiosło, III Mistrzostwo);
+wejście w epokę to osobny projekt przełomowy, a projekty epoki n wymagają skryptorium na poz. n.
+Projekt daje nowe budowle/poziomy, limit chat (8, 12) albo premię do zawodu (+10–15%). Bohater może
+studiować sam (3–4 pkt/dzień). Stary zapis dostaje wszystko jako poznane. Mnożnik kosztów
+`SKALA_KOSZTU` to jedyne pokrętło tempa.
 
 **Obrona.** Zagrożenie +(1,4 + dzień/70) × pora × bogactwo dziennie; przy 100 zapowiedź najazdu
 za 3–4 dni (+2 z wieżą). Siła bandy = 16 + 0,35 × dzień + 6 × liczba najazdów (±15%).
@@ -145,6 +170,26 @@ upada w pierwszym roku — to zamierzone.
 
 ---
 
+## 6b. Balans budowy i badań (autopilot, 240 dni)
+
+Skrypt pomocniczy (poza repozytorium, bo to jednorazowa miara) sterował osadą: obsada stanowisk
+wg priorytetów (badacz, budowniczy, tracz, hutnik, rolnik…), kolejka budów i badań wg listy, rekrutacja.
+Najazdy wyłączone, a bohater „zbiera na mapie” stałą dawkę surowców i **założony** dochód
+złota (5, 10 albo 20 zł dziennie — to założenie, nie pomiar z gry). Wynik z 5 ziaren na dochód:
+
+| Dochód bohatera | Epoka II | Epoka III | Wszystkie 27 badań | Poziomy budynków po 240 dniach |
+|---|---|---|---|---|
+| 5 zł/dzień | ~dzień 32–34 | **nie** (brak złota na skryptorium poz. 2) | 10/27 | 11–12 z 44 |
+| 10 zł/dzień | ~dzień 32–34 | ~dzień 76–84 | dzień 144–159 | 31–33 z 44 |
+| 20 zł/dzień | ~dzień 32–35 | ~dzień 74–82 | dzień 102–128 | 41–43 z 44 |
+
+Wniosek: tempo nauki narzuca czas (epoka II po ~miesiącu, III po ~2,5 miesiąca), a budowanie — złoto.
+Przy ~5 zł/dzień osada utyka na bramce epoki II, bo utrzymanie i koszty zjadają dochód; prawdziwy
+dochód z wypraw i zadań wymaga osobnego pomiaru. Wyniki §6 (15 kampanii) powstały **przed**
+budową w czasie i badaniami i nie były powtarzane.
+
+---
+
 ## 7. Mocne strony i ograniczenia
 
 **Działa.** Czas ma koszt i presję. Każdy system zasila inny: wyprawy → surowce → budynki →
@@ -182,6 +227,9 @@ Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd o
    (myśli i nastrój osadnika, storyteller z punktami zagrożenia i adaptacją, umiejętności
    z pasjami, priorytety pracy, zdrowie jako hediffy…). Najpierw wersja pythonowa z testami,
    potem port Unity. Kolejność wybiera właściciel projektu.
+   **Zrobione w Pythonie (26.10.2026):** umiejętności 0–20 i pasje, budowa w czasie
+   z budowniczymi, badania z epokami. **Do portu na Unity:** wszystkie trzy (osada w Unity
+   nie ma jeszcze logiki budynków ani zawodów).
 
 ---
 
@@ -194,7 +242,8 @@ python -m unittest discover -s tests -v
 Ręcznie po większej zmianie:
 
 - `python main.py` — okno: HUD pokazuje porę roku, żywność z bilansem, zagrożenie, morale.
-- Nowa gra → obóz: doradca podpowiada farmę; `[16]` osadnicy z cechami; `[11]` 16 budynków.
+- Nowa gra → obóz: doradca podpowiada farmę; `[16]` osadnicy z cechami i umiejętnościami; `[11]` rozbudowa
+  (zlecenie, pasek postępu, „Pomagaj przy budowie”); `[23]` skryptorium (po zbudowaniu go w `[11]`).
 - Wyprawa: prowiant maleje co ruch; w lesie `[6]` daje drewno i żywność.
 - Kilka odpoczynków `[3]`: „Wczoraj: …” w `[16]`, wieści z osady w obozie.
 - Walka: zapowiedź → `[5]` garda → komunikat o kontrze.

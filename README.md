@@ -61,11 +61,14 @@ w `%USERPROFILE%\.local\bin\`, a przy pierwszym starcie sam doinstalowuje pygame
 | **Czas i pory roku** | Każdy dzień (ruch na mapie, odpoczynek, praca) to dzień osady. Rok = wiosna, lato, jesień, zima po 30 dni. Jesienią żniwa, zimą pola nie rodzą, trzeba palić drewno, a bandy są głodniejsze |
 | **Przetrwanie** | Na wyprawę bierzesz prowiant (8 racji, +4 za poziom stajni). Bez jedzenia głód: −HP i słabszy atak. Zimą bez ciepłego odzienia mróz rani co dzień |
 | **Rany** | Ciężkie ciosy zostawiają rany (złamana ręka −20% ataku, głęboka rana −50% mikstur, zwichnięta noga, wstrząs). Goją się z czasem — szybciej przy odpoczynku, w lecznicy, po maści |
-| **Osadnicy** | Morale, cecha (pracowity, leniwy, żarłoczny, odważny, chorowity…), doświadczenie w zawodzie (★), choroby. Głodni i zmarznięci pracują gorzej, chorują i odchodzą |
+| **Osadnicy** | Morale, cecha (pracowity, leniwy, żarłoczny, odważny, chorowity…), choroby. Głodni i zmarznięci pracują gorzej, chorują i odchodzą |
+| **Umiejętności i pasje** | Każdy osadnik ma 10 umiejętności na poziomach 0–20 (budowa, górnictwo, uprawa, zbieractwo, łowiectwo, rzemiosło, handel, medycyna, walka, wiedza) i 1–2 pasje 🔥: kto robi to, co kocha, uczy się szybciej i ma lepszy humor. Praca w zawodzie podnosi umiejętność; mistrz pracuje do 2,2 razy szybciej niż nowicjusz |
 | **Więzi** | Osadnicy zaprzyjaźniają się i kłócą. Wspólna praca i zgodne charaktery zbliżają, sprzeczne cechy dzielą, a głód i zimno kłócą wszystkich. Przyjaciel obok podnosi morale, wróg ciągnie w dół. Para z więzią ≥ 80 jest wyłączna — nikt nie ma dwóch partnerów — i może doczekać się dziecka, jedynego darmowego osadnika w grze (potrzebna wolna chata, żywność, dobre morale i przerwa po poprzednim dziecku). Śmierć albo odejście bliskiego łamie tych, którzy go kochali |
-| **Zawody** | Drwal, kamieniarz, zielarz, myśliwy, rolnik, górnik, tracz, hutnik, handlarz, rzemieślnik, strażnik, uzdrowiciel |
+| **Zawody** | Drwal, kamieniarz, zielarz, myśliwy, rolnik, górnik, tracz, hutnik, handlarz, rzemieślnik, strażnik, uzdrowiciel, **budowniczy**, **badacz** |
 | **Łańcuchy produkcji** | Drewno → tartak → deski; ruda + drewno → huta → żelazo; żelazo → kuźnia → narzędzia (+25% pracy) i ulepszenia broni/zbroi |
-| **Budynki** | 16 budynków, każdy z poziomami i utrzymaniem: farma, spichlerz, tartak, huta, kuźnia, warsztat, laboratorium, lecznica, targ, karawanseraj, tawerna, palisada, wieża, stajnie, sklep, dom (+ chaty) |
+| **Budynki** | 17 budynków, każdy z poziomami i utrzymaniem: farma, spichlerz, tartak, huta, kuźnia, warsztat, laboratorium, lecznica, targ, karawanseraj, tawerna, palisada, wieża, stajnie, sklep, dom, skryptorium (+ chaty) |
+| **Budowa** | Zlecenie w `[11]` pobiera materiały i zakłada plan; budynek rośnie dzień po dniu pracą budowniczych (bezczynni pomagają słabiej, a Ty możesz poświęcić dzień). W scenie osady stoi szkielet z deski, który rośnie z postępem. Anulowanie zwraca część materiałów |
+| **Badania** | Na starcie umiesz niewiele: dom, pola, palisadę i skryptorium. W skryptorium `[23]` badacze poznają nowe budowle, wyższe poziomy i limity chat — 27 projektów w trzech epokach (Drewno i kamień → Żelazo i rzemiosło → Mistrzostwo). Wejście w epokę to osobny przełom, a wyższe projekty wymagają rozbudowanego skryptorium |
 | **Obrona osady** | Zagrożenie rośnie z czasem, zimą i z bogactwem. Zwiadowcy (lub wieża — dokładnie) zapowiadają najazd. W obozie: rozmowa z hersztem, 3 fale z wyborem taktyki, pojedynek. Pod nieobecność osada broni się sama |
 | **Rzemiosło i alchemia** | 14 przepisów w warsztacie, laboratorium i kuźni. Część trzeba **odkryć**: eksperyment z dwóch składników (test podpowiada trop), rozmowy, zwoje. Rzadkie składniki z biomów i potworów. Rzemieślnicy realizują **zamówienia** (docelowy zapas) |
 | **Handel i karawany** | Osady handlowe z własnymi cenami (Brzezie, Kamienny Bród, Port Veldmar + odkryte miasta). Ceny dryfują, żywność drożeje zimą. Karawana jedzie kilka dni, może wpaść w zasadzkę (eskorta pomaga), wraca ze złotem albo zamówionym towarem |
@@ -88,8 +91,9 @@ w `%USERPROFILE%\.local\bin\`, a przy pierwszym starcie sam doinstalowuje pygame
 
 1. **Nowa gra** → imię, klasa, pochodzenie, cechy, trudność. Startujesz z namiotem, dwiema chatami,
    dwojgiem osadników (drwal i myśliwy) i 30 racjami.
-2. **Najpierw jedzenie.** Postaw **pola uprawne** `[11]` i przestaw kogoś na rolnika `[16]`.
-   Myśliwy i polowanie w pracy `[15]` pomagają na start.
+2. **Najpierw jedzenie.** Zleć **pola uprawne** `[11]` i przestaw kogoś na rolnika `[16]`; budowie
+   pomagają bezczynni, budowniczy `[16]` i Ty (`[P]` w `[11]`). Myśliwy i polowanie `[15]` pomagają na start.
+   Potem **skryptorium** i badacz — bez badań nie postawisz tartaku ani kuźni `[23]`.
 3. **Wyprawy** `[1]` dają drewno, kamień, zioła, rudę, łup i doświadczenie. Pilnuj prowiantu i HP.
 4. **Przed pierwszym najazdem** (zwykle ok. 2. miesiąca): palisada, strażnik, zapas drewna na smołę.
 5. **Jesienią** gromadź żywność i drewno na zimę. Uszyj ciepłe odzienie w warsztacie.
@@ -98,7 +102,8 @@ w `%USERPROFILE%\.local\bin\`, a przy pierwszym starcie sam doinstalowuje pygame
 Menu obozu: `[1]` wyprawa · `[2]` sklep · `[3]` odpoczynek · `[4]` ekwipunek · `[5]` questy ·
 `[6]` osiągnięcia · `[7]` karta postaci · `[8]` podklasa · `[9]` mapa · `[10]` księga umiejętności ·
 `[11]` rozbudowa · `[12]` kuźnia · `[13]` stajnie · `[14]` drużyna · `[15]` praca · `[16]` osada ·
-`[17]` rzemiosło · `[18]` obrona · `[19]` handel · `[20]` talenty · `[21]` gabinet myśli · `[22]` sprawy osady.
+`[17]` rzemiosło · `[18]` obrona · `[19]` handel · `[20]` talenty · `[21]` gabinet myśli · `[22]` sprawy osady ·
+`[23]` skryptorium (badania).
 
 ---
 
@@ -113,6 +118,9 @@ Game_Simply/
 │   ├── kalendarz.py   # Pory roku
 │   ├── przetrwanie.py # Prowiant, głód, zimno, rany
 │   ├── osada.py       # Osadnicy, zawody, produkcja, morale, choroby, praca, targ
+│   ├── kompetencje.py # Umiejętności 0–20, pasje, nauka przez pracę
+│   ├── budowa.py      # Plany budowy w czasie, budowniczowie, rusztowania
+│   ├── badania.py     # Skryptorium: 27 projektów, 3 epoki, bramki budowli
 │   ├── wiezi.py       # Relacje między osadnikami: przyjaźnie, waśnie, pary, narodziny
 │   ├── oboz.py        # Surowce, budynki z poziomami, zbieractwo na mapie
 │   ├── obrona.py      # Zagrożenie, najazdy, fale, herszt
@@ -142,7 +150,7 @@ Game_Simply/
 │   ├── twarze.py      # Rysy twarzy rozmówców
 │   ├── teren.py       # Kafle, roślinność, budynki, sprite gracza
 │   └── piksele.py     # Prymitywy pixelartu
-└── tests/             # 192 testy unittest
+└── tests/             # 276 testów unittest
 ```
 
 ---

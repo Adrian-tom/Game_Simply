@@ -1,4 +1,4 @@
-"""Osada: osadnicy z morale, cechami i doświadczeniem, zawody i łańcuchy produkcji.
+"""Osada: osadnicy z morale, cechami, umiejętnościami i pasjami, zawody i łańcuchy produkcji.
 
 Osada żyje co dzień — niezależnie od tego, czy bohater jest w obozie
 (wcześniej targ płacił za „nieobecność”, a siedzenie w obozie dawało darmowe
@@ -13,7 +13,7 @@ import math
 import random
 from typing import TYPE_CHECKING
 
-from game import kalendarz, talenty
+from game import badania, budowa, kalendarz, kompetencje, talenty
 from game.oboz import (
     SUROWCE,
     _format_kosztu,
@@ -74,9 +74,12 @@ ZAJECIA: dict[str, dict] = {
     "straznik": {"nazwa": "strażnik", "ikona": "🛡", "opis": "+6 do obrony osady"},
     "uzdrowiciel": {"nazwa": "uzdrowiciel", "ikona": "⚕", "wymaga": "lecznica", "miejsca": 1,
                     "opis": "leczy chorych, przyspiesza gojenie ran"},
+    "budowniczy": {"nazwa": "budowniczy", "ikona": "🏗",
+                   "opis": "stawia to, co zlecisz w [11] — rośnie umiejętność Budowa"},
+    "badacz": {"nazwa": "badacz", "ikona": "📜", "wymaga": "skryptorium", "miejsca": 1,
+               "opis": "w skryptorium zdobywa punkty wiedzy na nowe budowle i epoki"},
 }
 ALIASY_ZAJEC = {"zbiory": "drwal", "handel": "handlarz", "rzemioslo": "rzemieslnik"}
-_PROGI_DOSWIADCZENIA = (10, 30, 60)
 
 CENY_SUROWCOW = {
     "zywnosc": 3, "drewno": 2, "kamien": 2, "ziola": 4, "skora": 5, "ruda": 8, "deski": 6, "zelazo": 16,
@@ -133,14 +136,15 @@ def liczba_chat(gracz: Gracz) -> int:
 
 
 def _zapewnij_osadnika(o: dict) -> dict:
-    """Stary zapis: dopisz morale, cechę, doświadczenie; stare zajęcia → nowe."""
+    """Stary zapis: dopisz morale, cechę, umiejętności; stare zajęcia → nowe."""
     o["zajecie"] = ALIASY_ZAJEC.get(o.get("zajecie"), o.get("zajecie") or "drwal")
     if o["zajecie"] not in ZAJECIA:
         o["zajecie"] = "drwal"
     o.setdefault("morale", 60.0)
-    o.setdefault("cecha", random.choice(list(CECHY_OSADNIKOW)))
-    o.setdefault("dosw", {})
+    if "cecha" not in o:                 # losuj tylko dla nowego — setdefault zjadałby losowość przy każdym odczycie
+        o["cecha"] = random.choice(list(CECHY_OSADNIKOW))
     o.setdefault("chory", 0)
+    kompetencje.zapewnij(o)
     o.pop("ikona", None)
     return o
 
@@ -193,21 +197,22 @@ def ustaw_zajecie(gracz: Gracz, o: dict, zajecie: str) -> str:
     return f"  {info['ikona']}  {o['imie']} zostaje: {info['nazwa']}."
 
 
-def poziom_doswiadczenia(o: dict, zajecie: str | None = None) -> int:
-    xp = (o.get("dosw") or {}).get(zajecie or o["zajecie"], 0)
-    return sum(1 for prog in _PROGI_DOSWIADCZENIA if xp >= prog)
+def mnoznik_pracy(gracz: Gracz, o: dict, zajecie: str | None = None) -> float:
+    """Morale (0,6–1,4) × cecha × umiejętność (0,8–1,8) × badania × talent Gospodarz.
 
-
-def mnoznik_pracy(gracz: Gracz, o: dict) -> float:
-    """Morale (0,6–1,4) × cecha × doświadczenie (+10%/stopień) × talent Gospodarz."""
+    ``zajecie`` pozwala zapytać o inną pracę niż wykonywana teraz (np. o budowę
+    bezczynnego osadnika); domyślnie liczy się jego własne zajęcie.
+    """
+    z = zajecie or o["zajecie"]
     cecha = CECHY_OSADNIKOW.get(o.get("cecha"), {})
     m = 0.6 + o.get("morale", 60) / 125
     m *= cecha.get("praca", 1.0)
-    if o["zajecie"] in ("tracz", "hutnik", "rzemieslnik"):
+    if z in ("tracz", "hutnik", "rzemieslnik"):
         m *= cecha.get("rzemioslo", 1.0)
-    if o["zajecie"] == "handlarz":
+    if z == "handlarz":
         m *= cecha.get("handel", 1.0)
-    m *= 1 + 0.10 * poziom_doswiadczenia(o)
+    m *= kompetencje.czynnik(o, z)
+    m *= badania.bonus_zajecia(gracz, z)
     if talenty.ma(gracz, "gospodarz"):
         m *= 1.10
     return m
@@ -240,7 +245,7 @@ def zatrudnij_osadnika(gracz: Gracz, zajecie: str = "drwal", *, darmo: bool = Fa
     koszt = "za darmo" if darmo else f"-{CENA_OSADNIKA} złota"
     return (
         f"  {info['ikona']}  {imie} ({cecha}: {CECHY_OSADNIKOW[cecha]['opis']}) wprowadza się"
-        f" i zostaje: {info['nazwa']}.  ({koszt})"
+        f" i zostaje: {info['nazwa']}.  Umie: {kompetencje.opis_krotki(nowy, 2)}.  ({koszt})"
     )
 
 
@@ -295,14 +300,15 @@ def dzien_osady(gracz: Gracz) -> tuple[list[str], list[str]]:
     rzemieslnicy = 0.0
     narzedzia = int(getattr(gracz, "narzedzia", 0) or 0)
     wolne_narzedzia = narzedzia
+    awanse: list[str] = []
     for o in lista:
-        if o.get("chory", 0) > 0 or o["zajecie"] == "bezczynny":
+        z = o["zajecie"]
+        if o.get("chory", 0) > 0 or z in ("bezczynny", "budowniczy", "badacz"):
             continue
         m = mnoznik_pracy(gracz, o)
-        if wolne_narzedzia > 0 and o["zajecie"] not in ("handlarz", "straznik"):
+        if wolne_narzedzia > 0 and z not in ("handlarz", "straznik"):
             m *= 1.25
             wolne_narzedzia -= 1
-        z = o["zajecie"]
         if z == "drwal":
             _plus(bilans, "drewno", _zaokraglij(2 * m))
         elif z == "kamieniarz":
@@ -335,7 +341,17 @@ def dzien_osady(gracz: Gracz) -> tuple[list[str], list[str]]:
             _plus(bilans, "zloto", _zaokraglij(baza * m))
         elif z == "rzemieslnik":
             rzemieslnicy += m
-        o.setdefault("dosw", {})[z] = o["dosw"].get(z, 0) + 1
+        awanse += kompetencje.cwicz(o, z)
+
+    kronika += awanse[:3]
+    if len(awanse) > 3:
+        kronika.append(f"  📈  (… i {len(awanse) - 3} innych awansów w umiejętnościach)")
+
+    # --- 1b. budowy i badania (ludzie przy rusztowaniach i w skryptorium) ---
+    for krok in (budowa.dzien_budowy, badania.dzien_badan):
+        k, pil = krok(gracz)
+        kronika += k
+        pilne += pil
 
     # drużyna na zbiorach też pracuje co dzień (połowa tego, co przynosiła z wyprawy)
     from game.rekruci import REKRUCI
@@ -457,6 +473,7 @@ def _cel_morale(gracz: Gracz, o: dict, glodni: bool, zimno: bool, zaniedbanie: b
     cel += premia_morale(gracz)
     if o.get("chory", 0) > 0:
         cel -= 10
+    cel += kompetencje.premia_morale(o)
     from game import wiezi
     cel += wiezi.premia_morale(gracz, o)
     return max(0.0, min(100.0, cel))
@@ -531,15 +548,20 @@ def _linia_bilansu(gracz: Gracz) -> str:
     return "  Wczoraj: " + ("  ".join(czesci) if czesci else "bez zmian")
 
 
+def _znacznik_umiejetnosci(o: dict) -> str:
+    """Poziom umiejętności używanej w obecnym zajęciu, np. „7🔥” (pusty dla bezczynnego)."""
+    u = kompetencje.umiejetnosc_zajecia(o["zajecie"])
+    if u is None:
+        return ""
+    return f"{kompetencje.poziom(o, u)}{kompetencje.opis_pasji(kompetencje.pasja(o, u))}"
+
+
 def _menu_zajec(gracz: Gracz, o: dict) -> None:
     cecha = o.get("cecha")
     print(f"\n  {o['imie']} — {cecha} ({CECHY_OSADNIKOW[cecha]['opis']}), morale {o['morale']:.0f}")
-    doswiadczenie = ", ".join(
-        f"{ZAJECIA[z]['nazwa']} {'★' * poziom_doswiadczenia(o, z)}" for z, xp in (o.get("dosw") or {}).items()
-        if poziom_doswiadczenia(o, z) and z in ZAJECIA
-    )
-    if doswiadczenie:
-        print(f"  Doświadczenie: {doswiadczenie}")
+    print("  Umiejętności (🔥 = pasja: szybsza nauka i lepszy humor przy tej pracy):")
+    for linia in kompetencje.opis_pelny(o, ile=5, zajecie=o["zajecie"]):
+        print(linia)
     from game import wiezi
     print(f"  Relacje: {wiezi.opis_relacji(gracz, o['imie'])}")
     if o.get("rodzice"):
@@ -592,7 +614,7 @@ def menu_osady(gracz: Gracz) -> None:
         from game import wiezi
         for i, o in enumerate(lista, 1):
             info = ZAJECIA[o["zajecie"]]
-            gwiazdki = "★" * poziom_doswiadczenia(o)
+            umiejetnosc = _znacznik_umiejetnosci(o)
             chory = "  🤒 chory" if o.get("chory") else ""
             # Znacznik relacji na liście: bez niego gracz musiałby wchodzić
             # w kartę każdego osadnika, żeby zauważyć parę albo waśń.
@@ -603,7 +625,7 @@ def menu_osady(gracz: Gracz) -> None:
                 znak = "  💢"
             elif wiezi.bliscy(gracz, o["imie"]):
                 znak = "  🤝"
-            print(f"  [{i:>2}] {ikona_morale(o['morale'])} {o['imie']:8} {info['ikona']} {info['nazwa']} {gwiazdki}"
+            print(f"  [{i:>2}] {ikona_morale(o['morale'])} {o['imie']:8} {info['ikona']} {info['nazwa']} {umiejetnosc}"
                   f"  · {o['cecha']}  · morale {o['morale']:.0f}{chory}{znak}")
         print()
         print(f"  [N]  🤝  Zatrudnij osadnika ({CENA_OSADNIKA} zł, potrzebna wolna chata: {wolne_chaty(gracz)})")

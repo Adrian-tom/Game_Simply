@@ -41,6 +41,7 @@ from game.oboz import (
 )
 from game.rekruci import menu_druzyny, etykieta_towarzysza
 from game.osada import menu_pracy, menu_osady, dodaj_czas, rozlicz_powrot_do_obozu
+from game.badania import etykieta_menu as etykieta_badan, menu_badan
 from game.atrybuty import (
     ATRYBUTY,
     KOLEJNOSC_ATRYBUTOW,
@@ -395,6 +396,7 @@ def menu_obozu(gracz: Gracz) -> str:
     print("  [20] 🌳  Drzewko talentów" + ("  ⭐" if punkty_talentow(gracz) > 0 else ""))
     print("  [21] 🧠  Gabinet myśli")
     print(f"  [22] 📜  Sprawy osady ({len(gracz.sprawy)})")
+    print(f"  [23] 🔬  {etykieta_badan(gracz)}")
     gwiazdka_atr = "  ⭐" if getattr(gracz, "punkty_atrybutow", 0) > 0 else ""
     print(f"  [7]  📋  Karta postaci (atrybuty, testy){gwiazdka_atr}")
     if gracz.podklasa_dostepna:
@@ -568,6 +570,11 @@ def nowa_gra(gracz: Gracz | None = None) -> None:
 
         elif wybor == "22":
             menu_spraw(gracz)
+            zapisz_gre(gracz)
+
+        elif wybor == "23":
+            with ekran.widok_osady("oboz"):
+                menu_badan(gracz)
             zapisz_gre(gracz)
 
         elif wybor == "0":

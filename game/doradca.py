@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from game import kalendarz, mysli, przetrwanie, talenty
+from game import badania, budowa
 from game.oboz import ma_budynek
 from game.osada import CENA_OSADNIKA, bilans_zywnosci, ilu_w_zawodzie, osadnicy, wolne_chaty
 
@@ -36,6 +37,15 @@ def porady(gracz: "Gracz", ile: int = 2) -> list[str]:
     bezczynni = ilu_w_zawodzie(gracz, "bezczynny")
     if bezczynni:
         wynik.append(f"{bezczynni} osadnik(ów) bez zajęcia — przydziel im pracę w [16].")
+    if budowa.plany(gracz) and budowa.moc_budowy(gracz) <= 0:
+        wynik.append("Budowa stoi — nikt nie ma sił, by ją prowadzić. Przydziel budowniczego w [16] albo pomóż sam w [11].")
+    elif budowa.plany(gracz) and ilu_w_zawodzie(gracz, "budowniczy") == 0:
+        wynik.append("Budowa idzie ślamazarnie: bez budowniczego pracują tylko pomocnicy. Przydziel go w [16] albo pomóż w [11].")
+    if ma_budynek(gracz, "skryptorium"):
+        if badania.stan(gracz)["aktualny"] is None and badania.dostepne(gracz):
+            wynik.append("Skryptorium czeka na polecenie — wybierz badania w [23].")
+        elif not ilu_w_zawodzie(gracz, "badacz") and badania.stan(gracz)["aktualny"]:
+            wynik.append("Badania stoją: przydziel badacza w [16] albo studiuj sam w [23].")
     if not ma_budynek(gracz, "farma") and gracz.czas >= 3:
         wynik.append("Pola uprawne (farma) to stałe jedzenie — rolnik daje ~3 racje dziennie, jesienią więcej.")
     if wolne_chaty(gracz) and gracz.zloto >= CENA_OSADNIKA:

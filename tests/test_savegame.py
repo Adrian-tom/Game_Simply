@@ -65,6 +65,52 @@ class TestZapisu(unittest.TestCase):
         self.assertEqual(w.testy_rozmow, g.testy_rozmow)
         swiat.minij_dni(w, 5)  # wczytany stan musi dać się dalej symulować
 
+    def test_round_trip_zachowuje_budowy_badania_i_umiejetnosci(self):
+        from game import badania, budowa, oboz
+        g = Gracz("Budowniczy", "Wojownik")
+        zapewnij_mape(g)
+        g.surowce.update({k: 99 for k in oboz.SUROWCE})
+        g.zloto = 500
+        oboz.ustaw_poziom(g, "skryptorium", 1)
+        badania.stan(g)["zrobione"].append("obrobka_drewna")
+        badania.wybierz_projekt(g, "kamieniarstwo")
+        badania.stan(g)["postep"]["kamieniarstwo"] = 7.5
+        budowa.zlec(g, "dom")
+        budowa.plany(g)[0]["zrobiona"] = 1.25
+        g.osadnicy[0]["kompetencje"] = None          # zapewnij() odtworzy z imienia
+        self.assertTrue(savegame.zapisz_gre(g))
+
+        w = savegame.wczytaj_gre()
+        self.assertEqual(w.badania["zrobione"], ["obrobka_drewna"])
+        self.assertEqual(w.badania["aktualny"], "kamieniarstwo")
+        self.assertEqual(w.badania["postep"], {"kamieniarstwo": 7.5})
+        self.assertEqual(w.budowy[0]["klucz"], "dom")
+        self.assertEqual(w.budowy[0]["zrobiona"], 1.25)
+        self.assertEqual(badania.maks_poziom(w, "tartak"), 1)
+        from game import osada
+        for o in osada.osadnicy(w):
+            self.assertEqual(len(o["kompetencje"]), 10)
+
+    def test_stary_zapis_bez_badan_ma_wszystko_poznane(self):
+        g = Gracz("Stary", "Wojownik")
+        zapewnij_mape(g)
+        savegame.zapisz_gre(g)
+        dane = json.loads(savegame._PLIK_ZAPISU.read_text(encoding="utf-8"))
+        for pole in ("badania", "budowy"):
+            dane.pop(pole)
+        for o in dane["osadnicy"]:
+            o.pop("kompetencje", None)
+            o["dosw"] = {o["zajecie"]: 70}
+        savegame._PLIK_ZAPISU.write_text(json.dumps(dane), encoding="utf-8")
+
+        from game import badania, budowa
+        w = savegame.wczytaj_gre()
+        self.assertEqual(badania.zrobione(w), set(badania.PROJEKTY))
+        self.assertEqual(budowa.plany(w), [])
+        self.assertIsNone(budowa.powod_blokady(w, "huta"))
+        from game import osada
+        self.assertNotIn("dosw", osada.osadnicy(w)[0])
+
     def test_stary_zapis_z_martwa_postacia_budzi_sie_ranny(self):
         g = Gracz("Stary", "Wojownik")
         zapewnij_mape(g)

@@ -19,7 +19,7 @@ NOWE_POLA = (
     "prowiant", "glod", "rany", "poziomy_budynkow", "zagrozenie", "najazd_za", "najazdy",
     "kronika", "sprawy", "narzedzia", "zapasy_cel", "przedmioty", "skladniki", "przepisy",
     "ulepszenia", "karawany", "ceny", "pokolenie", "rod", "talenty", "punkty_talentow",
-    "flagi", "testy_rozmow", "mysli", "w_obozie",
+    "flagi", "testy_rozmow", "mysli", "w_obozie", "budowy", "badania",
 )
 
 
@@ -178,6 +178,10 @@ def _dict_do_gracza(dane: dict) -> Gracz:
     for pole in NOWE_POLA:
         if dane.get(pole) is not None:
             setattr(gracz, pole, dane[pole])
+    if "badania" not in dane:
+        # Zapis sprzed skryptorium: wszystko jest już poznane, żeby osada się nie zablokowała.
+        from game import badania
+        badania.migruj_stary_zapis(gracz)
     if "punkty_talentow" not in dane:
         gracz.punkty_talentow = max(0, gracz.poziom - 1)
     if "zywnosc" not in (dane.get("surowce") or {}):

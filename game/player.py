@@ -123,8 +123,8 @@ class Gracz:
         # Obóz startowy: dwie chaty i dwoje ludzi, którzy uwierzyli w twój ogień.
         self.chaty: int = 2
         self.osadnicy: list[dict] = [
-            {"imie": "Olek", "zajecie": "drwal", "morale": 60.0, "cecha": "pracowity", "dosw": {}, "chory": 0},
-            {"imie": "Jagna", "zajecie": "mysliwy", "morale": 60.0, "cecha": "wesoly", "dosw": {}, "chory": 0},
+            {"imie": "Olek", "zajecie": "drwal", "morale": 60.0, "cecha": "pracowity", "chory": 0},
+            {"imie": "Jagna", "zajecie": "mysliwy", "morale": 60.0, "cecha": "wesoly", "chory": 0},
         ]
         # Relacje między osadnikami: {"Jagna|Olek": 42.0}. Klucz to para imion
         # posortowana alfabetycznie, więc jedna wartość opisuje związek w obie
@@ -137,6 +137,9 @@ class Gracz:
         self.rany: list[dict] = []
         # --- osada ---
         self.poziomy_budynkow: dict[str, int] = {}
+        # Plany budowy w toku (game.budowa) i stan nauki w skryptorium (game.badania).
+        self.budowy: list[dict] = []
+        self.badania: dict = {"zrobione": [], "aktualny": None, "postep": {}, "zapas": 0.0}
         self.zagrozenie: float = 0.0
         self.najazd_za: int | None = None
         self.najazdy: int = 0

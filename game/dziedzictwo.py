@@ -26,7 +26,7 @@ POLA_OSADY = (
     "seed", "regiony", "budynki", "poziomy_budynkow", "chaty", "osadnicy", "rekruci", "surowce",
     "skladniki", "przepisy", "zapasy_cel", "narzedzia", "karawany", "ceny", "czas", "czas_wyjscia",
     "zagrozenie", "najazd_za", "najazdy", "kronika", "sprawy", "flagi", "watki_npc", "statystyki",
-    "osiagniecia", "ukonczone_questy", "tryb_trudnosci", "rod", "pokolenie",
+    "osiagniecia", "ukonczone_questy", "tryb_trudnosci", "rod", "pokolenie", "budowy", "badania",
 )
 
 _KLASY_REKRUTOW = {
@@ -38,6 +38,7 @@ _KLASY_ZAWODOW = {
     "straznik": "Wojownik", "drwal": "Wojownik", "kamieniarz": "Wojownik", "gornik": "Wojownik",
     "mysliwy": "Lotrzyk", "handlarz": "Lotrzyk", "zielarz": "Druid", "rolnik": "Druid",
     "uzdrowiciel": "Druid", "rzemieslnik": "Mag", "tracz": "Wojownik", "hutnik": "Wojownik",
+    "budowniczy": "Wojownik", "badacz": "Mag",
 }
 
 

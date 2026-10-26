@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from game import kalendarz, talenty
 from game.mapa import pole_gracza, odkryj_pole, opis_punktu, PUNKTY_MITYCZNE
-from game.quests import sprawdz_questy
 from game.utils import wyczysc, wyswietl_linie, nacisnij_enter
 
 if TYPE_CHECKING:
@@ -72,7 +71,9 @@ _SKLADNIKI_BIOM = {
 }
 
 # koszt = cena poziomu 1; poziom n kosztuje koszt × n, a od 2. poziomu dochodzą
-# deski i żelazo (patrz koszt_budowy). utrzymanie = złoto dziennie za poziom.
+# deski i żelazo (patrz koszt_budowy; "zelazo_od" przesuwa żelazo na wyższy poziom,
+# żeby epoka I nie wymagała metalu, którego jeszcze nie umiemy wytopić).
+# utrzymanie = złoto dziennie za poziom. Czas budowy: game.budowa.
 BUDYNKI: dict[str, dict] = {
     "sklep": {
         "nazwa": "Sklep", "ikona": "🏪", "max": 2, "utrzymanie": 1,
@@ -154,7 +155,15 @@ BUDYNKI: dict[str, dict] = {
         "opis": "Szybka podróż i +4 racje prowiantu na poziom.",
         "koszt": {"drewno": 8, "kamien": 4, "skora": 5, "zloto": 30},
     },
+    "skryptorium": {
+        "nazwa": "Skryptorium", "ikona": "📜", "max": 3, "utrzymanie": 1, "zelazo_od": 3,
+        "opis": "Badacze (1 na poziom) poznają nowe budowle, poziomy i epoki — jak stół badawczy.",
+        "koszt": {"drewno": 8, "kamien": 4, "zloto": 20},
+    },
 }
+# 2. poziom pól (płodozmian) i palisady (ostrokół) to wiedza z epoki I — żelaza jeszcze nie ma skąd wziąć.
+for _klucz in ("farma", "palisada"):
+    BUDYNKI[_klucz]["zelazo_od"] = 3
 
 
 def _magazyn(gracz: Gracz) -> dict[str, int]:
@@ -252,7 +261,8 @@ def koszt_budowy(gracz: Gracz, klucz: str) -> dict | None:
     koszt = {k: v * nastepny for k, v in info["koszt"].items()}
     if nastepny >= 2:
         koszt["deski"] = koszt.get("deski", 0) + 4 * nastepny
-        koszt["zelazo"] = koszt.get("zelazo", 0) + 2 * (nastepny - 1)
+        if nastepny >= info.get("zelazo_od", 2):
+            koszt["zelazo"] = koszt.get("zelazo", 0) + 2 * (nastepny - 1)
     if talenty.ma(gracz, "architekt"):
         koszt = {k: max(1, int(v * 0.8)) for k, v in koszt.items()}
     return koszt
@@ -324,8 +334,23 @@ def zbierz_na_polu(gracz: Gracz) -> str:
     return "ok"
 
 
+def ustaw_poziom(gracz: Gracz, klucz: str, poziom: int) -> None:
+    """Zapisuje poziom budynku (bez opłat) — wspólny koniec natychmiastowej i rozłożonej w czasie budowy."""
+    if getattr(gracz, "budynki", None) is None:
+        gracz.budynki = set()
+    if getattr(gracz, "poziomy_budynkow", None) is None:
+        gracz.poziomy_budynkow = {}
+    gracz.budynki.add(klucz)
+    gracz.poziomy_budynkow[klucz] = poziom
+    gracz.statystyki["zbudowane_budynki"] = len(gracz.budynki)
+
+
 def zbuduj(gracz: Gracz, klucz: str) -> str:
-    """Wznosi budynek albo podnosi jego poziom. Zwraca komunikat."""
+    """Natychmiast wznosi budynek albo podnosi poziom — niski poziom API.
+
+    Gra używa ``game.budowa`` (plan, czas, budowniczowie, badania); ta funkcja
+    zostaje dla testów, nagród i migracji, które nie mają czekać na ludzi.
+    """
     info = BUDYNKI[klucz]
     koszt = koszt_budowy(gracz, klucz)
     if koszt is None:
@@ -336,72 +361,17 @@ def zbuduj(gracz: Gracz, klucz: str) -> str:
             f"  Potrzeba: {_format_kosztu(koszt)}."
         )
     _pobierz_koszt(gracz, koszt)
-    if getattr(gracz, "budynki", None) is None:
-        gracz.budynki = set()
-    if getattr(gracz, "poziomy_budynkow", None) is None:
-        gracz.poziomy_budynkow = {}
     nowy = poziom_budynku(gracz, klucz) + 1
-    gracz.budynki.add(klucz)
-    gracz.poziomy_budynkow[klucz] = nowy
-    gracz.statystyki["zbudowane_budynki"] = len(gracz.budynki)
+    ustaw_poziom(gracz, klucz, nowy)
     if nowy == 1:
         return f"  {info['ikona']}  Wznosisz: {info['nazwa']}!  ({info['opis']})"
     return f"  {info['ikona']}  {info['nazwa']} rozbudowana do poziomu {nowy}!"
 
 
 def menu_rozbudowy(gracz: Gracz) -> None:
-    """Obozowe menu budowy i rozbudowy."""
-    from game.osada import MAX_CHATY, KOSZT_CHATY, liczba_chat, zbuduj_chate
-
-    while True:
-        wyczysc()
-        wyswietl_linie("═")
-        print("  ROZBUDOWA OBOZU")
-        wyswietl_linie("═")
-        print(f"\n  {linia_surowcow(gracz)}")
-        print(f"  Złoto: {gracz.zloto} szt.   Utrzymanie budynków: {utrzymanie_dzienne(gracz)} zł/dzień\n")
-        klucze = list(BUDYNKI)
-        for i, klucz in enumerate(klucze, 1):
-            info = BUDYNKI[klucz]
-            poz = poziom_budynku(gracz, klucz)
-            koszt = koszt_budowy(gracz, klucz)
-            znacznik = f"poz. {poz}/{info['max']}" if poz else "—"
-            print(f"  [{i:>2}] {info['ikona']} {info['nazwa']} ({znacznik}) — {info['opis']}")
-            if koszt is None:
-                print("        ✔ najwyższy poziom")
-            else:
-                stac = "✔ " if _moze_zaplacic(gracz, koszt) else ""
-                akcja = "rozbuduj" if poz else "zbuduj"
-                utrz = f", utrzymanie +{info['utrzymanie']} zł/dz." if info["utrzymanie"] else ""
-                print(f"        {stac}{akcja}: {_format_kosztu(koszt)}{utrz}")
-        nr_chaty = len(klucze) + 1
-        print(
-            f"\n  [{nr_chaty}] 🛖 Chata osadnika  — dom dla jednej osoby"
-            f"  ({liczba_chat(gracz)}/{MAX_CHATY})"
-        )
-        print(f"        {_format_kosztu(KOSZT_CHATY)}")
-        print("\n  [0] Wróć\n")
-        wybor = input("  Twój wybór: ").strip()
-        if wybor == "0":
-            return
-        try:
-            idx = int(wybor) - 1
-            if 0 <= idx < len(klucze):
-                print(zbuduj(gracz, klucze[idx]))
-                for msg in sprawdz_questy(gracz):
-                    print(msg)
-                nacisnij_enter()
-                continue
-            if idx == len(klucze):
-                print(zbuduj_chate(gracz))
-                for msg in sprawdz_questy(gracz):
-                    print(msg)
-                nacisnij_enter()
-                continue
-        except ValueError:
-            pass
-        print("  Nieprawidłowy wybór.")
-        nacisnij_enter()
+    """Obozowe menu budowy i rozbudowy: plany, budowniczowie, czas (game.budowa)."""
+    from game.budowa import menu_budowy
+    menu_budowy(gracz)
 
 
 def odkryte_punkty(gracz: Gracz) -> list[tuple[int, int, dict]]:

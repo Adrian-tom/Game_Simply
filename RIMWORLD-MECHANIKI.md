@@ -217,6 +217,15 @@ Opisane osobno w [RimWorld-klasy-JobDriver-IncidentWorker-ThinkNode.md]. W skró
 | 11 | **Warunki pogodowe i ubranie** (N) | Urozmaicenie zimą | mały | niskie |
 | 12 | **Generator questów** (O) | Treść | większy | średnie |
 
+**Stan realizacji (26.10.2026, wersja pythonowa; port Unity jeszcze nie ruszył):**
+
+| # | Stan | Co dokładnie jest, a czym różni się od RimWorlda |
+|---|---|---|
+| 3 | **zrobione** | `game/kompetencje.py`: 10 umiejętności 0–20 (nie 12 — bez Strzelania, Gotowania, Zwierząt, Sztuki), pasje jak w RimWorldzie: brak / mała 🔥 / duża 🔥🔥 (mnożniki nauki 0,35 / 1 / 1,5; dodatkowo +4/+8 do celu morale przy ulubionej pracy), krzywa XP z RimWorlda podzielona przez 25, start losowany z imienia |
+| 10 | **zrobione w uproszczeniu** | `game/badania.py`: jeden „stół” (skryptorium) zamiast stołów i banków badań, 27 projektów w 3 epokach (neolit / średniowiecze / przemysł → tu: drewno i kamień / żelazo / mistrzostwo), punkty dzienne zamiast pracy pawna przy stole; bramki: wymagania, epoka, poziom skryptorium |
+| 4 | częściowo | `game/budowa.py`: priorytet to rola (budowniczy → bezczynni → reszta „po godzinach”), nie macierz priorytetów 1–4 per praca. Pełne priorytety pracy wciąż do zrobienia |
+| J | częściowo | Budowa jako proces w czasie z rusztowaniem (blueprint → frame → gotowe); bez jakości, bez pomieszczeń |
+
 **Czego świadomie NIE przenosimy:** siatki komórek, wyszukiwania ścieżek i regionów, renderowania, zwierząt gospodarskich, dodatków Anomaly/Odyssey. To silnik symulacji w czasie rzeczywistym, a Simply jest dzienną strategią z RPG.
 
 **Zasada techniczna:** każdy etap najpierw w Pythonie (`game/`, wzorzec) z testami `unittest`, potem port do `unity/`. Zapis (`savegame.py`) zawsze z migracją i wartościami domyślnymi. Liczby z tabel są **punktem startowym**, nie obietnicą: balans sprawdzamy botami jak w `ANALIZA.md` §5–6.

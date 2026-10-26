@@ -46,6 +46,7 @@ MIEJSCA: dict[str, tuple[int, int]] = {
     "targ": (4, 5),
     "wieza": (1, 5),
     "farma": (3, 5),
+    "skryptorium": (3, 1),
 }
 
 # Kolejność, w jakiej chaty zajmują wolne kafle placu.
@@ -71,18 +72,20 @@ WYGLAD: dict[str, tuple] = {
     "lecznica": (6, 7, teren.TYNK, teren.TYNK, "cegla", (210, 240, 255), 5),
     "targ": (8, 4, teren.DREWNO, teren.ZLOTO, "deski", None, 4),
     "wieza": (4, 16, teren.KAMIEN, teren.LUPEK, "cegla", None, 5),
+    "skryptorium": (7, 8, teren.TYNK, teren.CZERWIEN, "cegla", (255, 232, 150), 6),
 }
 
 # Blask rzucany przez budynek po ciemku — kuźnia i huta świecą na pomarańczowo.
 BLASK: dict[str, str] = {
     "kuznia": "kuznia", "huta": "kuznia", "laboratorium": "magia",
-    "tawerna": "okno", "dom": "okno", "lecznica": "latarnia",
+    "tawerna": "okno", "dom": "okno", "lecznica": "latarnia", "skryptorium": "okno",
 }
 
 # Gdzie pracuje kto. Brak budynku → osadnik wraca pod ognisko.
 PRZY_BUDYNKU: dict[str, str] = {
     "rolnik": "farma", "tracz": "tartak", "hutnik": "huta",
     "rzemieslnik": "warsztat", "uzdrowiciel": "lecznica", "handlarz": "targ",
+    "badacz": "skryptorium",
 }
 # Zajęcia bez budynku pracują na skraju placu — tam, gdzie las, skały i brama.
 PRZY_KRAWEDZI: dict[str, tuple[int, int]] = {
@@ -96,7 +99,7 @@ KOLORY_ZAJEC: dict[str, tuple[int, int, int]] = {
     "zielarz": (86, 140, 92), "mysliwy": (128, 104, 58), "rolnik": (196, 174, 92),
     "gornik": (92, 88, 104), "tracz": (138, 104, 64), "hutnik": (176, 92, 54),
     "handlarz": (178, 148, 70), "rzemieslnik": (104, 116, 150), "straznik": (150, 58, 56),
-    "uzdrowiciel": (188, 196, 206),
+    "uzdrowiciel": (188, 196, 206), "budowniczy": (176, 128, 70), "badacz": (112, 100, 168),
 }
 
 _OSADNIK = [
@@ -188,6 +191,7 @@ class WidokOsady:
         self._blask_baza = {n: poswiata(PROMIEN_BLASKU[n], KOLOR_BLASKU[n]) for n in KOLOR_BLASKU}
         self._blask_pamiec: dict = {}
         self._swiecenia: list[tuple[str, int, int]] = []   # co świeci w tej klatce
+        self._nakladki: dict[tuple[int, int], float] = {}  # rusztowania na istniejących budynkach
         self._ruch = ruch.Ruch(ROZMIAR_RUCHU)
         self._ostatni_t: float | None = None
         self._cien = pygame.Surface((12, 5), pygame.SRCALPHA)
@@ -285,11 +289,39 @@ class WidokOsady:
         wolne = [p for p in MIEJSCA_CHAT if p not in plan]
         for i in range(min(liczba_chat(gracz), len(wolne))):
             plan[wolne[i]] = ("chata", "chata", i)
+
+        # Budowy w toku: nowy budynek to goły szkielet na swoim polu, rozbudowa
+        # dostaje rusztowanie na istniejącym budynku (nakładka), chata staje
+        # na następnym wolnym kaflu. Palisada nie ma pola — jej postęp widać w menu.
+        from game import budowa
+        self._nakladki = {}
+        pierwsza_wolna = min(liczba_chat(gracz), len(wolne))
+        for klucz, _, postep in budowa.rusztowania(gracz):
+            procent = int(postep * 100)
+            if klucz == "chata":
+                if pierwsza_wolna < len(wolne):
+                    plan[wolne[pierwsza_wolna]] = ("budowa", "chata", procent)
+                    pierwsza_wolna += 1
+                continue
+            pole = MIEJSCA.get(klucz)
+            if pole is None:
+                continue
+            if pole in plan and plan[pole][0] != "namiot":
+                self._nakladki[pole] = postep
+            else:
+                plan[pole] = ("budowa", klucz, procent)
         return plan
 
     def _stanowisko(self, o: dict, plan: dict) -> tuple[int, int]:
         """Kafel, przy którym kręci się osadnik o danym zajęciu."""
         zajecie = o.get("zajecie") or "bezczynny"
+        if zajecie == "budowniczy":
+            for pole, (rodzaj, _, _) in sorted(plan.items()):
+                if rodzaj == "budowa":
+                    return pole
+            for pole in sorted(self._nakladki):
+                return pole
+            return (3, 3)                   # nie ma co budować — czeka przy ognisku
         budynek = PRZY_BUDYNKU.get(zajecie)
         if budynek:
             for pole, (_, klucz, _) in plan.items():
@@ -467,6 +499,9 @@ class WidokOsady:
         if rodzaj == "farma":
             self._pole_uprawne(cel, pole, poziom)
             return
+        if rodzaj == "budowa":
+            self._rusztowanie(cel, pole, poziom / 100.0)
+            return
         if rodzaj == "namiot":
             spr = self._namiot()
         elif rodzaj == "chata":
@@ -481,6 +516,24 @@ class WidokOsady:
             # Poświata idzie na listę i trafia na scenę dopiero po nałożeniu
             # światła dnia — inaczej noc przyciemniłaby także ogień.
             self._swiecenia.append((blask, sx, sy - spr.get_height() // 2))
+        if pole in self._nakladki:
+            self._rusztowanie(cel, pole, self._nakladki[pole])
+
+    def _rusztowanie(self, cel: pygame.Surface, pole, postep: float) -> None:
+        """Drewniany szkielet, który rośnie z postępem budowy: słupy, belki i coraz więcej desek."""
+        sx, sy = _srodek(*pole)
+        cel.blit(self._cien, (sx - 6, sy - 1))
+        wys = 5 + int(14 * max(0.0, min(1.0, postep)))
+        drewno, jasne = (88, 62, 40), (150, 112, 70)
+        rogi = [(-7, 0), (7, 0), (-4, -3), (4, -3)]
+        for dx, dy in rogi:
+            pygame.draw.line(cel, drewno, (sx + dx, sy + dy), (sx + dx, sy + dy - wys))
+        for poziom in range(3, wys, 4):
+            pygame.draw.line(cel, jasne, (sx - 7, sy - poziom), (sx + 7, sy - poziom))
+            pygame.draw.line(cel, drewno, (sx - 4, sy - 3 - poziom), (sx + 4, sy - 3 - poziom))
+        deski = int(wys * max(0.0, min(1.0, postep)))
+        if deski > 1:                                    # zabudowana część przedniej ściany
+            cel.fill((130, 98, 62), (sx - 6, sy - deski, 13, deski))
 
     def _namiot(self) -> pygame.Surface:
         if "namiot" not in self._budynki:
@@ -520,7 +573,7 @@ class WidokOsady:
         Pole uprawne jest płaskie — po zagonach się chodzi. Obwód zostaje
         otwarty tylko w bramie od frontu, za którą jest dziedziniec.
         """
-        zablokowane = {pole for pole, w in plan.items() if w[0] in ("budynek", "chata", "namiot")}
+        zablokowane = {pole for pole, w in plan.items() if w[0] in ("budynek", "chata", "namiot", "budowa")}
         zablokowane |= {OGNISKO, POLE_BOHATERA}
         for i in range(SIATKA):
             zablokowane |= {(i, 0), (i, SIATKA - 1), (0, i), (SIATKA - 1, i)}

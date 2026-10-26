@@ -11,7 +11,7 @@ import unittest
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-from game import ekran, kalendarz, osada
+from game import ekran, kalendarz, oboz, osada
 from game.mapa import zapewnij_mape
 from game.player import Gracz
 
@@ -109,6 +109,65 @@ class TestRozkladu(unittest.TestCase):
         plan = self.widok._rozklad(g)
         self.assertEqual(self.widok._stanowisko(g.osadnicy[0], plan), (3, 3))
 
+    def test_skryptorium_ma_swoje_pole_a_chaty_je_omijaja(self):
+        from grafika.widok_osady import MIEJSCA
+        g = _gracz(12, {"skryptorium": 1})
+        plan = self.widok._rozklad(g)
+        self.assertEqual(plan[MIEJSCA["skryptorium"]], ("budynek", "skryptorium", 1))
+        self.assertEqual(sum(1 for w in plan.values() if w[0] == "chata"), 12)
+
+    def test_badacz_pracuje_w_skryptorium(self):
+        from grafika.widok_osady import MIEJSCA
+        g = _gracz(0, {"skryptorium": 1}, [("Nessa", "badacz")])
+        plan = self.widok._rozklad(g)
+        self.assertEqual(self.widok._stanowisko(g.osadnicy[0], plan), MIEJSCA["skryptorium"])
+
+    def test_nowa_budowa_to_rusztowanie_na_polu_budynku(self):
+        from game import badania, budowa
+        from grafika.widok_osady import MIEJSCA
+        g = _gracz(0, {})
+        badania.stan(g)["zrobione"].append("obrobka_drewna")
+        g.surowce.update({"drewno": 99, "kamien": 99, "ruda": 99})
+        g.zloto = 99
+        budowa.zlec(g, "tartak")
+        budowa.plany(g)[0]["zrobiona"] = 1.5                       # z 3 dni: połowa
+        plan = self.widok._rozklad(g)
+        self.assertEqual(plan[MIEJSCA["tartak"]], ("budowa", "tartak", 50))
+
+    def test_rozbudowa_zostawia_budynek_i_dodaje_nakladke(self):
+        from game import badania, budowa
+        from grafika.widok_osady import MIEJSCA
+        g = _gracz(0, {"kuznia": 1})
+        badania.migruj_stary_zapis(g)
+        g.surowce.update({k: 99 for k in oboz.SUROWCE})
+        g.zloto = 999
+        budowa.zlec(g, "kuznia")
+        plan = self.widok._rozklad(g)
+        self.assertEqual(plan[MIEJSCA["kuznia"]][0], "budynek")
+        self.assertIn(MIEJSCA["kuznia"], self.widok._nakladki)
+
+    def test_chata_w_budowie_zajmuje_nastepny_wolny_kafel(self):
+        from game import budowa
+        g = _gracz(2, {})
+        g.zloto, g.surowce["drewno"], g.surowce["kamien"] = 99, 99, 99
+        budowa.zlec(g, "chata")
+        plan = self.widok._rozklad(g)
+        self.assertEqual(sum(1 for w in plan.values() if w[0] == "chata"), 2)
+        self.assertEqual(sum(1 for w in plan.values() if w[0] == "budowa"), 1)
+
+    def test_budowniczy_stoi_przy_rusztowaniu_a_bez_budowy_przy_ognisku(self):
+        from game import badania, budowa
+        from grafika.widok_osady import MIEJSCA
+        g = _gracz(0, {}, [("Bud", "budowniczy")])
+        self.assertEqual(self.widok._stanowisko(g.osadnicy[0], self.widok._rozklad(g)), (3, 3))
+        badania.stan(g)["zrobione"].append("obrobka_drewna")
+        g.surowce.update({"drewno": 99, "kamien": 99, "ruda": 99})
+        g.zloto = 99
+        budowa.zlec(g, "tartak")
+        plan = self.widok._rozklad(g)
+        self.assertEqual(self.widok._stanowisko(g.osadnicy[0], plan), MIEJSCA["tartak"])
+        self.assertIn(MIEJSCA["tartak"], self.widok._zablokowane(plan, 0))
+
 
 @unittest.skipIf(pygame is None, "brak pygame-ce")
 class TestRysowania(unittest.TestCase):
@@ -123,6 +182,21 @@ class TestRysowania(unittest.TestCase):
         self.widok = WidokOsady()
         self.pow = pygame.Surface((SZER, WYS))
         self.rozmiar = (SZER, WYS)
+
+    def test_rusztowania_i_skryptorium_sie_rysuja(self):
+        from game import badania, budowa
+        g = _gracz(3, {"skryptorium": 1, "kuznia": 1}, [("Bud", "budowniczy"), ("Nessa", "badacz")])
+        badania.migruj_stary_zapis(g)
+        g.surowce.update({k: 99 for k in oboz.SUROWCE})
+        g.zloto = 999
+        budowa.zlec(g, "kuznia")         # rozbudowa istniejącego
+        budowa.zlec(g, "tartak")         # nowy szkielet
+        budowa.zlec(g, "chata")
+        self.assertEqual(len(budowa.plany(g)), 3)
+        for plan in budowa.plany(g):
+            plan["zrobiona"] = plan["wymagana"] * 0.5
+        podpisy = self.widok.rysuj(self.pow, g, "oboz", 1.0)["podpisy"]
+        self.assertEqual(len(podpisy), 2)
 
     def test_pusty_oboz_sie_rysuje(self):
         wynik = self.widok.rysuj(self.pow, _gracz(0, {}), "oboz", 0.0)
