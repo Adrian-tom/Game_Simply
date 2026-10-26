@@ -46,6 +46,44 @@ namespace GraSimply.Logika
             Zasiej(DateTime.UtcNow.Ticks & 0x7FFFFFFF);
         }
 
+        /// <summary>
+        /// Jak <c>random.Random("tekst")</c> — zasiew napisem. CPython (wersja 2 zasiewu)
+        /// dokleja do bajtów UTF-8 ich skrót SHA-512, traktuje całość jako jedną wielką
+        /// liczbę (bajty od najstarszego) i rozbija ją na 32-bitowe słowa od najmłodszego.
+        /// Dzięki temu osadnik o tym samym imieniu ma te same predyspozycje w obu wersjach.
+        /// </summary>
+        public static Losowanie ZNapisu(string tekst)
+        {
+            byte[] bajty = System.Text.Encoding.UTF8.GetBytes(tekst ?? "");
+            byte[] skrot;
+            using (var sha = System.Security.Cryptography.SHA512.Create())
+            {
+                skrot = sha.ComputeHash(bajty);
+            }
+            var wszystko = new byte[bajty.Length + skrot.Length];
+            Buffer.BlockCopy(bajty, 0, wszystko, 0, bajty.Length);
+            Buffer.BlockCopy(skrot, 0, wszystko, bajty.Length, skrot.Length);
+
+            // Liczba big-endian → słowa little-endian; bez zer wiodących (jak bit_length w Pythonie).
+            int slow = (wszystko.Length + 3) / 4;
+            var klucz = new uint[slow];
+            for (int i = 0; i < wszystko.Length; i++)
+            {
+                int odKonca = wszystko.Length - 1 - i;            // numer bajtu od najmłodszego
+                klucz[odKonca / 4] |= (uint)wszystko[i] << (8 * (odKonca % 4));
+            }
+            int dlugosc = slow;
+            while (dlugosc > 1 && klucz[dlugosc - 1] == 0u)
+            {
+                dlugosc--;
+            }
+            Array.Resize(ref klucz, dlugosc);
+            var rng = new Losowanie(0);
+            rng.InitByArray(klucz);
+            rng._zuzyte = 0;
+            return rng;
+        }
+
         // ------------------------------------------------------------------ //
         //  Zasiew                                                             //
         // ------------------------------------------------------------------ //
@@ -231,6 +269,35 @@ namespace GraSimply.Logika
         public int Calkowita(int a, int b)
         {
             return Zakres(a, b + 1);
+        }
+
+        /// <summary>
+        /// Jak <c>random.triangular(low, high, mode)</c>: rozkład trójkątny z modą w <paramref name="moda"/>.
+        /// Zużywa jedno losowanie (<c>random()</c>), a pierwiastek liczy IEEE tak samo jak <c>math.sqrt</c>.
+        /// </summary>
+        public double Trojkatny(double dolna, double gorna, double moda)
+        {
+            double u = Losowa();
+            if (gorna == dolna)
+            {
+                return dolna;
+            }
+            double c = (moda - dolna) / (gorna - dolna);
+            if (u > c)
+            {
+                u = 1.0 - u;
+                c = 1.0 - c;
+                double tmp = dolna;
+                dolna = gorna;
+                gorna = tmp;
+            }
+            return dolna + (gorna - dolna) * Math.Sqrt(u * c);
+        }
+
+        /// <summary>Jak <c>random.uniform(a, b)</c>.</summary>
+        public double Rownomierny(double a, double b)
+        {
+            return a + (b - a) * Losowa();
         }
 
         /// <summary>Jak <c>random.choice(seq)</c>.</summary>

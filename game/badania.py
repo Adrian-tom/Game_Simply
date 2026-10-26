@@ -19,6 +19,7 @@ w całości, żeby jeden dzień bez wyboru nie kosztował pracy badaczy).
 """
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 from game import atrybuty, kalendarz, kompetencje
@@ -183,8 +184,10 @@ def projekt_dla_chat(gracz: "Gracz") -> str | None:
 def bonus_zajecia(gracz: "Gracz", zajecie: str) -> float:
     """Iloczyn premii z poznanych projektów dla danego zajęcia (np. płodozmian dla rolnika)."""
     m = 1.0
-    for pid in zrobione(gracz):
-        m *= PROJEKTY[pid]["bonus"].get(zajecie, 1.0)
+    poznane = zrobione(gracz)
+    for pid, p in PROJEKTY.items():          # w kolejności tabeli: iloczyn nie zależy od kolejności w zbiorze
+        if pid in poznane:
+            m *= p["bonus"].get(zajecie, 1.0)
     return m
 
 
@@ -261,7 +264,7 @@ def dni_do_konca(gracz: "Gracz") -> int | None:
     if tempo <= 0:
         return None
     zostalo = PROJEKTY[b["aktualny"]]["koszt"] - postep(gracz, b["aktualny"]) - b["zapas"]
-    return max(1, int(-(-max(0.0, zostalo) // tempo)))
+    return max(1, math.ceil(max(0.0, zostalo) / tempo))   # dzielenie, nie //: ten sam wzór daje to samo w C#
 
 
 def wybierz_projekt(gracz: "Gracz", pid: str) -> str:

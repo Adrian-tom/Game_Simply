@@ -12,7 +12,12 @@ namespace GraSimply.Logika
         public double Morale;
         public string Cecha;
         public int Chory;
-        public Dictionary<string, int> Dosw = new Dictionary<string, int>();
+
+        /// <summary>
+        /// Umiejętności 0–20 z pasjami (<see cref="Logika.Kompetencje"/>). Puste do pierwszego
+        /// odczytu — wtedy powstają z imienia osadnika, tak samo jak w Pythonie.
+        /// </summary>
+        public Dictionary<string, Umiejetnosc> Kompetencje;
     }
 
     /// <summary>Startowe statystyki i wzrosty klasy.</summary>
@@ -174,6 +179,12 @@ namespace GraSimply.Logika
         public int CzasWyjscia;
         public int Chaty = 2;
         public List<Osadnik> Osadnicy = new List<Osadnik>();
+
+        /// <summary>Plany budowy w toku (<see cref="Budowa"/>), w kolejności zlecenia.</summary>
+        public List<PlanBudowy> Budowy = new List<PlanBudowy>();
+
+        /// <summary>Stan nauki w skryptorium (<see cref="Badania"/>).</summary>
+        public StanBadan Badania = new StanBadan();
 
         /// <summary>
         /// Relacje między osadnikami: klucz to para imion posortowana

@@ -33,7 +33,7 @@ namespace GraSimply.Logika
     /// surowców — budowanie, ulepszanie i utrzymanie budynków należą
     /// do osady i czekają na etap 2.
     /// </summary>
-    public static class Oboz
+    public static partial class Oboz
     {
         public const int MaxZbiorowNaPolu = 2;
 
