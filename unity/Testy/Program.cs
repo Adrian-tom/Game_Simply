@@ -26,7 +26,9 @@ namespace GraSimply.Testy
                 string cel = argumenty.Length >= 2 ? argumenty[1] : "podglad";
                 if (argumenty.Length >= 3)
                 {
-                    Styl.Aktywny = argumenty[2] == "mroczny" ? Styl.Mroczny : Styl.Klasyczny;
+                    Styl.Aktywny = argumenty[2] == "mroczny" ? Styl.Mroczny
+                                 : argumenty[2] == "hybrydowy" ? Styl.Hybrydowy
+                                 : Styl.Klasyczny;
                 }
                 Console.WriteLine($"Renderuję klatki podglądu ({Styl.Aktywny.Nazwa}) do {cel}…");
                 return Podglad.Zapisz(cel);
@@ -39,9 +41,11 @@ namespace GraSimply.Testy
             TestyMapy.Uruchom(Wczytaj(katalog, "mapa.json"));
             TestyPostaci.Uruchom(Wczytaj(katalog, "postac.json"));
             TestyWalki.Uruchom(Wczytaj(katalog, "wrogowie.json"));
+            TestyRuchu.Uruchom(Wczytaj(katalog, "ruch.json"));
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
             TestyInterfejsu.Uruchom();
+            TestyHybrydy.Uruchom();
 
             string piksele = Path.Combine(katalog, "piksele.json");
             if (File.Exists(piksele))

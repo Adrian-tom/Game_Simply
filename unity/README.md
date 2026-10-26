@@ -6,10 +6,15 @@ i dalej jest grywalna (`python main.py`).
 
 ![Styl mroczny: mapa na cały ekran, strzałki ruchu, kule życia i many](podglad/mroczny/dzien.png)
 
-Gra ma dwa style grafiki, do wyboru w inspektorze komponentu *Silnik gry*
+Gra ma trzy style grafiki, do wyboru w inspektorze komponentu *Silnik gry*
 (pole **Styl grafiki**):
 
-* **Mroczny** (domyślny) — mroczne fantasy w języku obrazu pierwszego
+* **Hybrydowy** (domyślny) — pixelart i Mroczny w jednym obrazie: rzut skośny,
+  ciągły grunt gasnący w czerń, noc ze światłem tylko ognia i okien, wspólna
+  paleta i interfejs fantasy z Mrocznego, ale chaty, namiot i ludzie jako
+  pixelart. Jedyny styl ze **sceną osady z bliska**, po której chodzą osadnicy
+  (patrz niżej).
+* **Mroczny** — mroczne fantasy w języku obrazu pierwszego
   Fallouta: ciągły grunt w rzucie skośnym, obiekty jako prerenderowane bryły
   z cieniem, noc rozjaśniana tylko przez ogień i okna, jedna wspólna paleta.
   Interfejs leży na mapie: strzałki ruchu wokół postaci, kule życia i many
@@ -18,7 +23,13 @@ Gra ma dwa style grafiki, do wyboru w inspektorze komponentu *Silnik gry*
 * **Klasyczny** — pixelart jeden do jednego z wersji pythonowej: mapa
   obok konsoli z tekstem.
 
-| Wybór klasy | Podróż (dziennik na mapie) | Noc |
+Styl hybrydowy — plac osady w południe i w nocy:
+
+| Południe | Noc |
+| --- | --- |
+| ![](podglad/hybrydowy/osada-poludnie.png) | ![](podglad/hybrydowy/osada-noc.png) |
+
+| Wybór klasy (Mroczny) | Podróż, dziennik na mapie (Mroczny) | Noc (Mroczny) |
 | --- | --- | --- |
 | ![](podglad/mroczny/klasa.png) | ![](podglad/mroczny/podroz.png) | ![](podglad/mroczny/zmierzch.png) |
 
@@ -151,6 +162,43 @@ License 1.1) z polskimi znakami — plik i licencja leżą w
 `Assets/Resources/Kroje/`. Krój trzyma siatkę pikseli przy wielokrotnościach
 11 px, dlatego napisy mają 22 px. Styl klasyczny bierze czcionki systemowe.
 
+## Scena osady z bliska (styl hybrydowy)
+
+Gdy gracz jest w menu obozu (`Ekran.Widok` = „oboz”), styl hybrydowy rysuje
+plac osady zamiast mapy regionu: siatka 7×7, budynki na swoich miejscach,
+chaty na wolnych polach, palisada z bramą, ognisko pośrodku i bohater obok.
+Pozostałe style dalej pokazują mapę.
+
+**Osadnicy naprawdę chodzą.** Ruch liczy `Logika/Ruch.cs` — port
+`game/ruch.py`, bez UnityEngine: siatka, ścieżki A* (bez ścinania rogów),
+rezerwacje pól (nikt nie stoi na jednym polu z drugim) i własne miejsce przy
+celu, od frontu budynku. Doba sceny trwa 90 s i jest osobna od dnia świata:
+
+| Pora | Co robią |
+| --- | --- |
+| rano | idą do stanowisk (kto przy czym pracuje — jak w wersji pythonowej) |
+| praca | stoją przy warsztacie i kołyszą się w rytmie pracy |
+| wieczór | siadają przy ognisku albo idą do tawerny (stały wybór dla imienia) |
+| noc | śpią przy chatach — leżą |
+
+Chory nie opuszcza okolic domu. Przybysz wchodzi bramą, odejście usuwa postać.
+Plac ma **dziedziniec** przed bramą (dwa rzędy), bo przy komplecie budynków
+i chat na placu zostaje jedno wolne pole — nadmiar osadników czeka na zewnątrz,
+zamiast stać w murze. Po powrocie z innego widoku scena nadrabia do 12 s ruchu.
+
+**Jak powstaje obraz.** Grunt (`GruntOsady`) liczy fakturę we współrzędnych
+świata jak w Mrocznym, z ubitą ziemią pod osadą i czernią za obrzeżem; kolor
+zależy od pory roku (wiosna, lato, jesień, zima ze śniegiem). Sprite'y
+(`SpriteOsady`) są rysowane jak w klasycznym — domki z faktury deski i cegły,
+sylwetki z linijek tekstu — ale w barwach materiałów Mrocznego, powiększone
+×2 i z konturem. Potem na całą scenę idzie światło dnia, **a dopiero po nim**
+rozjaśniane jest to, co świeci samo (ognisko, okna, kuźnia, latarnia bohatera),
+i klatka wpada do wspólnej palety. Światło i paleta to ten sam kod co na mapie
+(`Mroczny/Oswietlenie.cs`, wydzielony z generatora regionu bez zmiany obrazu).
+
+F2 wymusza noc także na placu. Podpisy osadników rysuje warstwa interfejsu
+(`PulpitFantasy`), jak resztę tekstu.
+
 ## Testy
 
 ```bash
@@ -170,6 +218,14 @@ Testy porównują port z wersją pythonową — nie „mniej więcej”, tylko d
   w piksel**, bajt w bajt;
 * **postać**: progi EXP, statystyki startowe pięciu klas, dwanaście awansów
   każdej, kalendarz, karma, rany i głód;
+* **ruch osadników**: trasy A* **co do pola** i pozycje po kilkuset krokach
+  symulacji (cztery scenariusze, w tym zastawiony plac i budowa w trakcie
+  marszu) zgodne z Pythonem co do bitu, rytm doby i światło oraz zadania
+  osadników;
+* **styl hybrydowy**: układ placu, że nikt nie wchodzi w budynek ani nie stoi
+  na jednym polu z drugim (także na zastawionym placu), że noc jest ciemniejsza
+  od dnia i ognisko świeci, że scena w pulpicie zastępuje mapę tylko w tym
+  stylu;
 * **interfejs fantasy**: że ekrany prawdziwej gry rozkładają się na tytuł,
   opcje, kierunki ruchu i pytania, a złożona klatka ma przycisk dla każdej
   opcji; styl klasyczny pozostaje co do bajtu wersją pythonową;
@@ -198,6 +254,10 @@ python unity/narzedzia/podglad.py unity/podglad
 # styl mroczny — z ekranami imienia, wyboru klasy, karty postaci, obozu i podróży
 cd unity/Testy && dotnet run -- --podglad ../podglad/mroczny mroczny && cd ../..
 python unity/narzedzia/podglad.py unity/podglad/mroczny
+
+# styl hybrydowy — to samo co mroczny, plus scena osady o różnych porach doby i roku
+cd unity/Testy && dotnet run -- --podglad ../podglad/hybrydowy hybrydowy && cd ../..
+python unity/narzedzia/podglad.py unity/podglad/hybrydowy
 ```
 
 Obrazki lądują w `unity/podglad/`. Przydaje się, gdy zmieniasz coś w rysowaniu
@@ -213,10 +273,10 @@ zbieractwo i zwiad z testem k20.
 | --- | --- |
 | trwały świat, regiony, mgła wojny | walka i wrogowie (`combat.py`, `enemy.py`) |
 | pięć klas, atrybuty, awanse, testy k20 | rozmowy i dialogi (`rozmowy.py`, `dialogues.py`) |
-| kalendarz, pory roku, karma | osada: budynki, osadnicy, więzi, najazdy |
+| kalendarz, pory roku, karma | osada: budowanie, ekonomia, więzi, najazdy (sama scena osady jest — tylko w stylu hybrydowym) |
 | prowiant, głód, rany | rzemiosło, handel, questy |
 | zbieractwo i magazyn surowców | zapis i wczytywanie gry |
-| scena mapy, HUD, konsola | pochodzenie, talenty, myśli |
+| scena mapy, HUD, konsola, scena osady z chodzącymi osadnikami | pochodzenie, talenty, myśli |
 
 Miejsca, w których dojdą brakujące systemy, są w kodzie oznaczone komentarzem
 `Etap 2`. Wersja pythonowa ma je wszystkie i działa — port je dogania.

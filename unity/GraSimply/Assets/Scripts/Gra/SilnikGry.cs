@@ -32,12 +32,20 @@ namespace GraSimply.Gra
 
             /// <summary>Wygląd jeden do jednego z wersji pythonowej.</summary>
             Klasyczny,
+
+            /// <summary>
+            /// Pixelart i Mroczny w jednym: rzut, grunt, światło i interfejs
+            /// z Mrocznego, obiekty jako pixelart. Ma scenę osady z chodzącymi osadnikami.
+            /// Dopisany na końcu, żeby wartości zapisane w scenach się nie przesunęły.
+            /// </summary>
+            Hybrydowy,
         }
 
         [Header("Wygląd")]
-        [Tooltip("Mroczny — nowy styl w duchu Fallouta z motywem fantasy. " +
+        [Tooltip("Hybrydowy — pixelart w światłach Mrocznego, ze sceną osady i chodzącymi osadnikami. " +
+                 "Mroczny — styl w duchu Fallouta z motywem fantasy. " +
                  "Klasyczny — pixelart z wersji pythonowej.")]
-        public WyborStylu StylGrafiki = WyborStylu.Mroczny;
+        public WyborStylu StylGrafiki = WyborStylu.Hybrydowy;
 
         [Header("Krój pisma")]
         [Tooltip("Czcionki systemowe o stałej szerokości, w kolejności prób — " +
@@ -123,7 +131,9 @@ namespace GraSimply.Gra
             // po co chodzic 144 razy na sekunde.
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = Mathf.Max(15, KlatekNaSekunde);
-            Styl.Aktywny = StylGrafiki == WyborStylu.Klasyczny ? Styl.Klasyczny : Styl.Mroczny;
+            Styl.Aktywny = StylGrafiki == WyborStylu.Klasyczny ? Styl.Klasyczny
+                         : StylGrafiki == WyborStylu.Mroczny ? Styl.Mroczny
+                         : Styl.Hybrydowy;
             _pulpit = new Pulpit();
             _tekstura = new Texture2D(Pulpit.Szerokosc, Pulpit.Wysokosc, TextureFormat.RGBA32, false)
             {
@@ -401,7 +411,8 @@ namespace GraSimply.Gra
             }
 
             List<Napis> napisy = _pulpit.Zloz(m.Pola, _czas, m.Hud, m.Region, m.GraczXy,
-                                              m.Klasa, m.WszystkoOdkryte, m.Osada, konsola, mysz);
+                                              m.Klasa, m.WszystkoOdkryte, m.Osada, konsola, mysz,
+                                              string.IsNullOrEmpty(m.Widok) ? null : m.Plac);
             _tekstura.LoadRawTextureData(_pulpit.Klatka.Dane);
             _tekstura.Apply(false);
 

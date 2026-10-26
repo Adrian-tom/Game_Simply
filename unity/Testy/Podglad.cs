@@ -92,8 +92,131 @@ namespace GraSimply.Testy
                                   $"{napisy.Count} napisów");
             }
 
+            if (Styl.Aktywny.Generator is IRysownikOsady)
+            {
+                ZapiszOsady(katalog);
+            }
+
             Console.WriteLine($"Gotowe. Zamień na PNG: python unity/narzedzia/podglad.py {katalog}");
             return 0;
+        }
+
+        // ------------------------------------------------------------------ //
+        //  Scena osady z bliska (styl hybrydowy)                              //
+        // ------------------------------------------------------------------ //
+
+        private static readonly (string Imie, string Zajecie, bool Chory)[] Mieszkancy =
+        {
+            ("Jagna", "rolnik", false), ("Olek", "drwal", false), ("Wit", "straznik", false),
+            ("Hela", "handlarz", false), ("Torin", "tracz", false), ("Mila", "uzdrowiciel", true),
+            ("Bram", "rzemieslnik", false), ("Nessa", "zielarz", false), ("Gareth", "kamieniarz", false),
+        };
+
+        /// <summary>
+        /// Klatki sceny osady w kilku porach doby i roku. Ruch liczy się na
+        /// prawdziwej symulacji: scena „przewijana” skokami po 12 s, jak po
+        /// powrocie z innego widoku, żeby ludzie byli tam, gdzie o tej porze są.
+        /// </summary>
+        private static void ZapiszOsady(string katalog)
+        {
+            const double dzien = RytmDnia.DlugoscDnia;
+            double T(double u) => dzien * 2 + u * dzien - Grafika.Hybryda.ScenaOsady.PrzesuniecieDnia;
+
+            var male = new Dictionary<string, int> { { "dom", 1 }, { "farma", 1 } };
+            var srednie = new Dictionary<string, int>
+            {
+                { "dom", 1 }, { "kuznia", 1 }, { "tawerna", 1 }, { "farma", 2 }, { "tartak", 1 },
+                { "palisada", 1 }, { "targ", 1 }, { "lecznica", 1 },
+            };
+            var duze = new Dictionary<string, int>
+            {
+                { "dom", 2 }, { "kuznia", 2 }, { "huta", 1 }, { "spichlerz", 1 }, { "karawanseraj", 1 },
+                { "tartak", 2 }, { "sklep", 1 }, { "warsztat", 1 }, { "stajnie", 1 }, { "laboratorium", 1 },
+                { "tawerna", 2 }, { "lecznica", 1 }, { "targ", 1 }, { "wieza", 2 }, { "farma", 3 },
+                { "palisada", 2 },
+            };
+
+            var klatki = new (string Nazwa, double U, int CzasGry, int Chaty, Dictionary<string, int> Budynki,
+                              int Ludzi, bool Zmierzch)[]
+            {
+                ("osada-rano", 0.06, 40, 4, srednie, 7, false),
+                ("osada-poludnie", 0.35, 40, 4, srednie, 7, false),
+                ("osada-wieczor", 0.72, 40, 4, srednie, 7, false),
+                ("osada-noc", 0.93, 40, 4, srednie, 7, false),
+                ("osada-zima", 0.35, 95, 4, srednie, 7, false),
+                ("osada-jesien", 0.35, 70, 4, srednie, 7, false),
+                ("osada-pelna", 0.35, 40, 12, duze, 9, false),
+                ("osada-pelna-noc", 0.93, 40, 12, duze, 9, false),
+                ("osada-obozek", 0.35, 5, 1, male, 2, false),
+                ("osada-f2", 0.35, 40, 4, srednie, 7, true),
+            };
+            foreach ((string nazwa, double u, int czasGry, int chaty, Dictionary<string, int> budynki,
+                      int ludzi, bool zmierzch) in klatki)
+            {
+                var pulpit = new Pulpit();
+                pulpit.Scena.Zmierzch = zmierzch;
+                Migawka m = ScenkaOsady(czasGry, chaty, budynki, ludzi);
+                double cel = T(u);
+                List<Napis> napisy = null;
+                // Przewijamy skokami co 12 s — jak scena, która wraca po przerwie.
+                for (double t = cel - 48; t <= cel + 1e-9; t += 12)
+                {
+                    napisy = pulpit.Zloz(m.Pola, t, m.Hud, m.Region, m.GraczXy, m.Klasa, false, m.Osada,
+                                         default, null, m.Plac);
+                }
+                // Ostatnie kilka klatek zwykłym tempem — ruch bez skoku.
+                for (int i = 1; i <= 6; i++)
+                {
+                    napisy = pulpit.Zloz(m.Pola, cel + i * 0.05, m.Hud, m.Region, m.GraczXy, m.Klasa, false,
+                                         m.Osada, default, null, m.Plac);
+                }
+                ZapiszKlatke(katalog, nazwa, pulpit, napisy);
+            }
+        }
+
+        private static Migawka ScenkaOsady(int czasGry, int chaty, Dictionary<string, int> budynki, int ludzi)
+        {
+            var gracz = new Gracz("Halina", "Druid", new Losowanie(2024)) { Seed = 7 };
+            Mapa.ZapewnijMape(gracz);
+            gracz.Chaty = chaty;
+            foreach (KeyValuePair<string, int> b in budynki)
+            {
+                gracz.PoziomyBudynkow[b.Key] = b.Value;
+            }
+            gracz.Poziom = 4;
+            gracz.Hp = (int)(gracz.MaxHp * 0.62);
+            gracz.Mana = (int)(gracz.MaxMana * 0.45);
+            gracz.Zloto = 148;
+            gracz.Czas = czasGry;
+            gracz.Surowce["drewno"] = 24;
+            gracz.Surowce["kamien"] = 11;
+            for (int i = 0; i < ludzi && i < Mieszkancy.Length; i++)
+            {
+                gracz.Osadnicy.Add(new Osadnik
+                {
+                    Imie = Mieszkancy[i].Imie, Zajecie = Mieszkancy[i].Zajecie,
+                    Chory = Mieszkancy[i].Chory ? 3 : 0, Morale = i == 3 ? 28 : 62,
+                });
+            }
+            var ekran = new Ekran { Gracz = gracz, Widok = "oboz" };
+            return ekran.Migawke();
+        }
+
+        private static void ZapiszKlatke(string katalog, string nazwa, Pulpit pulpit, List<Napis> napisy)
+        {
+            File.WriteAllBytes(Path.Combine(katalog, nazwa + ".raw"), pulpit.Klatka.Dane);
+            var opis = new StringBuilder();
+            opis.AppendLine($"{Pulpit.Szerokosc} {Pulpit.Wysokosc} {Styl.Aktywny.Kroj ?? "-"}");
+            foreach (Napis n in napisy)
+            {
+                string tekst = Styl.Aktywny.Emoji ? n.Tekst : Grafika.Konsola.BezEmoji(n.Tekst);
+                string alfa = n.Kolor.A < 255 ? $",{n.Kolor.A}" : "";
+                opis.AppendLine($"{n.X}\t{n.Y}\t{n.Krój}\t{n.Kolor.R},{n.Kolor.G}," +
+                                $"{n.Kolor.B}{alfa}\t{tekst}");
+            }
+            File.WriteAllText(Path.Combine(katalog, nazwa + ".napisy"), opis.ToString(),
+                              new UTF8Encoding(false));
+            Console.WriteLine($"  {nazwa}: {pulpit.Klatka.Dane.Length} bajtów, {napisy.Count} napisów");
         }
 
         /// <summary>

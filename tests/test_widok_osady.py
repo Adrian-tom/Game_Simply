@@ -287,6 +287,23 @@ class TestRuchuWScenie(unittest.TestCase):
         self.widok.rysuj(self.pow, self.gracz, "osada", 2.0)    # zegar okna wystartował od nowa
         self.assertEqual(przed, self._pozycje())
 
+    def test_zastawiony_plac_nie_zbija_ludzi_na_jednym_polu(self):
+        # Komplet budynków i chat zostawia na placu jedno wolne pole. Reszta
+        # osadników musi czekać na dziedzińcu przed bramą, nie we wnętrzu budynków.
+        from game.oboz import BUDYNKI
+        from game.osada import MAX_CHATY
+        g = _gracz(MAX_CHATY, {k: w["max"] for k, w in BUDYNKI.items()},
+                   [(f"Osada{i}", "drwal") for i in range(MAX_CHATY)])
+        zablokowane = self.widok._zablokowane(self.widok._rozklad(g), 2)
+        t = 0.0
+        for _ in range(900):
+            self.widok.rysuj(self.pow, g, "osada", t)
+            pola = [self.widok._ruch.postacie[o["imie"]].pole for o in g.osadnicy]
+            self.assertEqual(len(set(pola)), len(pola), f"t={t}")
+            for pole in pola:
+                self.assertNotIn(pole, zablokowane, f"t={t}")
+            t += 0.1
+
     def test_noc_jest_ciemniejsza_od_dnia(self):
         from game.ruch import DLUGOSC_DNIA
         from grafika.widok_osady import PRZESUNIECIE_DNIA

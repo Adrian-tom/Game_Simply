@@ -237,6 +237,39 @@ class TestRuchu(unittest.TestCase):
             return [(round(r.pozycja(i)[0], 4), round(r.pozycja(i)[1], 4)) for i in sorted(r.postacie)]
         self.assertEqual(przebieg(), przebieg())
 
+    def test_nie_wybiera_wolnego_pola_za_murem(self):
+        # Wolne pole wprost przed celem leży w zamkniętej kieszeni. Gdyby miejsce
+        # wybierano bez sprawdzenia drogi, postać stałaby w miejscu, a nie dochodziła.
+        kieszen = {(2, 2), (3, 2), (4, 2), (2, 3), (4, 3), (2, 4), (3, 4), (4, 4)}
+        r = Ruch()
+        r.przebuduj(kieszen)
+        r.dodaj("Olek", (0, 0))
+        r.ustaw_cel("Olek", (3, 4))        # front celu to (3, 5), a „za murem” — (3, 3)
+        _symuluj(r, 12)
+        self.assertTrue(r.dotarl("Olek"))
+        self.assertNotEqual(r.postacie["Olek"].pole, (3, 3))
+        r.ustaw_cel("Olek", (3, 2))        # od frontu (3, 3) — kieszeń, więc musi obejść
+        _symuluj(r, 12)
+        self.assertTrue(r.dotarl("Olek"))
+        px, py = r.postacie["Olek"].pole
+        self.assertNotEqual((px, py), (3, 3))
+        # Stoi przy nowym celu (a nie został przy poprzednim, bo droga do kieszeni nie istnieje).
+        self.assertLessEqual(max(abs(px - 3), abs(py - 2)), 1, (px, py))
+
+    def test_zastawiony_plac_nie_zbija_postaci_na_jednym_polu(self):
+        # Jedno wolne pole i brama na dziewięciu ludzi: nadmiar czeka na dziedzińcu.
+        zablokowane = {(x, y) for x in range(7) for y in range(7)} - {(3, 5), (3, 6)}
+        zablokowane |= {(x, y) for y in range(9) for x in range(7, 9)}
+        r = Ruch(9)
+        r.przebuduj(zablokowane)
+        for i in range(9):
+            r.dodaj(f"Osada{i}", (3, 5))
+            r.ustaw_cel(f"Osada{i}", (3, 5))
+        _symuluj(r, 15)
+        pola = [p.pole for p in r.postacie.values()]
+        self.assertEqual(len(set(pola)), len(pola), pola)
+        self.assertFalse(set(pola) & zablokowane)
+
     def test_dystans_rosnie_tylko_w_marszu(self):
         r = Ruch()
         r.dodaj("Olek", (1, 1))

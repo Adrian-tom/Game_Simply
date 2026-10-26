@@ -19,7 +19,7 @@ namespace GraSimply.Grafika.Mroczny
     /// kluczowanego tym, co na mapie widać. Co klatkę dochodzą tylko rzeczy
     /// żywe: płomienie, postać, światło i paleta.
     /// </summary>
-    public sealed class GeneratorMroczny : IRysownikRegionu
+    public sealed class GeneratorMroczny : IRysownikRegionu, IKadrPostaci
     {
         public int SzerSceny => Rzut.SzerSceny;
         public int WysSceny => Rzut.WysSceny;
@@ -40,16 +40,6 @@ namespace GraSimply.Grafika.Mroczny
         /// <summary>Ile klatek ma woda bagien — tyle wersji gruntu trzymamy.</summary>
         private const int KlatkiWody = 3;
 
-        /// <summary>Światło nocy: przyciemnienie bez źródeł, lekko w stronę błękitu.</summary>
-        private static readonly (double R, double G, double B) Noc = (0.36, 0.37, 0.47);
-
-        private sealed class Swiatlo
-        {
-            public double X, Y, Promien;
-            public (double R, double G, double B) Kolor;
-            public bool Migocze;
-        }
-
         /// <summary>Region złożony do bufora: obraz bez rzeczy żywych i to, co trzeba do nich dorysować.</summary>
         private sealed class Sklad
         {
@@ -61,8 +51,6 @@ namespace GraSimply.Grafika.Mroczny
         private readonly Dictionary<string, SpriteBryly> _sprite = new Dictionary<string, SpriteBryly>();
         private readonly Dictionary<string, Sklad> _sklady = new Dictionary<string, Sklad>();
         private readonly Dictionary<string, SpriteBryly> _bohaterowie = new Dictionary<string, SpriteBryly>();
-        private Kwantyzator _kwantyzator;
-        private bool[] _komorkiSwiecace;
 
         // ------------------------------------------------------------------ //
         //  Klatka                                                             //
@@ -620,111 +608,16 @@ namespace GraSimply.Grafika.Mroczny
         //  Światło i paleta                                                   //
         // ------------------------------------------------------------------ //
 
-        /// <summary>
-        /// Noc: każdy piksel mnożony przez natężenie — otoczenie albo najjaśniejsze
-        /// z pobliskich świateł (max, nie suma: dwa ogniska obok siebie nie
-        /// prześwietlają ziemi). Barwy samoświecące przepuszczamy bez zmian.
-        /// </summary>
+        /// <summary>Noc: patrz <see cref="Oswietlenie.Zastosuj"/> — wspólne dla regionu i sceny osady.</summary>
         private void Oswietl(Plotno cel, List<Swiatlo> swiatla, double t)
         {
-            int szer = cel.Szerokosc, wys = cel.Wysokosc;
-            var natR = new float[szer * wys];
-            var natG = new float[szer * wys];
-            var natB = new float[szer * wys];
-            for (int i = 0; i < natR.Length; i++)
-            {
-                natR[i] = (float)Noc.R;
-                natG[i] = (float)Noc.G;
-                natB[i] = (float)Noc.B;
-            }
-            foreach (Swiatlo s in swiatla)
-            {
-                double r = s.Promien;
-                if (s.Migocze)
-                {
-                    r *= 1 + Math.Sin(t * 9 + s.X) * 0.04 + Math.Sin(t * 13.7 + s.Y) * 0.03;
-                }
-                int x0 = Math.Max(0, (int)(s.X - r)), x1 = Math.Min(szer - 1, (int)(s.X + r));
-                // Na gruncie światło rozlewa się w spłaszczoną elipsę, jak sam rzut.
-                int y0 = Math.Max(0, (int)(s.Y - r * 0.62)), y1 = Math.Min(wys - 1, (int)(s.Y + r * 0.62));
-                for (int y = y0; y <= y1; y++)
-                {
-                    double dy = (y - s.Y) / 0.62;
-                    for (int x = x0; x <= x1; x++)
-                    {
-                        double dx = x - s.X;
-                        double d = Math.Sqrt(dx * dx + dy * dy) / r;
-                        if (d >= 1)
-                        {
-                            continue;
-                        }
-                        double f = 1 - d;
-                        f = f * f * (3 - 2 * f); // gładkie wygaszenie, bez twardego kręgu
-                        int i = y * szer + x;
-                        natR[i] = Math.Max(natR[i], (float)(s.Kolor.R * f));
-                        natG[i] = Math.Max(natG[i], (float)(s.Kolor.G * f));
-                        natB[i] = Math.Max(natB[i], (float)(s.Kolor.B * f));
-                    }
-                }
-            }
-            bool[] swiecace = KomorkiSwiecace();
-            byte[] dane = cel.Dane;
-            for (int i = 0; i < natR.Length; i++)
-            {
-                int j = i * 4;
-                byte r = dane[j], g = dane[j + 1], b = dane[j + 2];
-                if (swiecace[((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3)] && Materialy.CzySamoswiecaca(r, g, b))
-                {
-                    continue;
-                }
-                dane[j] = (byte)Math.Min(255, r * natR[i]);
-                dane[j + 1] = (byte)Math.Min(255, g * natG[i]);
-                dane[j + 2] = (byte)Math.Min(255, b * natB[i]);
-            }
+            Oswietlenie.Zastosuj(cel, swiatla, t, Oswietlenie.Noc);
         }
 
-        /// <summary>Komórki RGB555, w które wpada jakaś barwa samoświecąca — szybkie sito przed zbiorem.</summary>
-        private bool[] KomorkiSwiecace()
-        {
-            if (_komorkiSwiecace == null)
-            {
-                var k = new bool[32 * 32 * 32];
-                foreach (int c in Materialy.Samoswiecace)
-                {
-                    int r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
-                    k[((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3)] = true;
-                }
-                _komorkiSwiecace = k;
-            }
-            return _komorkiSwiecace;
-        }
-
-        /// <summary>Paleta główna: wszystkie rampy materiałów plus czerń. Ogień i światła nietykalne.</summary>
+        /// <summary>Paleta główna stylu — jedna na cały proces.</summary>
         private Kwantyzator Kwantyzator()
         {
-            if (_kwantyzator == null)
-            {
-                var barwy = new List<Barwa> { new Barwa(0, 0, 0) };
-                foreach (Barwa[] rampa in Materialy.WszystkieRampy())
-                {
-                    barwy.AddRange(rampa);
-                }
-                // Przyciemnione wersje ramp — noc i cienie potrzebują stopni poniżej
-                // najciemniejszego stopnia materiału, inaczej wszystko zlewa się w jedną barwę.
-                foreach (Barwa[] rampa in Materialy.WszystkieRampy())
-                {
-                    foreach (Barwa b in rampa)
-                    {
-                        if (!Materialy.CzySamoswiecaca(b.R, b.G, b.B))
-                        {
-                            barwy.Add(Paleta.Siatka6(b.R * 0.5, b.G * 0.5, b.B * 0.55));
-                            barwy.Add(Paleta.Siatka6(b.R * 0.28, b.G * 0.28, b.B * 0.34));
-                        }
-                    }
-                }
-                _kwantyzator = new Kwantyzator(barwy, Materialy.Samoswiecace);
-            }
-            return _kwantyzator;
+            return Oswietlenie.Paleta();
         }
     }
 }

@@ -121,6 +121,11 @@ _OSADNIK_KROK = _OSADNIK[:8] + [
     ".o...o.",
 ]
 
+# Siatka ruchu jest większa od placu: dwa rzędy dziedzińca przed bramą. Na
+# zastawionym placu (komplet budynków i chat) nie byłoby gdzie stanąć, a ludzie
+# lądowaliby na jednym polu — nadmiar czeka więc przed bramą.
+ROZMIAR_RUCHU = SIATKA + 2
+
 # Gdzie stoi ognisko, gdzie brama od frontu i przez które pole przechodzi bohater.
 OGNISKO = (3, 3)
 BRAMA = (SIATKA // 2, SIATKA - 1)
@@ -183,7 +188,7 @@ class WidokOsady:
         self._blask_baza = {n: poswiata(PROMIEN_BLASKU[n], KOLOR_BLASKU[n]) for n in KOLOR_BLASKU}
         self._blask_pamiec: dict = {}
         self._swiecenia: list[tuple[str, int, int]] = []   # co świeci w tej klatce
-        self._ruch = ruch.Ruch()
+        self._ruch = ruch.Ruch(ROZMIAR_RUCHU)
         self._ostatni_t: float | None = None
         self._cien = pygame.Surface((12, 5), pygame.SRCALPHA)
         pygame.draw.ellipse(self._cien, (0, 0, 0, 90), self._cien.get_rect())
@@ -513,13 +518,17 @@ class WidokOsady:
         """Pola, przez które nie da się przejść: budynki, ognisko, bohater i obwód placu.
 
         Pole uprawne jest płaskie — po zagonach się chodzi. Obwód zostaje
-        otwarty tylko w bramie od frontu.
+        otwarty tylko w bramie od frontu, za którą jest dziedziniec.
         """
         zablokowane = {pole for pole, w in plan.items() if w[0] in ("budynek", "chata", "namiot")}
         zablokowane |= {OGNISKO, POLE_BOHATERA}
         for i in range(SIATKA):
             zablokowane |= {(i, 0), (i, SIATKA - 1), (0, i), (SIATKA - 1, i)}
         zablokowane.discard(BRAMA)
+        # Dziedziniec to dwa rzędy pod bramą; reszta siatki poza placem jest zamknięta.
+        for y in range(ROZMIAR_RUCHU):
+            for x in range(SIATKA, ROZMIAR_RUCHU):
+                zablokowane.add((x, y))
         return zablokowane
 
     def _domy(self, plan: dict) -> list[tuple[int, int]]:

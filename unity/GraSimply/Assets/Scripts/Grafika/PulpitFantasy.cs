@@ -94,11 +94,20 @@ namespace GraSimply.Grafika
         /// Dokłada interfejs do narysowanej już sceny i powiększa całość do
         /// <paramref name="cel"/>. Zwraca napisy (piksele 1280×720).
         /// </summary>
+        /// <param name="podpisy">Imiona osadników nad głowami (scena osady) — w pikselach natywnych sceny.</param>
         public List<Napis> Zloz(Plotno cel, StanHud hud, string klasa, (int X, int Y)? graczXy,
-                                StanKonsoli konsola, (int X, int Y)? mysz)
+                                StanKonsoli konsola, (int X, int Y)? mysz,
+                                IReadOnlyList<PodpisOsadnika> podpisy = null)
         {
             _napisy.Clear();
             _przyciski.Clear();
+            if (podpisy != null)
+            {
+                foreach (PodpisOsadnika p in podpisy)
+                {
+                    TekstSrodek(p.Tekst, p.X, p.Y - Wiersz + 2, p.Kolor);
+                }
+            }
             _mysz = mysz.HasValue ? (mysz.Value.X / K, mysz.Value.Y / K) : ((int, int)?)null;
 
             EkranGry ekran = EkranGry.Z(konsola.Linie, konsola.Pyta, konsola.CzekaNaEnter);
@@ -338,7 +347,7 @@ namespace GraSimply.Grafika
 
         private void Strzalki(EkranGry ekran)
         {
-            if (!(Styl.Aktywny.Generator is GeneratorMroczny gen) || !gen.PozycjaPostaci.HasValue)
+            if (!(Styl.Aktywny.Generator is IKadrPostaci gen) || !gen.PozycjaPostaci.HasValue)
             {
                 StosPrzyciskow(ekran.Opcje.FindAll(o => o.Kierunek.HasValue), null, false);
                 return;

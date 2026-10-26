@@ -131,6 +131,7 @@ namespace GraSimply.Logika
                 GraczXy = (g.MapaX, g.MapaY),
                 Klasa = g.Klasa,
                 Osada = (g.Chaty, g.PoziomBudynku("palisada"), g.PoziomBudynku("wieza")),
+                Plac = string.IsNullOrEmpty(widok) ? null : Migawka.PlacZGracza(g),
                 Widok = widok,
                 Rozmowa = rozmowa,
             };

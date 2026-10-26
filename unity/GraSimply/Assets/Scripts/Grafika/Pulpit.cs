@@ -131,17 +131,28 @@ namespace GraSimply.Grafika
         /// </summary>
         /// <param name="konsola">Treść konsoli — potrzebna tylko układowi fantasy, który sam ją rozkłada.</param>
         /// <param name="mysz">Kursor w pikselach pulpitu — podświetla przycisk pod nim (układ fantasy).</param>
+        /// <param name="plac">
+        /// Osada do narysowania z bliska. Gdy jest ustawiona, a styl umie taką scenę
+        /// (<see cref="IRysownikOsady"/>), plac zastępuje mapę regionu; pozostałe style
+        /// dalej pokazują mapę.
+        /// </param>
         public List<Napis> Zloz(PoleDoRysunku[][] pola, double t, StanHud hud,
                                 (int X, int Y) region = default,
                                 (int X, int Y)? graczXy = null, string klasa = null,
                                 bool wszystkoOdkryte = false,
                                 (int Chaty, int Palisada, int Wieza)? osada = null,
-                                StanKonsoli konsola = default, (int X, int Y)? mysz = null)
+                                StanKonsoli konsola = default, (int X, int Y)? mysz = null,
+                                StanOsady plac = null)
         {
             ScenaMapy scena = Scena;
             if (scena.Styl.UkladFantasy)
             {
                 _fantasy = _fantasy ?? new PulpitFantasy();
+                if (plac != null && scena.Styl.Generator is IRysownikOsady rysownikOsady)
+                {
+                    rysownikOsady.RysujOsade(_fantasy.Natywne, plac, t, scena.Zmierzch);
+                    return _fantasy.Zloz(_plotno, hud, klasa, graczXy, konsola, mysz, rysownikOsady.Podpisy);
+                }
                 scena.Rysuj(_fantasy.Natywne, pola, t, region, graczXy, klasa, wszystkoOdkryte, osada);
                 return _fantasy.Zloz(_plotno, hud, klasa, graczXy, konsola, mysz);
             }

@@ -349,12 +349,192 @@ def wzorce_wrogow() -> dict:
     }
 
 
+# ------------------------------------------------------------------ #
+#  Ruch osadników                                                      #
+# ------------------------------------------------------------------ #
+
+# Plac jak w scenie osady: budynki, ognisko, pole bohatera i obwód z bramą.
+_PLAC_BLOK = sorted({(3, 3), (3, 4), (1, 1), (2, 1), (4, 1), (5, 1), (1, 2), (5, 2), (1, 3),
+                     (5, 3), (2, 2), (4, 2), (2, 3), (4, 3), (2, 4), (4, 4)}
+                    | {(i, 0) for i in range(7)} | {(i, 6) for i in range(7) if i != 3}
+                    | {(0, i) for i in range(7)} | {(6, i) for i in range(7)})
+
+
+def _symuluj_ruch(scen: dict) -> list[dict]:
+    """Odtwarza scenariusz na ``game.ruch`` i zwraca próbki pozycji."""
+    from game.ruch import Ruch
+
+    r = Ruch(scen.get("rozmiar", 7))
+    r.przebuduj({tuple(p) for p in scen["zablokowane"]})
+    for imie, pole in scen["postacie"]:
+        r.dodaj(imie, tuple(pole))
+    probki = []
+    for krok in range(scen["kroki"]):
+        for pol in scen["polecenia"]:
+            if pol["krok"] == krok:
+                r.ustaw_cel(pol["imie"], tuple(pol["pole"]), pol["czynnosc"])
+        for pr in scen.get("przebudowy", []):
+            if pr["krok"] == krok:
+                r.przebuduj({tuple(p) for p in pr["zablokowane"]})
+        r.aktualizuj(scen["dt"])
+        if (krok + 1) % scen["co"] == 0:
+            probki.append({
+                "krok": krok + 1,
+                "pozycje": {i: [r.postacie[i].x, r.postacie[i].y] for i in sorted(r.postacie)},
+                "pola": {i: list(r.postacie[i].pole) for i in sorted(r.postacie)},
+                "dotarl": {i: r.dotarl(i) for i in sorted(r.postacie)},
+            })
+    return probki
+
+
+def wzorce_ruchu() -> dict:
+    """Ścieżki A*, rytm doby i przebiegi symulacji — czysta logika, bez pygame."""
+    from game import ruch
+
+    # --- ścieżki ---
+    przypadki = []
+    mur = [(2, 0), (2, 1), (2, 2), (2, 3), (2, 4)]
+    zamkniety = [(2, 2), (3, 2), (4, 2), (2, 3), (4, 3), (2, 4), (3, 4), (4, 4)]
+    for opis, blok, start, cel, dodatkowo in (
+        ("prosta", [], (0, 0), (4, 0), []),
+        ("po_skosie", [], (0, 0), (3, 3), []),
+        ("wokol_muru", mur, (0, 1), (4, 1), []),
+        ("zamkniety_cel", zamkniety, (0, 0), (3, 3), []),
+        ("cel_zablokowany", [(3, 3)], (0, 0), (3, 3), []),
+        ("rog_nie_do_scinania", [(1, 0), (0, 1)], (0, 0), (1, 1), []),
+        ("start_rowny_celowi", [], (2, 2), (2, 2), []),
+        ("plac_do_ogniska", _PLAC_BLOK, (3, 5), (2, 3), []),
+        ("plac_przez_brame", _PLAC_BLOK, (3, 6), (1, 4), []),
+        ("z_dodatkowymi", [], (0, 3), (6, 3), [(1, 3), (2, 3), (3, 3)]),
+        ("zygzak", [(1, 0), (1, 1), (1, 2), (3, 6), (3, 5), (3, 4), (3, 3)], (0, 0), (6, 6), []),
+    ):
+        s = ruch.Siatka(7, set(blok))
+        trasa = ruch.sciezka(s, start, cel, set(dodatkowo))
+        przypadki.append({
+            "opis": opis, "zablokowane": [list(b) for b in blok], "start": list(start),
+            "cel": list(cel), "dodatkowo": [list(d) for d in dodatkowo],
+            "trasa": None if trasa is None else [list(p) for p in trasa],
+        })
+
+    najblizsze = []
+    for blok, pole in (([(3, 3)], (3, 3)), ([], (2, 2)), ([(3, 3), (3, 4), (2, 3)], (3, 3)),
+                       (_PLAC_BLOK, (1, 1))):
+        n = ruch.Siatka(7, set(blok)).najblizsze_wolne(pole)
+        najblizsze.append({"zablokowane": [list(b) for b in blok], "pole": list(pole),
+                           "wynik": None if n is None else list(n)})
+
+    # --- rytm ---
+    czasy = [0.0, 3.5, 8.99, 9.0, 20.0, 35.0, 55.7, 55.8, 60.0, 73.0, 73.8, 80.0, 89.9,
+             90.0, 135.5, 1000.25]
+    # Światło liczy cosinus z biblioteki systemowej — Windows i Linux mogą się różnić o ostatni
+    # bit, a CI porównuje zapisany plik z wygenerowanym, więc zaokrąglamy (test ma tolerancję 1e-9).
+    rytm = [{"t": t, "faza": ruch.faza(t), "swiatlo": round(ruch.swiatlo(t), 10)} for t in czasy]
+    zadania = []
+    for chory in (0, 1):
+        for imie in ("Jagna", "Olek", "Wit", "Zofka", "Łukasz"):
+            for pora in ("rano", "praca", "wieczor", "noc"):
+                for tawerna in (None, (5, 4)):
+                    pole, czynnosc = ruch.zadanie({"imie": imie, "chory": chory}, (1, 1), (2, 2),
+                                                  (3, 3), tawerna, pora)
+                    zadania.append({
+                        "imie": imie, "chory": chory, "pora": pora,
+                        "tawerna": None if tawerna is None else list(tawerna),
+                        "pole": list(pole), "czynnosc": czynnosc,
+                    })
+    losy = {imie: ruch.los_imienia(imie) for imie in
+            ("Jagna", "Olek", "Wit", "Zofka", "Łukasz", "Ala", "")}
+
+    # --- symulacje ---
+    symulacje = []
+    wszyscy = [["Ala", [0, 5]], ["Bram", [1, 5]], ["Cira", [2, 5]], ["Dan", [4, 5]],
+               ["Ewa", [5, 5]], ["Fil", [3, 6]]]
+    symulacje.append({
+        "nazwa": "wszyscy_do_ogniska", "rozmiar": 7, "zablokowane": [list(b) for b in _PLAC_BLOK],
+        "postacie": wszyscy, "dt": 0.05, "kroki": 400, "co": 20, "przebudowy": [],
+        "polecenia": [{"krok": 0, "imie": i, "pole": [3, 3], "czynnosc": "ognisko"}
+                      for i, _ in wszyscy],
+    })
+    mur2 = sorted({(x, y) for x in range(7) for y in range(7) if y not in (3, 4)})
+    symulacje.append({
+        "nazwa": "dwupolowe_przejscie", "rozmiar": 7, "zablokowane": [list(b) for b in mur2],
+        "postacie": [["Ala", [0, 3]], ["Bram", [6, 3]]], "dt": 0.05, "kroki": 600, "co": 20,
+        "przebudowy": [],
+        "polecenia": [{"krok": 0, "imie": "Ala", "pole": [6, 3], "czynnosc": "idzie"},
+                      {"krok": 0, "imie": "Bram", "pole": [0, 3], "czynnosc": "idzie"}],
+    })
+    symulacje.append({
+        "nazwa": "budowa_w_marszu", "rozmiar": 7, "zablokowane": [],
+        "postacie": [["Ala", [0, 0]], ["Bram", [0, 2]], ["Cira", [0, 4]]], "dt": 0.05,
+        "kroki": 300, "co": 15,
+        "przebudowy": [{"krok": 30, "zablokowane": [[2, 1], [2, 2], [2, 3]]},
+                       {"krok": 120, "zablokowane": [[2, 1], [2, 2], [2, 3], [4, 2], [4, 3]]}],
+        "polecenia": [{"krok": 0, "imie": "Ala", "pole": [6, 0], "czynnosc": "idzie"},
+                      {"krok": 0, "imie": "Bram", "pole": [6, 2], "czynnosc": "idzie"},
+                      {"krok": 0, "imie": "Cira", "pole": [6, 4], "czynnosc": "idzie"},
+                      {"krok": 60, "imie": "Ala", "pole": [0, 6], "czynnosc": "wraca"}],
+    })
+
+    # Doba na placu: polecenia wg rytmu, jak w scenie (co sekundę, z pory doby).
+    ludzie = [("Jagna", 0, (3, 5)), ("Olek", 0, (2, 1)), ("Wit", 0, (3, 5)), ("Hela", 0, (4, 1)),
+              ("Torin", 1, (1, 3)), ("Mila", 0, (5, 2)), ("Bram", 0, (1, 2))]
+    domy = [(2, 2), (4, 2), (2, 3), (4, 3)]
+    tawerna = (5, 4)
+    polecenia = []
+    for krok in range(0, 900, 10):
+        t = krok * 0.1 + 18.0           # przesunięcie sceny: zaczyna się rano
+        pora = ruch.faza(t)
+        for i, (imie, chory, stanowisko) in enumerate(ludzie):
+            pole, czynnosc = ruch.zadanie({"imie": imie, "chory": chory}, stanowisko,
+                                          domy[i % len(domy)], (3, 3), tawerna, pora)
+            polecenia.append({"krok": krok, "imie": imie, "pole": list(pole),
+                              "czynnosc": czynnosc})
+    symulacje.append({
+        "nazwa": "doba_na_placu", "rozmiar": 7, "zablokowane": [list(b) for b in _PLAC_BLOK],
+        "postacie": [[imie, list(s)] for imie, _, s in ludzie], "dt": 0.1, "kroki": 900, "co": 30,
+        "przebudowy": [], "polecenia": polecenia,
+    })
+
+    # Zastawiony plac: komplet budynków i chat zostawia jedno wolne pole, więc nadmiar
+    # osadników musi czekać na dziedzińcu przed bramą (siatka 9×9 z zamkniętą resztą).
+    budynki = [(3, 2), (1, 1), (2, 1), (4, 1), (5, 1), (1, 2), (5, 2), (1, 3), (5, 3), (1, 4),
+               (5, 4), (2, 5), (4, 5), (1, 5)]
+    chaty = [(2, 2), (4, 2), (2, 3), (4, 3), (2, 4), (4, 4), (3, 4), (5, 5), (3, 1)]
+    pelny = set(budynki) | set(chaty) | {(3, 3)}
+    for i in range(7):
+        pelny |= {(i, 0), (i, 6), (0, i), (6, i)}
+    pelny.discard((3, 6))
+    pelny |= {(x, y) for y in range(9) for x in range(7, 9)}
+    pelni = [("Jagna", (3, 5)), ("Olek", (1, 1)), ("Wit", (3, 5)), ("Hela", (4, 5)),
+             ("Torin", (1, 2)), ("Mila", (2, 5)), ("Bram", (1, 3)), ("Nessa", (1, 5)),
+             ("Gareth", (5, 1))]
+    polecenia = []
+    for krok in range(0, 900, 10):
+        t = krok * 0.1 + 18.0
+        pora = ruch.faza(t)
+        for i, (imie, stanowisko) in enumerate(pelni):
+            pole, czynnosc = ruch.zadanie({"imie": imie, "chory": 0}, stanowisko,
+                                          sorted(chaty)[i % len(chaty)], (3, 3), (5, 4), pora)
+            polecenia.append({"krok": krok, "imie": imie, "pole": list(pole),
+                              "czynnosc": czynnosc})
+    symulacje.append({
+        "nazwa": "zastawiony_plac", "rozmiar": 9, "zablokowane": [list(b) for b in sorted(pelny)],
+        "postacie": [[imie, list(s)] for imie, s in pelni], "dt": 0.1, "kroki": 900, "co": 30,
+        "przebudowy": [], "polecenia": polecenia,
+    })
+    for scen in symulacje:
+        scen["probki"] = _symuluj_ruch(scen)
+
+    return {"sciezki": przypadki, "najblizsze": najblizsze, "rytm": rytm, "zadania": zadania,
+            "losy": losy, "symulacje": symulacje}
+
+
 def main() -> int:
     print("Zrzucam wzorce dla portu na C#…")
     zapisz("losowanie.json", wzorce_losowania())
     zapisz("mapa.json", wzorce_mapy())
     zapisz("postac.json", wzorce_postaci())
     zapisz("wrogowie.json", wzorce_wrogow())
+    zapisz("ruch.json", wzorce_ruchu())
     try:
         import pygame  # noqa: F401
     except ImportError:

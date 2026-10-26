@@ -142,7 +142,7 @@ Game_Simply/
 │   ├── twarze.py      # Rysy twarzy rozmówców
 │   ├── teren.py       # Kafle, roślinność, budynki, sprite gracza
 │   └── piksele.py     # Prymitywy pixelartu
-└── tests/             # 189 testów unittest
+└── tests/             # 192 testy unittest
 ```
 
 ---

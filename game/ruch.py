@@ -213,7 +213,9 @@ class Ruch:
     # -- zarządzanie ------------------------------------------------- #
 
     def dodaj(self, imie: str, pole: Pole) -> Postac:
-        pole = self._wolne_miejsce(pole, imie) or pole
+        # Gdy nie ma wolnego miejsca przy celu (zastawiony plac), staje na najbliższym
+        # wolnym polu choćby zajętym przez innego — byle nie wewnątrz budynku.
+        pole = self._wolne_miejsce(pole, imie) or self.siatka.najblizsze_wolne(pole) or pole
         p = Postac(imie, pole)
         self.postacie[imie] = p
         self._rez[pole] = imie
@@ -250,11 +252,13 @@ class Ruch:
         p.czynnosc = czynnosc
         if p.zamiar == pole and p.cel is not None:
             return
-        miejsce = self._wolne_miejsce(pole, imie)
+        start = p.nastepne or p.pole
+        # Miejsce musi być osiągalne: bez tego zastawiony plac dałby wolne pole
+        # za murem, do którego nie ma drogi, i postać stałaby w miejscu.
+        miejsce = self._wolne_miejsce(pole, imie, self._osiagalne(start))
         p.zamiar = pole
         if miejsce is None:
             return
-        start = p.nastepne or p.pole
         trasa = sciezka(self.siatka, start, miejsce)
         if trasa is None:
             return
@@ -268,15 +272,30 @@ class Ruch:
         if p.cel is not None and self._rez.get(p.cel) == p.imie and p.cel not in (p.pole, p.nastepne):
             del self._rez[p.cel]
 
-    def _wolne_miejsce(self, pole: Pole, imie: str) -> Pole | None:
-        """Najbliższe pole przy ``pole``, na którym nikt inny nie stoi i do którego nikt nie idzie."""
+    def _osiagalne(self, start: Pole) -> set[Pole]:
+        """Pola, do których da się dojść ze ``start`` po wolnych polach (bez rezerwacji)."""
+        widziane = {start}
+        kolejka = deque([start])
+        while kolejka:
+            p = kolejka.popleft()
+            for n, _ in self.siatka.sasiedzi(p):
+                if n not in widziane:
+                    widziane.add(n)
+                    kolejka.append(n)
+        return widziane
+
+    def _wolne_miejsce(self, pole: Pole, imie: str, dostepne: set[Pole] | None = None) -> Pole | None:
+        """Najbliższe pole przy ``pole``, na którym nikt inny nie stoi i do którego nikt nie idzie.
+
+        ``dostepne`` zawęża wybór do pól, do których postać może dojść.
+        """
         cudze = {k for k, v in self._rez.items() if v != imie}
         cudze |= {q.cel for q in self.postacie.values() if q.imie != imie and q.cel is not None}
         kolejka = deque([pole])
         widziane = {pole}
         while kolejka:
             p = kolejka.popleft()
-            if self.siatka.wolne(p) and p not in cudze:
+            if self.siatka.wolne(p) and p not in cudze and (dostepne is None or p in dostepne):
                 return p
             for dx, dy in _PRZY_CELU:
                 n = (p[0] + dx, p[1] + dy)
@@ -311,7 +330,7 @@ class Ruch:
                 self._rez[kolejne] = p.imie
             cx, cy = float(p.nastepne[0]), float(p.nastepne[1])
             dx, dy = cx - p.x, cy - p.y
-            d = math.hypot(dx, dy)
+            d = math.sqrt(dx * dx + dy * dy)
             if d > 1e-9:
                 p.kierunek = (dx / d, dy / d)
             if d <= zostalo:

@@ -10,6 +10,35 @@ namespace GraSimply.Logika
         public bool Odkryte;
     }
 
+    /// <summary>Jeden osadnik w tyle, ile potrzebuje scena osady z bliska.</summary>
+    public sealed class OsadnikDoRysunku
+    {
+        public string Imie;
+        public string Zajecie;
+        public bool Chory;
+        public double Morale;
+    }
+
+    /// <summary>
+    /// Osada do narysowania z bliska: kto mieszka, co stoi i jaka jest pora roku.
+    /// Zamrożona kopia — scena nigdy nie zagląda do żywych list postaci.
+    /// </summary>
+    public sealed class StanOsady
+    {
+        public List<OsadnikDoRysunku> Osadnicy = new List<OsadnikDoRysunku>();
+
+        /// <summary>Klucz budynku → poziom (0 = nie stoi).</summary>
+        public Dictionary<string, int> Budynki = new Dictionary<string, int>();
+
+        public int Chaty;
+
+        /// <summary>„wiosna”, „lato”, „jesien” albo „zima” — kolor gruntu i śnieg.</summary>
+        public string Pora = "lato";
+
+        /// <summary>Klasa bohatera — stoi na placu przy ognisku.</summary>
+        public string Klasa;
+    }
+
     /// <summary>Stan postaci przepisany na to, co pokazuje HUD.</summary>
     public sealed class StanHud
     {
@@ -57,6 +86,9 @@ namespace GraSimply.Logika
         public bool WszystkoOdkryte;
         public (int Chaty, int Palisada, int Wieza)? Osada;
 
+        /// <summary>Osada do narysowania z bliska — tylko gdy otwarty jest widok <see cref="Widok"/>.</summary>
+        public StanOsady Plac;
+
         /// <summary>Otwarty widok z bliska („oboz”, „osada”) albo null.</summary>
         public string Widok;
 
@@ -99,6 +131,39 @@ namespace GraSimply.Logika
                 }
             }
             return wynik;
+        }
+
+        /// <summary>Budynki, które mają miejsce na placu — tylko ich poziomy są potrzebne scenie.</summary>
+        public static readonly string[] BudynkiPlacu =
+        {
+            "dom", "kuznia", "huta", "spichlerz", "karawanseraj", "tartak", "sklep", "warsztat",
+            "stajnie", "laboratorium", "tawerna", "lecznica", "targ", "wieza", "farma", "palisada",
+        };
+
+        /// <summary>Zamraża osadę do narysowania z bliska. Wołane z wątku logiki.</summary>
+        public static StanOsady PlacZGracza(Gracz g)
+        {
+            var plac = new StanOsady
+            {
+                Chaty = g.Chaty,
+                Pora = Kalendarz.PoraGracza(g).Klucz,
+                Klasa = g.Klasa,
+            };
+            foreach (string klucz in BudynkiPlacu)
+            {
+                plac.Budynki[klucz] = g.PoziomBudynku(klucz);
+            }
+            foreach (Osadnik o in g.Osadnicy)
+            {
+                plac.Osadnicy.Add(new OsadnikDoRysunku
+                {
+                    Imie = o.Imie,
+                    Zajecie = o.Zajecie,
+                    Chory = o.Chory > 0,
+                    Morale = o.Morale,
+                });
+            }
+            return plac;
         }
 
         /// <summary>Buduje stan HUD z postaci. Wołane z wątku logiki.</summary>

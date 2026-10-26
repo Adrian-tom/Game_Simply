@@ -169,6 +169,9 @@ Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd o
    i pixelartem liczonym w C#. Zgodność z tą wersją jest sprawdzana testami:
    ten sam seed daje ten sam świat, a kafle i sprite'y zgadzają się co do piksela.
    Etap 2: walka, rozmowy, osada i zapis gry. Szczegóły: `unity/README.md`.
+   Jest już trzeci styl, **hybrydowy** (pixelart w światłach Mrocznego), ze sceną
+   osady z bliska i chodzącymi osadnikami (`Logika/Ruch.cs` zgodny z `game/ruch.py`
+   co do bitu); to domyślny styl portu.
 1. **Kampania** — akty, finał, epilog zależny od karmy i osady (odłożona na osobną iterację).
 2. Menu jako okna pixelart (scena obozu i osady już jest; tekstowe pozostają listy wyborów),
    własna sceneria dla targu i warsztatu.
