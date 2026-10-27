@@ -153,6 +153,7 @@ namespace GraSimply.Grafika
                 // panelem na środku. Treść idzie do rogu, opcje do plakietek z boku.
                 InfoObozu(ekran);
                 OpcjeObozu(ekran.Opcje, konsola.Wpisywane, konsola.Kursor);
+                PodpowiedzObozu(ekran);
             }
             else if (konsola.Pyta)
             {
@@ -513,6 +514,23 @@ namespace GraSimply.Grafika
         /// <summary>Ile wierszy informacji obozu pokazujemy — reszta zasłoniłaby plac.</summary>
         private const int WierszyInfoObozu = 5;
 
+        /// <summary>
+        /// Podpowiedź chodzenia („▶ Spacja: wejdź do skryptorium”) na dole sceny, na środku —
+        /// tam, gdzie wzrok szuka bohatera, a nic ważnego nie leży.
+        /// </summary>
+        private void PodpowiedzObozu(EkranGry e)
+        {
+            foreach (string l in e.Tresc)
+            {
+                string c = l.Trim();
+                if (c.StartsWith("▶", StringComparison.Ordinal))
+                {
+                    Plakietka(c, W / 2 - (c.Length * Znak + 10) / 2, H - 52, Styl.Aktywny.Wyrozniony, false);
+                    return;
+                }
+            }
+        }
+
         /// <summary>Tytuł i krótkie podsumowanie obozu w lewym górnym rogu, na ciemnej plakietce.</summary>
         private void InfoObozu(EkranGry e)
         {
@@ -521,7 +539,8 @@ namespace GraSimply.Grafika
             {
                 // Uwagi w nawiasach („dojdą w kolejnym etapie”) to przypisy dla grającego
                 // w konsolę — na placu zajęłyby tylko miejsce.
-                if (l.TrimStart().StartsWith("(", StringComparison.Ordinal))
+                if (l.TrimStart().StartsWith("(", StringComparison.Ordinal)
+                    || l.TrimStart().StartsWith("▶", StringComparison.Ordinal))
                 {
                     continue;
                 }

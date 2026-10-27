@@ -32,6 +32,9 @@ namespace GraSimply.Logika
 
         public int Chaty;
 
+        /// <summary>Pole placu, na którym stoi bohater.</summary>
+        public (int X, int Y) Bohater = UkladPlacu.PoleBohatera;
+
         /// <summary>Budowy w toku: (klucz budynku albo „chata”, poziom, postęp 0–1) — rusztowania na placu.</summary>
         public List<(string Klucz, int Poziom, double Postep)> Rusztowania =
             new List<(string Klucz, int Poziom, double Postep)>();
@@ -153,6 +156,7 @@ namespace GraSimply.Logika
                 Chaty = g.Chaty,
                 Pora = Kalendarz.PoraGracza(g).Klucz,
                 Klasa = g.Klasa,
+                Bohater = g.PozycjaObozu,
             };
             foreach (string klucz in BudynkiPlacu)
             {

@@ -36,6 +36,11 @@ namespace GraSimply.Grafika.Hybryda
         private readonly Dictionary<string, Plotno> _grunty = new Dictionary<string, Plotno>();
         private readonly List<PodpisOsadnika> _podpisy = new List<PodpisOsadnika>();
         private double? _ostatniT;
+        private (double X, double Y)? _bohater;
+        private double _tBohatera;
+
+        /// <summary>Szybkość chodzenia bohatera po placu (pola na sekundę).</summary>
+        public const double SzybkoscBohatera = 7.0;
         private Dictionary<(int X, int Y), double> _nakladki = new Dictionary<(int X, int Y), double>();
 
         public IReadOnlyList<PodpisOsadnika> Podpisy => _podpisy;
@@ -100,7 +105,8 @@ namespace GraSimply.Grafika.Hybryda
                 OsadnikDoRysunku osadnik = o;
                 rzeczy.Add((x + y + 1.0 + 0.01, () => RysujOsadnika(cel, osadnik, t)));
             }
-            rzeczy.Add((3.5 + 4.3 + 0.01, () => RysujBohatera(cel, osada.Klasa, swiatla)));
+            (double bx, double by) = PozycjaBohatera(osada.Bohater, t);
+            rzeczy.Add((bx + by + 0.5 + 0.01, () => RysujBohatera(cel, osada.Klasa, swiatla, bx + 0.5, by + 0.3)));
             rzeczy.Add((UkladPlacu.Ognisko.X + UkladPlacu.Ognisko.Y + 1.0, () => RysujOgnisko(cel, t, swiatla)));
 
             foreach ((double _, Action rysuj) in rzeczy.OrderBy(r => r.Glebokosc))
@@ -144,7 +150,7 @@ namespace GraSimply.Grafika.Hybryda
         private void Ruszaj(StanOsady osada, Dictionary<(int X, int Y), ElementPlacu> plan,
                             double t, double czasDnia)
         {
-            _ruch.Przebuduj(UkladPlacu.Zablokowane(plan));
+            _ruch.Przebuduj(UkladPlacu.Zablokowane(plan, osada.Bohater));
             bool pierwsza = !_ostatniT.HasValue;
 
             var imiona = new HashSet<string>(osada.Osadnicy.Select(o => o.Imie));
@@ -429,10 +435,32 @@ namespace GraSimply.Grafika.Hybryda
             _podpisy.Add(new PodpisOsadnika(sx, sy - spr.Wysokosc - 4, o.Imie, kolor));
         }
 
-        private void RysujBohatera(Plotno cel, string klasa, List<Swiatlo> swiatla)
+        /// <summary>
+        /// Bohater płynnie dochodzi do pola, które wskazała logika — krok na siatce jest
+        /// natychmiastowy, ale na ekranie trwa ułamek sekundy. Po długiej przerwie
+        /// w oglądaniu sceny staje od razu na miejscu.
+        /// </summary>
+        public (double X, double Y) PozycjaBohatera((int X, int Y) cel, double t)
+        {
+            double dt = Math.Max(0.0, t - _tBohatera);
+            _tBohatera = t;
+            if (!_bohater.HasValue || dt > 1.0)
+            {
+                _bohater = (cel.X, cel.Y);
+                return _bohater.Value;
+            }
+            (double x, double y) = _bohater.Value;
+            double dx = cel.X - x, dy = cel.Y - y;
+            double odl = Math.Sqrt(dx * dx + dy * dy);
+            double krok = SzybkoscBohatera * dt;
+            _bohater = odl <= krok || odl < 1e-9 ? ((double)cel.X, (double)cel.Y) : (x + dx / odl * krok, y + dy / odl * krok);
+            return _bohater.Value;
+        }
+
+        private void RysujBohatera(Plotno cel, string klasa, List<Swiatlo> swiatla, double wx, double wy)
         {
             Plotno spr = _sprite.Bohater(klasa);
-            (double ex, double ey) = RzutOsady.NaEkran(3.5, 4.3);
+            (double ex, double ey) = RzutOsady.NaEkran(wx, wy);
             int sx = (int)Math.Round(ex), sy = (int)Math.Round(ey);
             Plotno cien = _sprite.Cien(spr.Szerokosc + 6, 7, 120);
             cel.Nalóż(cien, sx - cien.Szerokosc / 2 + 3, sy - 3);

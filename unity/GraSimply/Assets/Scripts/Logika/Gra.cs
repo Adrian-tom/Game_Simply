@@ -164,6 +164,7 @@ namespace GraSimply.Logika
                         var wyprawa = new Eksploracja(gracz, _konsola, _ekran, _rng);
                         wyprawa.Uruchom();
                     }
+                    gracz.PozycjaObozu = ChodzenieObozu.PoPowrocie;
                     foreach (string nowe in gracz.SprawdzOsiagniecia())
                     {
                         _konsola.Pisz(nowe);
@@ -178,6 +179,10 @@ namespace GraSimply.Logika
                 else if (wybor == "3")
                 {
                     Odpoczynek(gracz);
+                }
+                else if (wybor.StartsWith("info:"))
+                {
+                    InfoBudynku(gracz, wybor.Substring(5));
                 }
                 else if (wybor == "11")
                 {
@@ -207,8 +212,38 @@ namespace GraSimply.Logika
             }
         }
 
+        /// <summary>Krótka karta budynku, przy którym stoi bohater: opis, poziom, utrzymanie i załoga.</summary>
+        private void InfoBudynku(Gracz gracz, string klucz)
+        {
+            OpisBudynku b = Oboz.OpisBudynkuKlucza(klucz);
+            if (b == null)
+            {
+                return;
+            }
+            _konsola.Wyczysc();
+            Utils.Linia(_konsola, '═');
+            _konsola.Pisz($"  {b.Ikona}  {b.Nazwa.ToUpperInvariant()}  (poz. {gracz.PoziomBudynku(klucz)}/{b.Max})");
+            Utils.Linia(_konsola, '═');
+            _konsola.Pisz($"\n  {b.Opis}");
+            if (b.Utrzymanie > 0)
+            {
+                _konsola.Pisz($"  Utrzymanie: {b.Utrzymanie * gracz.PoziomBudynku(klucz)} zł dziennie.");
+            }
+            foreach (KeyValuePair<string, OpisZajecia> z in Osada.Zajecia.Where(z => z.Value.Wymaga == klucz))
+            {
+                List<string> ludzie = Osada.Osadnicy(gracz).Where(o => o.Zajecie == z.Key).Select(o => o.Imie).ToList();
+                int? miejsca = Osada.Miejsca(gracz, z.Key);
+                _konsola.Pisz($"  {z.Value.Ikona} {z.Value.Nazwa}: {ludzie.Count}/{miejsca ?? 0}"
+                              + (ludzie.Count > 0 ? "  (" + string.Join(", ", ludzie) + ")" : ""));
+            }
+            _konsola.Pisz("\n  Rozbudować go możesz w [11], a ludzi przydzielić w [16].");
+            Utils.NacisnijEnter(_konsola);
+        }
+
         private string MenuObozu(Gracz gracz)
         {
+            // Wieści zostają na ekranie, póki bohater chodzi po placu — każdy krok przerysowuje menu.
+            var wiesci = new List<string>();
             while (true)
             {
                 using (_ekran?.WidokOsady("oboz"))
@@ -221,10 +256,13 @@ namespace GraSimply.Logika
                     _konsola.Pisz($"  {Karma.Etykieta(gracz)}  ·  {Przetrwanie.OpisStanu(gracz)}");
                     _konsola.Pisz($"  Osada: {gracz.Osadnicy.Count} os.  ·  chaty: {gracz.Chaty}");
                     _konsola.Pisz($"  {Oboz.LiniaSurowcow(gracz)}");
-                    foreach (string wiesc in Osada.RozliczKronike(gracz))
+                    wiesci.AddRange(Osada.RozliczKronike(gracz));
+                    foreach (string wiesc in wiesci)
                     {
                         _konsola.Pisz(wiesc);
                     }
+                    StanOsady plac = Migawka.PlacZGracza(gracz);
+                    _konsola.Pisz("  " + ChodzenieObozu.Podpowiedz(plac, gracz.PozycjaObozu));
                     _konsola.Pisz();
                     _konsola.Pisz("  [1]  🧭  Wyrusz na wyprawę");
                     _konsola.Pisz("  [2]  🧙  Karta postaci");
@@ -238,9 +276,32 @@ namespace GraSimply.Logika
                     _konsola.Pisz("  (Warsztat, targ, rozmowy i sprawy osady dojdą " +
                                   "w kolejnym etapie portu.)");
                     _konsola.Pisz();
-                    string wybor = (_konsola.Czytaj("  Twój wybór: ") ?? "").Trim();
+                    string wybor;
+                    _ekran?.UstawSkroty(ChodzenieObozu.Skroty);
+                    try
+                    {
+                        wybor = (_konsola.Czytaj("  Twój wybór: ") ?? "").Trim();
+                    }
+                    finally
+                    {
+                        _ekran?.UstawSkroty(null);
+                    }
+                    if (ChodzenieObozu.CzyKierunek(wybor))
+                    {
+                        ChodzenieObozu.Ruch(gracz, plac, wybor);
+                        continue;
+                    }
+                    if (wybor == "@akcja" || wybor.Length == 0)
+                    {
+                        Interakcja akcja = ChodzenieObozu.Cel(plac, gracz.PozycjaObozu);
+                        if (akcja == null)
+                        {
+                            continue;
+                        }
+                        wybor = akcja.Odpowiedz;
+                    }
                     if (wybor == "0" || wybor == "1" || wybor == "2" || wybor == "3"
-                        || wybor == "11" || wybor == "16" || wybor == "23")
+                        || wybor == "11" || wybor == "16" || wybor == "23" || wybor.StartsWith("info:"))
                     {
                         return wybor;
                     }

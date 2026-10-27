@@ -607,17 +607,42 @@ namespace GraSimply.Gra
             SprawdzKlikniecie();
         }
 
+        private readonly Dictionary<KeyCode, float> _powtorzenia = new Dictionary<KeyCode, float>();
+
+        /// <summary>
+        /// Naciśnięcie klawisza, a dla klawiszy chodzenia także jego przytrzymanie: po krótkim
+        /// opóźnieniu krok powtarza się co ułamek sekundy. Ruch po mapie ma jedno pole na
+        /// naciśnięcie (każdy krok to zdarzenie), więc powtarzanie dotyczy tylko obozu.
+        /// </summary>
+        private bool NacisnietoZPowtorzeniem(KeyCode klawisz, string nazwa)
+        {
+            if (Input.GetKeyDown(klawisz))
+            {
+                _powtorzenia[klawisz] = Time.unscaledTime + 0.28f;
+                return true;
+            }
+            bool chodzenie = nazwa != "spacja" && nazwa != "e";
+            if (chodzenie && _ekran.Widok == "oboz" && Input.GetKey(klawisz)
+                && _powtorzenia.TryGetValue(klawisz, out float kiedy) && Time.unscaledTime >= kiedy)
+            {
+                _powtorzenia[klawisz] = Time.unscaledTime + 0.11f;
+                return true;
+            }
+            return false;
+        }
+
         private bool SprawdzSkroty()
         {
             var skroty = new (KeyCode Klawisz, string Nazwa)[]
             {
                 (KeyCode.UpArrow, "gora"), (KeyCode.DownArrow, "dol"),
                 (KeyCode.LeftArrow, "lewo"), (KeyCode.RightArrow, "prawo"),
+                (KeyCode.W, "w"), (KeyCode.A, "a"), (KeyCode.S, "s"), (KeyCode.D, "d"), (KeyCode.E, "e"),
                 (KeyCode.Space, "spacja"),
             };
             foreach ((KeyCode klawisz, string nazwa) in skroty)
             {
-                if (!Input.GetKeyDown(klawisz))
+                if (!NacisnietoZPowtorzeniem(klawisz, nazwa))
                 {
                     continue;
                 }

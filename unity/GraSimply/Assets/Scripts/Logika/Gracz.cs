@@ -180,6 +180,9 @@ namespace GraSimply.Logika
         public int Chaty = 2;
         public List<Osadnik> Osadnicy = new List<Osadnik>();
 
+        /// <summary>Pole placu osady, na którym stoi bohater (chodzenie po obozie).</summary>
+        public (int X, int Y) PozycjaObozu = UkladPlacu.PoleBohatera;
+
         /// <summary>Plany budowy w toku (<see cref="Budowa"/>), w kolejności zlecenia.</summary>
         public List<PlanBudowy> Budowy = new List<PlanBudowy>();
 

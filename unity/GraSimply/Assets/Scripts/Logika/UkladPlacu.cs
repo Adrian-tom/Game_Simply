@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using GraSimply.Logika;
 
-namespace GraSimply.Grafika.Hybryda
+namespace GraSimply.Logika
 {
     /// <summary>Co stoi na jednym polu placu: rodzaj (budynek, chata, namiot, farma), klucz i poziom.</summary>
     public struct ElementPlacu
@@ -21,7 +20,8 @@ namespace GraSimply.Grafika.Hybryda
     }
 
     /// <summary>
-    /// Układ placu osady — odpowiednik rozkładu z <c>grafika/widok_osady.py</c>:
+    /// Układ placu osady — odpowiednik rozkładu z <c>grafika/widok_osady.py</c>. Leży w logice,
+    /// bo korzystają z niego i scena (rysowanie), i chodzenie bohatera po obozie:
     /// gdzie stoi który budynek, co zagradza drogę osadnikom, przy czym pracuje
     /// kto i gdzie śpi. Czysta logika, bez rysowania, więc da się ją sprawdzić
     /// bez obrazka.
@@ -167,7 +167,8 @@ namespace GraSimply.Grafika.Hybryda
         }
 
         /// <summary>Pola, przez które nie da się przejść: budynki, ognisko, bohater i obwód placu.</summary>
-        public static HashSet<(int X, int Y)> Zablokowane(Dictionary<(int X, int Y), ElementPlacu> plan)
+        public static HashSet<(int X, int Y)> Zablokowane(Dictionary<(int X, int Y), ElementPlacu> plan,
+                                                          (int X, int Y)? bohater = null)
         {
             var zablokowane = new HashSet<(int X, int Y)>();
             foreach (KeyValuePair<(int X, int Y), ElementPlacu> wpis in plan)
@@ -179,7 +180,7 @@ namespace GraSimply.Grafika.Hybryda
                 }
             }
             zablokowane.Add(Ognisko);
-            zablokowane.Add(PoleBohatera);
+            zablokowane.Add(bohater ?? PoleBohatera);
             for (int i = 0; i < Siatka; i++)
             {
                 zablokowane.Add((i, 0));
