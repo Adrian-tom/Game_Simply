@@ -116,6 +116,33 @@ namespace GraSimply.Testy
             Harness.Rowne("palisada ma obwód bez bramy", 4 * (UkladPlacu.Siatka - 1) - 1,
                           UkladPlacu.PolaPalisady(1).Count);
             Harness.Rowne("bez palisady nie ma pól", 0, UkladPlacu.PolaPalisady(0).Count);
+
+            // Skryptorium, rusztowania i ludzie od budowy i badań.
+            var sk = UkladPlacu.Rozklad(Stan(12, new Dictionary<string, int> { { "skryptorium", 1 } }, 0));
+            Harness.Rowne("skryptorium ma swoje pole", "skryptorium", sk[UkladPlacu.Miejsca["skryptorium"]].Klucz);
+            Harness.Rowne("chaty omijają skryptorium", 12, sk.Values.Count(w => w.Rodzaj == "chata"));
+            Harness.Rowne("badacz pracuje w skryptorium", UkladPlacu.Miejsca["skryptorium"],
+                          UkladPlacu.Stanowisko("badacz", sk));
+
+            StanOsady budowa = Stan(2, new Dictionary<string, int> { { "kuznia", 1 } }, 0);
+            budowa.Rusztowania.Add(("tartak", 1, 0.5));
+            budowa.Rusztowania.Add(("kuznia", 2, 0.25));
+            budowa.Rusztowania.Add(("chata", 1, 0.4));
+            var planBudowy = UkladPlacu.Rozklad(budowa, out var nakladki);
+            Harness.Rowne("nowy budynek to szkielet na swoim polu", ("budowa", "tartak", 50),
+                          (planBudowy[UkladPlacu.Miejsca["tartak"]].Rodzaj, planBudowy[UkladPlacu.Miejsca["tartak"]].Klucz,
+                           planBudowy[UkladPlacu.Miejsca["tartak"]].Poziom));
+            Harness.Sprawdz("rozbudowa zostawia budynek i dodaje nakładkę",
+                            planBudowy[UkladPlacu.Miejsca["kuznia"]].Rodzaj == "budynek"
+                            && nakladki.ContainsKey(UkladPlacu.Miejsca["kuznia"]));
+            Harness.Rowne("chata w budowie zajmuje kafel obok dwóch stojących", 1,
+                          planBudowy.Values.Count(w => w.Rodzaj == "budowa" && w.Klucz == "chata"));
+            Harness.Sprawdz("szkielet zagradza drogę",
+                            UkladPlacu.Zablokowane(planBudowy).Contains(UkladPlacu.Miejsca["tartak"]));
+            Harness.Rowne("budowniczy staje przy szkielecie", UkladPlacu.Miejsca["tartak"],
+                          UkladPlacu.Stanowisko("budowniczy", planBudowy, nakladki));
+            Harness.Rowne("bez budowy budowniczy czeka przy ognisku", UkladPlacu.Ognisko,
+                          UkladPlacu.Stanowisko("budowniczy", UkladPlacu.Rozklad(Stan(2, Srednia, 0), out var brak), brak));
         }
 
         // ------------------------------------------------------------------ //
@@ -182,6 +209,14 @@ namespace GraSimply.Testy
                             Rozne(poludnie, Klatka(Stan(4, Srednia, 7, "zima"), d * 0.35)));
             Harness.Sprawdz("jesień wygląda inaczej niż lato",
                             Rozne(poludnie, Klatka(Stan(4, Srednia, 7, "jesien"), d * 0.35)));
+            StanOsady zBudowa = Stan(4, Srednia, 7);
+            zBudowa.Rusztowania.Add(("huta", 1, 0.5));
+            zBudowa.Rusztowania.Add(("kuznia", 2, 0.3));
+            Harness.Sprawdz("rusztowania zmieniają obraz", Rozne(poludnie, Klatka(zBudowa, d * 0.35)));
+            StanOsady zBudowa2 = Stan(4, Srednia, 7);
+            zBudowa2.Rusztowania.Add(("huta", 1, 0.9));
+            Harness.Sprawdz("szkielet rośnie z postępem",
+                            Rozne(Klatka(zBudowa, d * 0.35), Klatka(zBudowa2, d * 0.35)));
             Harness.Sprawdz("rozbudowa zmienia obraz",
                             Rozne(Klatka(Stan(2, new Dictionary<string, int>(), 0), d * 0.35),
                                   Klatka(Stan(2, new Dictionary<string, int> { { "kuznia", 1 }, { "palisada", 1 } }, 0), d * 0.35)));

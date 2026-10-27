@@ -42,6 +42,7 @@ namespace GraSimply.Testy
             TestyPostaci.Uruchom(Wczytaj(katalog, "postac.json"));
             TestyWalki.Uruchom(Wczytaj(katalog, "wrogowie.json"));
             TestyRuchu.Uruchom(Wczytaj(katalog, "ruch.json"));
+            TestyOsady.Uruchom(Wczytaj(katalog, "osada.json"));
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
             TestyInterfejsu.Uruchom();

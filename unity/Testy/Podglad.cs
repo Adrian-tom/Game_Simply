@@ -110,6 +110,7 @@ namespace GraSimply.Testy
             ("Jagna", "rolnik", false), ("Olek", "drwal", false), ("Wit", "straznik", false),
             ("Hela", "handlarz", false), ("Torin", "tracz", false), ("Mila", "uzdrowiciel", true),
             ("Bram", "rzemieslnik", false), ("Nessa", "zielarz", false), ("Gareth", "kamieniarz", false),
+            ("Piotr", "budowniczy", false), ("Sira", "badacz", false),
         };
 
         /// <summary>
@@ -149,6 +150,7 @@ namespace GraSimply.Testy
                 ("osada-pelna-noc", 0.93, 40, 12, duze, 9, false),
                 ("osada-obozek", 0.35, 5, 1, male, 2, false),
                 ("osada-f2", 0.35, 40, 4, srednie, 7, true),
+                ("osada-budowa", 0.35, 40, 4, srednie, 11, false),
             };
             // Menu obozu z prawdziwej gry — tak jak widzi je gracz na placu.
             (List<string> liniaObozu, bool naEnterObozu) = EkranKonsoli(new List<string> { "1", "Halina", "4", "" });
@@ -162,6 +164,14 @@ namespace GraSimply.Testy
                 var pulpit = new Pulpit();
                 pulpit.Scena.Zmierzch = zmierzch;
                 Migawka m = ScenkaOsady(czasGry, chaty, budynki, ludzi);
+                if (nazwa == "osada-budowa")
+                {
+                    // Trzy budowy w różnym stadium: nowy budynek, rozbudowa i chata.
+                    m.Plac.Budynki["skryptorium"] = 1;
+                    m.Plac.Rusztowania.Add(("huta", 1, 0.55));
+                    m.Plac.Rusztowania.Add(("kuznia", 2, 0.3));
+                    m.Plac.Rusztowania.Add(("chata", 1, 0.8));
+                }
                 double cel = T(u);
                 List<Napis> napisy = null;
                 // Przewijamy skokami co 12 s — jak scena, która wraca po przerwie.

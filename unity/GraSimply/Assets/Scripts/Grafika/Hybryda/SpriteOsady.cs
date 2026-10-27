@@ -47,6 +47,7 @@ namespace GraSimply.Grafika.Hybryda
             { "lecznica", Opis(6, 7, Materialy.Tynk, Materialy.Tynk, "cegla", Materialy.Okno[2], 5) },
             { "targ", Opis(8, 4, Materialy.Deski, Materialy.Mosiadz, "deski", null, 4) },
             { "wieza", Opis(4, 16, Materialy.KamienMuru, Materialy.Lupek, "cegla", null, 5) },
+            { "skryptorium", Opis(7, 8, Materialy.Tynk, Materialy.SkalaCzerwona, "cegla", Materialy.Okno[2], 6) },
         };
 
         private static Wyglad Opis(int a, int h, Barwa[] sciana, Barwa[] dach, string faktura,
@@ -108,6 +109,8 @@ namespace GraSimply.Grafika.Hybryda
                 case "rzemieslnik": return Materialy.SukmanaModra[5];
                 case "straznik": return Materialy.SukmanaCzerwona[6];
                 case "uzdrowiciel": return Materialy.Kosc[7];
+                case "budowniczy": return Materialy.SkoraWyprawiona[7];
+                case "badacz": return Materialy.SukmanaFioletowa[6];
                 default: return Materialy.SukmanaSzara[4];
             }
         }

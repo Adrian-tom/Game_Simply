@@ -140,7 +140,7 @@ namespace GraSimply.Logika
         /// <summary>
         /// Upływ dni dla bohatera. Zwraca wieści warte pokazania od razu.
         ///
-        /// Pełny cykl osady dojdzie w etapie 2; tu mija czas, zmienia się pora
+        /// Cykl osady (produkcja, jedzenie, opał, morale, budowy, badania) liczy <c>Osada.DzienOsady</c>; tu mija czas, zmienia się pora
         /// roku i bohater ponosi koszt dnia (prowiant albo głód, gojenie ran).
         /// </summary>
         public static List<string> MinijDni(Gracz gracz, Losowanie rng, int dni = 1,
@@ -172,12 +172,21 @@ namespace GraSimply.Logika
                     {
                         pilne.Add(wiesc);
                     }
-                    pilne.AddRange(Przetrwanie.LeczRany(gracz, odpoczynek ? 2.0 : 1.0));
+                    double tempo = 1.0 + (odpoczynek ? 1.0 : 0.0) + 0.5 * gracz.PoziomBudynku("lecznica");
+                    if (Osada.IluWZawodzie(gracz, "uzdrowiciel") > 0)
+                    {
+                        tempo += 0.5;
+                    }
+                    pilne.AddRange(Przetrwanie.LeczRany(gracz, tempo));
                 }
                 else
                 {
                     pilne.AddRange(Przetrwanie.DzienWyprawy(gracz, rng));
                 }
+
+                (List<string> kronika, List<string> pilneOsady) = Osada.DzienOsady(gracz, rng);
+                gracz.Kronika.AddRange(kronika);
+                pilne.AddRange(pilneOsady);
 
                 if (!gracz.Zyje())
                 {

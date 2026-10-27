@@ -36,6 +36,7 @@ namespace GraSimply.Grafika.Hybryda
         private readonly Dictionary<string, Plotno> _grunty = new Dictionary<string, Plotno>();
         private readonly List<PodpisOsadnika> _podpisy = new List<PodpisOsadnika>();
         private double? _ostatniT;
+        private Dictionary<(int X, int Y), double> _nakladki = new Dictionary<(int X, int Y), double>();
 
         public IReadOnlyList<PodpisOsadnika> Podpisy => _podpisy;
 
@@ -51,7 +52,9 @@ namespace GraSimply.Grafika.Hybryda
 
         public void Rysuj(Plotno cel, StanOsady osada, double t, bool zmierzch)
         {
-            Dictionary<(int X, int Y), ElementPlacu> plan = UkladPlacu.Rozklad(osada);
+            Dictionary<(int X, int Y), ElementPlacu> plan = UkladPlacu.Rozklad(
+                osada, out Dictionary<(int X, int Y), double> nakladki);
+            _nakladki = nakladki;
             int palisada = osada.Budynki.TryGetValue("palisada", out int pp) ? pp : 0;
             double czasDnia = t + PrzesuniecieDnia;
 
@@ -169,7 +172,7 @@ namespace GraSimply.Grafika.Hybryda
                 OsadnikDoRysunku o = osada.Osadnicy[i];
                 var dane = new Osadnik { Imie = o.Imie, Zajecie = o.Zajecie, Chory = o.Chory ? 1 : 0 };
                 (( int X, int Y) cel, string czynnosc) = RytmDnia.Zadanie(
-                    dane, UkladPlacu.Stanowisko(o.Zajecie, plan), domy[i % domy.Count],
+                    dane, UkladPlacu.Stanowisko(o.Zajecie, plan, _nakladki), domy[i % domy.Count],
                     UkladPlacu.Ognisko, tawerna, pora);
                 if (!_ruch.Postacie.ContainsKey(o.Imie))
                 {
@@ -242,6 +245,11 @@ namespace GraSimply.Grafika.Hybryda
         private void RysujElement(Plotno cel, int x, int y, ElementPlacu el, List<Swiatlo> swiatla)
         {
             (int sx, int sy) = RzutOsady.SrodekPola(x, y);
+            if (el.Rodzaj == "budowa")
+            {
+                Rusztowanie(cel, x, y, el.Poziom / 100.0);
+                return;
+            }
             Plotno spr;
             (int X, int Y) podstawa;
             if (el.Rodzaj == "namiot")
@@ -273,6 +281,40 @@ namespace GraSimply.Grafika.Hybryda
             if (blask != null)
             {
                 DodajBlask(swiatla, blask, sx, sy - spr.Wysokosc / 2);
+            }
+            if (_nakladki.TryGetValue((x, y), out double postep))
+            {
+                Rusztowanie(cel, x, y, postep);
+            }
+        }
+
+        /// <summary>
+        /// Drewniany szkielet, który rośnie z postępem budowy: cztery słupy, poprzeczki
+        /// i coraz więcej desek na przedniej ścianie (odpowiednik <c>_rusztowanie</c> ze sceny pythonowej).
+        /// </summary>
+        private void Rusztowanie(Plotno cel, int x, int y, double postep)
+        {
+            (int sx, int sy) = RzutOsady.SrodekPola(x, y);
+            Plotno cien = _sprite.Cien(36, 12);
+            cel.Nalóż(cien, sx - cien.Szerokosc / 2 + 2, sy - cien.Wysokosc / 2 + 2);
+            postep = Math.Max(0.0, Math.Min(1.0, postep));
+            int wys = 10 + (int)(28 * postep);
+            (int Dx, int Dy)[] rogi = { (-14, 0), (14, 0), (-8, -6), (8, -6) };
+            foreach ((int dx, int dy) in rogi)
+            {
+                cel.Wypelnij(Piksele.Kontur, sx + dx - 1, sy + dy - wys - 1, 4, wys + 2);
+                cel.Wypelnij(Materialy.Deski[2], sx + dx, sy + dy - wys, 2, wys);
+            }
+            for (int poziom = 6; poziom < wys; poziom += 8)
+            {
+                cel.Odcinek(Materialy.Deski[5], sx - 14, sy - poziom, sx + 14, sy - poziom);
+                cel.Odcinek(Materialy.Deski[3], sx - 8, sy - 6 - poziom, sx + 8, sy - 6 - poziom);
+            }
+            int deski = (int)(wys * postep);
+            if (deski > 2)
+            {
+                cel.Wypelnij(Materialy.Deski[4], sx - 12, sy - deski, 25, deski);
+                cel.Wypelnij(Materialy.Deski[6], sx - 12, sy - deski, 25, 1);
             }
         }
 

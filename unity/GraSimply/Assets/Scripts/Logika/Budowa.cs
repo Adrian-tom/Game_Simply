@@ -403,3 +403,176 @@ namespace GraSimply.Logika
         {
             return Plany(gracz).Select(p => (p.Klucz, p.Poziom, PostepPlanu(p))).ToList();
         }
+
+        // ------------------------------------------------------------------ //
+        //  Menu                                                               //
+        // ------------------------------------------------------------------ //
+
+        private static string Pasek(double czesc, int szer = 12)
+        {
+            int n = Math.Max(0, Math.Min(szer, Liczby.ZaokragliDoInt(czesc * szer)));
+            return new string('█', n) + new string('░', szer - n);
+        }
+
+        private static string OpisRobotnikow(Gracz gracz)
+        {
+            List<(Osadnik Osadnik, double Moc)> ludzie = Robotnicy(gracz);
+            int budowniczych = ludzie.Count(l => l.Osadnik.Zajecie == "budowniczy");
+            int pomocnikow = ludzie.Count(l => l.Osadnik.Zajecie == "bezczynny");
+            int reszta = ludzie.Count - budowniczych - pomocnikow;
+            return $"{budowniczych} budowniczych, {pomocnikow} bezczynnych, {reszta} po godzinach";
+        }
+
+        private static PlanBudowy WybierzPlan(IKonsola konsola, Gracz gracz, string pytanie)
+        {
+            List<PlanBudowy> kolejka = Plany(gracz);
+            if (kolejka.Count == 0)
+            {
+                konsola.Pisz("  Nic się teraz nie buduje.");
+                return null;
+            }
+            if (kolejka.Count == 1)
+            {
+                return kolejka[0];
+            }
+            for (int i = 0; i < kolejka.Count; i++)
+            {
+                konsola.Pisz($"  [{i + 1}] {IkonaPlanu(kolejka[i])} {NazwaPlanu(kolejka[i])}");
+            }
+            string wybor = (konsola.Czytaj($"  {pytanie}: ") ?? "").Trim();
+            if (int.TryParse(wybor, out int nr) && nr >= 1 && nr <= kolejka.Count)
+            {
+                return kolejka[nr - 1];
+            }
+            konsola.Pisz("  Nieprawidłowy wybór.");
+            return null;
+        }
+
+        private static void Naglowek(IKonsola konsola, Gracz gracz)
+        {
+            konsola.Wyczysc();
+            Utils.Linia(konsola, '═');
+            konsola.Pisz($"  ROZBUDOWA OBOZU  —  {Kalendarz.OpisDaty(gracz.Czas)}");
+            Utils.Linia(konsola, '═');
+            konsola.Pisz($"\n  {Oboz.LiniaSurowcow(gracz)}");
+            int era = Badania.Era(gracz);
+            konsola.Pisz($"  Złoto: {gracz.Zloto}   Utrzymanie: {Oboz.UtrzymanieDzienne(gracz)} zł/dz.   "
+                         + $"Epoka {era}: {Badania.Ery[era]}");
+            konsola.Pisz($"  Moc budowy: {Liczby.Format(MocBudowy(gracz), 1)} pracy/dzień  ({OpisRobotnikow(gracz)})");
+            List<PlanBudowy> kolejka = Plany(gracz);
+            konsola.Pisz($"\n  W BUDOWIE ({kolejka.Count}/{MaksPlanow}):");
+            if (kolejka.Count == 0)
+            {
+                konsola.Pisz("   — nic; wybierz budowlę poniżej.");
+            }
+            foreach (PlanBudowy p in kolejka)
+            {
+                int? dni = DniDoKonca(gracz, p);
+                string eta = dni.HasValue ? $"~{dni.Value} dni" : "stoi — brak ludzi";
+                konsola.Pisz($"   {IkonaPlanu(p)} {Liczby.Dopelnij(NazwaPlanu(p), 24)} [{Pasek(PostepPlanu(p))}] "
+                             + $"{Liczby.Format(p.Zrobiona, 1)}/{Liczby.Format(p.Wymagana, 0)}  {eta}");
+            }
+        }
+
+        private static (List<string> Pozycje, List<string> Zamkniete) Oferta(IKonsola konsola, Gracz gracz)
+        {
+            var pozycje = new List<string>();
+            var zamkniete = new List<string>();
+            konsola.Pisz("\n  MOŻNA ZLECIĆ:");
+            foreach (KeyValuePair<string, OpisBudynku> b in Oboz.Budynki)
+            {
+                string powod = PowodBlokady(gracz, b.Key);
+                if (powod != null && powod.StartsWith("nieznane"))
+                {
+                    zamkniete.Add($"{b.Value.Nazwa} ← {powod.Substring(powod.IndexOf(": ") + 2)}");
+                    continue;
+                }
+                if (powod == "najwyższy poziom" || powod == "w budowie")
+                {
+                    continue;
+                }
+                pozycje.Add(b.Key);
+                int nast = NastepnyPoziom(gracz, b.Key).Value;
+                Dictionary<string, int> koszt = Oboz.KosztBudowy(gracz, b.Key);
+                string stac = Oboz.MozeZaplacic(gracz, koszt) ? "✔ " : "";
+                int poz = gracz.PoziomBudynku(b.Key);
+                string stan = poz > 0 ? $"poz. {poz} → {nast}" : "nowa";
+                string utrz = b.Value.Utrzymanie > 0 ? $", utrzymanie +{b.Value.Utrzymanie} zł/dz." : "";
+                konsola.Pisz($"  [{pozycje.Count.ToString().PadLeft(2)}] {b.Value.Ikona} {b.Value.Nazwa} ({stan}) — {b.Value.Opis}");
+                konsola.Pisz($"        {stac}{Oboz.FormatKosztu(koszt)}  ·  praca "
+                             + $"{Liczby.Format(PracaPotrzebna(b.Key, nast), 0)} dni{utrz}");
+            }
+            if (pozycje.Count == 0)
+            {
+                konsola.Pisz("   — wszystko, co znacie, jest już zbudowane albo w budowie.");
+            }
+            return (pozycje, zamkniete);
+        }
+
+        /// <summary>Rozbudowa obozu: rusztowania w toku, lista budowli do zlecenia, zamknięte do odkrycia.</summary>
+        public static void MenuBudowy(IKonsola konsola, Gracz gracz, Losowanie rng)
+        {
+            while (true)
+            {
+                Naglowek(konsola, gracz);
+                (List<string> pozycje, List<string> zamkniete) = Oferta(konsola, gracz);
+                string chataPowod = PowodBlokady(gracz, "chata");
+                int nrChaty = pozycje.Count + 1;
+                if (chataPowod == null)
+                {
+                    string stac = Oboz.MozeZaplacic(gracz, Osada.KosztChaty) ? "✔ " : "";
+                    konsola.Pisz($"  [{nrChaty.ToString().PadLeft(2)}] 🛖 Chata osadnika ({Osada.LiczbaChat(gracz)}/{Osada.MaxChaty}) — dom dla jednej osoby");
+                    konsola.Pisz($"        {stac}{Oboz.FormatKosztu(Osada.KosztChaty)}  ·  praca {Liczby.Format(KosztChatyPraca, 0)} dni");
+                }
+                else
+                {
+                    konsola.Pisz($"   🛖 Chata osadnika ({Osada.LiczbaChat(gracz)}/{Osada.MaxChaty}): {chataPowod}");
+                }
+                if (zamkniete.Count > 0)
+                {
+                    konsola.Pisz("\n  🔒 NIEZNANE (badania w skryptorium [23]):");
+                    foreach (string linia in zamkniete)
+                    {
+                        konsola.Pisz($"     {linia}");
+                    }
+                }
+                konsola.Pisz("\n  [P] 🔨 Pomagaj przy budowie (dzień)    [A] ✖ Anuluj plan    [0] ↩ Wróć\n");
+                string wybor = (konsola.Czytaj("  Twój wybór: ") ?? "").Trim().ToLowerInvariant();
+                if (wybor == "0")
+                {
+                    return;
+                }
+                bool liczba = int.TryParse(wybor, out int nr);
+                if (wybor == "p")
+                {
+                    PlanBudowy plan = WybierzPlan(konsola, gracz, "Przy której budowie");
+                    if (plan != null)
+                    {
+                        konsola.Pisz(Pomoz(konsola, gracz, rng, plan.Id));
+                    }
+                }
+                else if (wybor == "a")
+                {
+                    PlanBudowy plan = WybierzPlan(konsola, gracz, "Który plan anulować");
+                    if (plan != null)
+                    {
+                        konsola.Pisz(Anuluj(gracz, plan.Id));
+                    }
+                }
+                else if (liczba && nr >= 1 && nr <= pozycje.Count)
+                {
+                    konsola.Pisz(Zlec(gracz, pozycje[nr - 1]));
+                }
+                else if (liczba && nr == nrChaty && chataPowod == null)
+                {
+                    konsola.Pisz(Zlec(gracz, "chata"));
+                }
+                else
+                {
+                    konsola.Pisz("  Nieprawidłowy wybór.");
+                }
+                Utils.NacisnijEnter(konsola);
+            }
+        }
+    }
+}

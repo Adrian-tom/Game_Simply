@@ -48,7 +48,7 @@ namespace GraSimply.Testy
             var konsola = new KonsolaTestowa(odpowiedzi);
             var gracz = new Gracz("Test", "Wojownik", new Losowanie(1)) { Seed = 2024 };
             Mapa.ZapewnijMape(gracz);
-            var wyprawa = new Eksploracja(gracz, konsola, null, new Losowanie(2024));
+            var wyprawa = new Eksploracja(gracz, konsola, null, new Losowanie(2026));
             wyprawa.Uruchom();
 
             string wyjscie = konsola.Wyjscie;
@@ -94,7 +94,11 @@ namespace GraSimply.Testy
                             wyjscieZnany.Contains("ZNANY REGION [1, 0]"));
             Harness.Sprawdz($"odkrycie pobiera losowanie na opis ({zuzyteNowy} słów)",
                             zuzyteNowy > 0);
-            Harness.Rowne("powrót nie rusza generatora", 0, zuzyteZnany);
+            // Dzień podróży woła też dzień osady (produkcja, choroby, morale), który losuje —
+            // tak samo jak w Pythonie. Dlatego powrót nie zużywa już „zera” słów, ale wyraźnie
+            // mniej niż odkrycie, które dokłada losowanie opisu regionu.
+            Harness.Sprawdz($"powrót zużywa mniej losowań niż odkrycie ({zuzyteZnany} < {zuzyteNowy} słów)",
+                            zuzyteZnany < zuzyteNowy);
         }
 
         /// <summary>

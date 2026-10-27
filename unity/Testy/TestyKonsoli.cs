@@ -112,7 +112,9 @@ namespace GraSimply.Testy
 
             var konsola = new KonsolaKolejkowa();
             var ekran = new Ekran();
-            var gra = new Logika.Gra(konsola, ekran, new Losowanie(7));
+            // Seed dobrany tak, by scenariusz poniżej nie trafił na walkę w drodze: dzień osady
+            // zużywa losowania, więc ten sam seed co dawniej wyznacza już inną wyprawę.
+            var gra = new Logika.Gra(konsola, ekran, new Losowanie(8));
             Migawka migawka = null;
             konsola.PrzedPytaniem = () =>
             {

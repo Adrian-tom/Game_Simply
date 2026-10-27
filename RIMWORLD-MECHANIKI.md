@@ -217,7 +217,7 @@ Opisane osobno w [RimWorld-klasy-JobDriver-IncidentWorker-ThinkNode.md]. W skró
 | 11 | **Warunki pogodowe i ubranie** (N) | Urozmaicenie zimą | mały | niskie |
 | 12 | **Generator questów** (O) | Treść | większy | średnie |
 
-**Stan realizacji (26.10.2026, wersja pythonowa; port Unity jeszcze nie ruszył):**
+**Stan realizacji (26.10.2026 Python; 27.10.2026 port Unity etapów 3 i 10 oraz budowy, z testami zgodności):**
 
 | # | Stan | Co dokładnie jest, a czym różni się od RimWorlda |
 |---|---|---|

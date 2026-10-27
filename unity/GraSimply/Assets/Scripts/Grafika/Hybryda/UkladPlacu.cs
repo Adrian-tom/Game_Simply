@@ -66,6 +66,7 @@ namespace GraSimply.Grafika.Hybryda
             { "targ", (4, 5) },
             { "wieza", (1, 5) },
             { "farma", (3, 5) },
+            { "skryptorium", (3, 1) },
         };
 
         /// <summary>Kolejność, w jakiej chaty zajmują wolne pola placu.</summary>
@@ -80,6 +81,7 @@ namespace GraSimply.Grafika.Hybryda
         {
             { "rolnik", "farma" }, { "tracz", "tartak" }, { "hutnik", "huta" },
             { "rzemieslnik", "warsztat" }, { "uzdrowiciel", "lecznica" }, { "handlarz", "targ" },
+            { "badacz", "skryptorium" },
         };
 
         /// <summary>Zajęcia bez budynku pracują na skraju placu — tam, gdzie las, skały i brama.</summary>
@@ -93,12 +95,24 @@ namespace GraSimply.Grafika.Hybryda
         public static readonly Dictionary<string, string> Blask = new Dictionary<string, string>
         {
             { "kuznia", "kuznia" }, { "huta", "kuznia" }, { "laboratorium", "magia" },
-            { "tawerna", "okno" }, { "dom", "okno" }, { "lecznica", "latarnia" },
+            { "tawerna", "okno" }, { "dom", "okno" }, { "lecznica", "latarnia" }, { "skryptorium", "okno" },
         };
 
         /// <summary>Co gdzie stoi: pole → element. Budynek ma pierwszeństwo przed chatą.</summary>
         public static Dictionary<(int X, int Y), ElementPlacu> Rozklad(StanOsady osada)
         {
+            return Rozklad(osada, out _);
+        }
+
+        /// <summary>
+        /// Jak <see cref="Rozklad(StanOsady)"/>, a do tego rusztowania stawiane na już stojących
+        /// budynkach (rozbudowa): pole → postęp 0–1. Nowy budynek to wpis „budowa” w planie,
+        /// chata w budowie zajmuje następny wolny kafel (postęp w procentach w polu Poziom).
+        /// </summary>
+        public static Dictionary<(int X, int Y), ElementPlacu> Rozklad(
+            StanOsady osada, out Dictionary<(int X, int Y), double> nakladki)
+        {
+            nakladki = new Dictionary<(int X, int Y), double>();
             var plan = new Dictionary<(int X, int Y), ElementPlacu>();
             foreach (KeyValuePair<string, (int X, int Y)> miejsce in Miejsca)
             {
@@ -120,6 +134,34 @@ namespace GraSimply.Grafika.Hybryda
             for (int i = 0; i < Math.Min(osada.Chaty, wolne.Count); i++)
             {
                 plan[wolne[i]] = new ElementPlacu("chata", "chata", i);
+            }
+
+            // Budowy w toku. Palisada nie ma pola — jej postęp widać w menu.
+            int pierwszaWolna = Math.Min(osada.Chaty, wolne.Count);
+            foreach ((string klucz, int _, double postep) in osada.Rusztowania)
+            {
+                int procent = (int)(postep * 100);
+                if (klucz == "chata")
+                {
+                    if (pierwszaWolna < wolne.Count)
+                    {
+                        plan[wolne[pierwszaWolna]] = new ElementPlacu("budowa", "chata", procent);
+                        pierwszaWolna++;
+                    }
+                    continue;
+                }
+                if (!Miejsca.TryGetValue(klucz, out (int X, int Y) pole))
+                {
+                    continue;
+                }
+                if (plan.TryGetValue(pole, out ElementPlacu stoi) && stoi.Rodzaj != "namiot")
+                {
+                    nakladki[pole] = postep;
+                }
+                else
+                {
+                    plan[pole] = new ElementPlacu("budowa", klucz, procent);
+                }
             }
             return plan;
         }
@@ -158,9 +200,26 @@ namespace GraSimply.Grafika.Hybryda
         }
 
         /// <summary>Pole, przy którym kręci się osadnik o danym zajęciu.</summary>
-        public static (int X, int Y) Stanowisko(string zajecie, Dictionary<(int X, int Y), ElementPlacu> plan)
+        public static (int X, int Y) Stanowisko(string zajecie, Dictionary<(int X, int Y), ElementPlacu> plan,
+                                                Dictionary<(int X, int Y), double> nakladki = null)
         {
             zajecie = string.IsNullOrEmpty(zajecie) ? "bezczynny" : zajecie;
+            if (zajecie == "budowniczy")
+            {
+                // Przy pierwszym szkielecie (kolejność po polu), potem przy rozbudowie; bez budowy — pod ogniskiem.
+                foreach (KeyValuePair<(int X, int Y), ElementPlacu> wpis in plan.OrderBy(w => w.Key.X).ThenBy(w => w.Key.Y))
+                {
+                    if (wpis.Value.Rodzaj == "budowa")
+                    {
+                        return wpis.Key;
+                    }
+                }
+                if (nakladki != null && nakladki.Count > 0)
+                {
+                    return nakladki.Keys.OrderBy(p => p.X).ThenBy(p => p.Y).First();
+                }
+                return Ognisko;
+            }
             if (PrzyBudynku.TryGetValue(zajecie, out string budynek))
             {
                 foreach (KeyValuePair<(int X, int Y), ElementPlacu> wpis in plan)

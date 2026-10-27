@@ -32,6 +32,10 @@ namespace GraSimply.Logika
 
         public int Chaty;
 
+        /// <summary>Budowy w toku: (klucz budynku albo „chata”, poziom, postęp 0–1) — rusztowania na placu.</summary>
+        public List<(string Klucz, int Poziom, double Postep)> Rusztowania =
+            new List<(string Klucz, int Poziom, double Postep)>();
+
         /// <summary>„wiosna”, „lato”, „jesien” albo „zima” — kolor gruntu i śnieg.</summary>
         public string Pora = "lato";
 
@@ -138,6 +142,7 @@ namespace GraSimply.Logika
         {
             "dom", "kuznia", "huta", "spichlerz", "karawanseraj", "tartak", "sklep", "warsztat",
             "stajnie", "laboratorium", "tawerna", "lecznica", "targ", "wieza", "farma", "palisada",
+            "skryptorium",
         };
 
         /// <summary>Zamraża osadę do narysowania z bliska. Wołane z wątku logiki.</summary>
@@ -153,6 +158,7 @@ namespace GraSimply.Logika
             {
                 plac.Budynki[klucz] = g.PoziomBudynku(klucz);
             }
+            plac.Rusztowania.AddRange(Budowa.Rusztowania(g));
             foreach (Osadnik o in g.Osadnicy)
             {
                 plac.Osadnicy.Add(new OsadnikDoRysunku

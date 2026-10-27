@@ -118,6 +118,29 @@ Czego w walce jeszcze nie ma: umiejętności klasowych (`skills.py`), przedmiot�
 bojowych i łupów (`items.py`, `rzemioslo.py`), towarzyszy (`rekruci.py`), zadań
 (`quests.py`) i cech pochodzenia (`pochodzenie.py`). Miejsca styku są oznaczone
 komentarzem w `Walka.cs`.
+
+**Osada, budowa, badania i umiejętności** (`osada.py`, `budowa.py`, `badania.py`,
+`kompetencje.py`, tabela budynków z `oboz.py` → `Osada.cs`, `Budowa.cs`, `Badania.cs`,
+`Kompetencje.cs`, `ObozBudynki.cs`). Z menu obozu: `[11]` rozbudowa (plany, rusztowania,
+pomoc bohatera), `[16]` osada (zawody, zatrudnianie, karta osadnika z umiejętnościami
+i pasjami), `[23]` badania w skryptorium (27 projektów, 3 epoki). Dzień świata woła
+teraz `Osada.DzienOsady`: produkcja, jedzenie, opał, psucie żywności, morale, choroby,
+awanse, praca budowniczych i badaczy. Scena hybrydowa pokazuje skryptorium, szkielety
+budów rosnące z postępem i stanowiska budowniczego oraz badacza.
+
+Zgodność z Pythonem pilnuje `Testy/TestyOsady.cs` przez `wzorce/osada.json`
+(`narzedzia/wzorce_osady.py`): tabele budynków, projektów, zajęć i cech, umiejętności
+z imienia, koszty każdego poziomu, bramki badań w ośmiu stanach oraz trzy scenariusze
+wielodniowe (60, 50 i 130 dni) porównywane co dzień co do morale, XP, planów, badań
+i tekstów kroniki. Do tego `Liczby.cs` — zaokrąglanie i formatowanie jak w Pythonie
+(`round(0.15, 1)` i `f"{2.5:.0f}"` różnią się od .NET) oraz zasiew generatora napisem
+(`random.Random("kompetencje|Nessa")`).
+
+Czego z osady jeszcze nie ma: więzi (`wiezi.py`), gabinetu myśli (`mysli.py`),
+zamówień rzemieślników (`rzemioslo.py`), drużyny na zbiorach (`rekruci.py`),
+sprzedaży na targu, handlu, obrony i najazdów, zapisu gry. Miejsca styku są
+oznaczone komentarzem w `Osada.cs` (morale z więzi i myśli, żałoba po stracie,
+zadania po ukończeniu budowy w `Budowa.cs`).
 | **Grafika** | `Assets/Scripts/Grafika` | tylko Logika; rysuje do bufora pikseli |
 | **Gra** | `Assets/Scripts/Gra` | Unity; jeden `MonoBehaviour` spinający całość |
 

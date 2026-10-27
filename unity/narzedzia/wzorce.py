@@ -26,13 +26,17 @@ KORZEN = os.path.dirname(os.path.dirname(KATALOG))
 WYJSCIE = os.path.join(os.path.dirname(KATALOG), "Testy", "wzorce")
 
 sys.path.insert(0, KORZEN)
+sys.path.insert(0, KATALOG)
 
 
-def zapisz(nazwa: str, dane) -> None:
+def zapisz(nazwa: str, dane, kompakt: bool = False) -> None:
     os.makedirs(WYJSCIE, exist_ok=True)
     sciezka = os.path.join(WYJSCIE, nazwa)
     with open(sciezka, "w", encoding="utf-8") as f:
-        json.dump(dane, f, ensure_ascii=False, indent=1)
+        if kompakt:     # duże migawki scenariuszy: wcięcia czterokrotnie zwiększyłyby plik
+            json.dump(dane, f, ensure_ascii=False, separators=(",", ":"))
+        else:
+            json.dump(dane, f, ensure_ascii=False, indent=1)
     print(f"  zapisano {os.path.relpath(sciezka, KORZEN)}")
 
 
@@ -535,6 +539,8 @@ def main() -> int:
     zapisz("postac.json", wzorce_postaci())
     zapisz("wrogowie.json", wzorce_wrogow())
     zapisz("ruch.json", wzorce_ruchu())
+    from wzorce_osady import wzorce_osady
+    zapisz("osada.json", wzorce_osady(), kompakt=True)
     try:
         import pygame  # noqa: F401
     except ImportError:

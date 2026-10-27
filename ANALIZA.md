@@ -228,8 +228,10 @@ Decyzje w rozmowach mają skutki mechaniczne (morale, myśli, przepisy, najazd o
    z pasjami, priorytety pracy, zdrowie jako hediffy…). Najpierw wersja pythonowa z testami,
    potem port Unity. Kolejność wybiera właściciel projektu.
    **Zrobione w Pythonie (26.10.2026):** umiejętności 0–20 i pasje, budowa w czasie
-   z budowniczymi, badania z epokami. **Do portu na Unity:** wszystkie trzy (osada w Unity
-   nie ma jeszcze logiki budynków ani zawodów).
+   z budowniczymi, badania z epokami. **Zportowane na Unity (27.10.2026):** wszystkie trzy
+   razem z dziennym cyklem osady, menu `[11]/[16]/[23]` i sceną z rusztowaniami; zgodność
+   z Pythonem sprawdzają scenariusze wielodniowe w `unity/Testy`. Zostają w Unity: więzi,
+   myśli, zamówienia rzemieślników, handel, obrona, zapis.
 
 ---
 

@@ -179,6 +179,27 @@ namespace GraSimply.Logika
                 {
                     Odpoczynek(gracz);
                 }
+                else if (wybor == "11")
+                {
+                    using (_ekran?.WidokOsady("oboz"))
+                    {
+                        Budowa.MenuBudowy(_konsola, gracz, _rng);
+                    }
+                }
+                else if (wybor == "16")
+                {
+                    using (_ekran?.WidokOsady("osada"))
+                    {
+                        Osada.MenuOsady(_konsola, gracz, _rng);
+                    }
+                }
+                else if (wybor == "23")
+                {
+                    using (_ekran?.WidokOsady("oboz"))
+                    {
+                        Badania.MenuBadan(_konsola, gracz, _rng);
+                    }
+                }
                 else if (wybor == "0")
                 {
                     return;
@@ -200,17 +221,26 @@ namespace GraSimply.Logika
                     _konsola.Pisz($"  {Karma.Etykieta(gracz)}  ·  {Przetrwanie.OpisStanu(gracz)}");
                     _konsola.Pisz($"  Osada: {gracz.Osadnicy.Count} os.  ·  chaty: {gracz.Chaty}");
                     _konsola.Pisz($"  {Oboz.LiniaSurowcow(gracz)}");
+                    foreach (string wiesc in Osada.RozliczKronike(gracz))
+                    {
+                        _konsola.Pisz(wiesc);
+                    }
                     _konsola.Pisz();
                     _konsola.Pisz("  [1]  🧭  Wyrusz na wyprawę");
                     _konsola.Pisz("  [2]  🧙  Karta postaci");
-                    _konsola.Pisz("  [3]  🔥  Odpocznij przy ogniu (1 dzień)");
+                    _konsola.Pisz("  [3]  🔥  Odpocznij (1 dzień)");
+                    _konsola.Pisz("  [11] 🏗  Rozbudowa obozu");
+                    _konsola.Pisz("  [16] 🛖  Osada");
+                    // Krótko: plakietki obozu stoją w prawym górnym rogu i nie mogą wejść na środek placu.
+                    _konsola.Pisz("  [23] 🔬  Badania");
                     _konsola.Pisz("  [0]  🚪  Zakończ grę");
                     _konsola.Pisz();
                     _konsola.Pisz("  (Warsztat, targ, rozmowy i sprawy osady dojdą " +
                                   "w kolejnym etapie portu.)");
                     _konsola.Pisz();
                     string wybor = (_konsola.Czytaj("  Twój wybór: ") ?? "").Trim();
-                    if (wybor == "0" || wybor == "1" || wybor == "2" || wybor == "3")
+                    if (wybor == "0" || wybor == "1" || wybor == "2" || wybor == "3"
+                        || wybor == "11" || wybor == "16" || wybor == "23")
                     {
                         return wybor;
                     }
