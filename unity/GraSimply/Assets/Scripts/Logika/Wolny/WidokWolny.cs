@@ -1,0 +1,80 @@
+using System.Collections.Generic;
+using System.Linq;
+
+namespace GraSimply.Logika.Wolny
+{
+    /// <summary>Tekst i liczby interfejsu trybu „Zomboid fantasy” — wszystko, co warstwa rysująca bierze ze stanu świata.</summary>
+    public static class WidokWolny
+    {
+        public const string Klawisze =
+            "WASD ruch · E zbieraj · 1 śpiwór · 2 ognisko · 3 namiot · F jedz · Z śpij · Esc menu";
+
+        /// <summary>Pasek stanu: życie, energia (jako „mana”), głód, pora doby i to, co niesie bohater.</summary>
+        public static StanHud Hud(SwiatWolny s)
+        {
+            var hud = new StanHud
+            {
+                Imie = "Wędrowiec",
+                Klasa = "Przetrwanie",
+                Poziom = s.Dzien,
+                Zloto = 0,
+                Hp = (int)System.Math.Round(s.Hp),
+                MaxHp = 100,
+                Mana = (int)System.Math.Round(s.Energia),
+                MaxMana = 100,
+                Data = s.Czas,
+                Region = s.ObozZalozony ? "obóz stoi" : "bez obozu",
+                Biom = s.Swiat.Biom((int)System.Math.Floor(s.X), (int)System.Math.Floor(s.Y)),
+                Zywnosc = $"🍖 głód {(int)s.Glod}%",
+                Zagrozenie = s.Spi ? "śpisz" : s.Jasnosc < 0.3 ? "noc" : "dzień",
+                Osada = $"Energia {(int)s.Energia}%  ·  jagody {s.Ile("jagody")}",
+                Surowce = Liczby.Format(s.X, 0) + ", " + Liczby.Format(s.Y, 0),
+            };
+            foreach (string klucz in new[] { "zywnosc", "drewno", "kamien", "ziola" })
+            {
+                int ile = klucz == "zywnosc" ? s.Ile("jagody") : s.Ile(klucz);
+                hud.ListaSurowcow.Add(new KeyValuePair<string, int>(klucz, ile));
+            }
+            return hud;
+        }
+
+        /// <summary>Plecak w lewym górnym rogu: tylko to, co bohater ma, z włóknem, którego nie ma w pasku surowców.</summary>
+        public static List<string> Plecak(SwiatWolny s)
+        {
+            var linie = new List<string> { "PLECAK" };
+            foreach (KeyValuePair<string, int> p in s.Plecak.Where(p => p.Value > 0))
+            {
+                linie.Add($"{SwiatWolny.Nazwa(p.Key)}: {p.Value}");
+            }
+            if (linie.Count == 1)
+            {
+                linie.Add("pusty");
+            }
+            return linie;
+        }
+
+        public static List<string> Dziennik(SwiatWolny s, int ile = 6)
+        {
+            return s.Dziennik.Skip(System.Math.Max(0, s.Dziennik.Count - ile)).ToList();
+        }
+
+        /// <summary>Podpowiedź na dole: co zrobi E albo co stoi na przeszkodzie; w nocy ostrzeżenie.</summary>
+        public static string Podpowiedz(SwiatWolny s)
+        {
+            if (s.Martwy)
+            {
+                return "Koniec drogi — Esc wraca do menu";
+            }
+            if (s.Spi)
+            {
+                return "Śpisz… dowolny ruch cię obudzi";
+            }
+            (int X, int Y)? cel = s.ZnajdzCel();
+            if (cel.HasValue && SwiatWolny.Zbiory.TryGetValue(s.ObiektNa(cel.Value.X, cel.Value.Y), out OpisZbioru o))
+            {
+                return $"E: {o.Czynnosc}";
+            }
+            return Klawisze;
+        }
+    }
+}

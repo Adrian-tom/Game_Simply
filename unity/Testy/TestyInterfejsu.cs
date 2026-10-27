@@ -67,7 +67,7 @@ namespace GraSimply.Testy
             EkranGry e = EkranGry.Z(linie, true, naEnter);
             Harness.Sprawdz("logo rozpoznane", e.MaLogo);
             Harness.Sprawdz("logo nie trafia do treści", !e.Tresc.Any(l => l.Contains("╗") || l.Contains("╚")));
-            Harness.RowneCiagi("opcje: nowa gra i wyjście", new[] { "1", "0" }, e.Opcje.Select(o => o.Klawisz));
+            Harness.RowneCiagi("opcje: nowa gra i wyjście", new[] { "1", "2", "0" }, e.Opcje.Select(o => o.Klawisz));
 
             (linie, naEnter) = Ekran("1", "Halina");
             e = EkranGry.Z(linie, true, naEnter);

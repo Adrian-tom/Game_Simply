@@ -366,8 +366,17 @@ namespace GraSimply.Gra
         private void Update()
         {
             _czas += Time.unscaledDeltaTime;
-            ObsluzWejscie();
-            Rysuj();
+            Logika.Wolny.SwiatWolny wolny = _ekran.Wolny;
+            if (wolny != null)
+            {
+                ObsluzWolny(wolny);
+                RysujWolny(wolny);
+            }
+            else
+            {
+                ObsluzWejscie();
+                Rysuj();
+            }
             if (_watekLogiki != null && _watekLogiki.IsCompleted && !_konsola.Zamknieta)
             {
                 _watekLogiki = null;
@@ -379,6 +388,62 @@ namespace GraSimply.Gra
                     Wyjdz();
                 }
             }
+        }
+
+        // ------------------------------------------------------------------ //
+        //  Tryb „Zomboid fantasy” — świat w czasie rzeczywistym                //
+        // ------------------------------------------------------------------ //
+
+        private Grafika.Wolny.ScenaWolna _scenaWolna;
+
+        /// <summary>
+        /// Sterowanie: WASD albo strzałki (względem ekranu — w rzucie skośnym to przekątne siatki),
+        /// E albo spacja zbiera (przytrzymanie powtarza), 1/2/3 stawia śpiwór, ognisko, namiot,
+        /// F je, Z śpi, Esc wraca do menu głównego.
+        /// </summary>
+        private void ObsluzWolny(Logika.Wolny.SwiatWolny swiat)
+        {
+            if (Input.GetKeyDown(KeyCode.F11))
+            {
+                Screen.fullScreen = !Screen.fullScreen;
+            }
+            if (Input.GetKeyDown(KeyCode.Escape) && _konsola.CzekaNaWejscie)
+            {
+                Odpowiedz("koniec");
+                return;
+            }
+            double dx = 0, dy = 0;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) { dx -= 1; dy -= 1; }
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) { dx += 1; dy += 1; }
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) { dx -= 1; dy += 1; }
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) { dx += 1; dy -= 1; }
+            int buduj = 0;
+            if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) { buduj = 1; }
+            if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) { buduj = 2; }
+            if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) { buduj = 3; }
+            swiat.Aktualizuj(Time.unscaledDeltaTime, new Logika.Wolny.Wejscie
+            {
+                Dx = dx,
+                Dy = dy,
+                Dzialaj = Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.Space),
+                Buduj = buduj,
+                Jedz = Input.GetKeyDown(KeyCode.F),
+                Spij = Input.GetKeyDown(KeyCode.Z),
+            });
+        }
+
+        private void RysujWolny(Logika.Wolny.SwiatWolny swiat)
+        {
+            _scenaWolna = _scenaWolna ?? new Grafika.Wolny.ScenaWolna();
+            List<Napis> napisy = _pulpit.ZlozWolny(_scenaWolna, swiat, _czas,
+                                                   Logika.Wolny.WidokWolny.Hud(swiat),
+                                                   Logika.Wolny.WidokWolny.Plecak(swiat),
+                                                   Logika.Wolny.WidokWolny.Dziennik(swiat),
+                                                   Logika.Wolny.WidokWolny.Podpowiedz(swiat));
+            _tekstura.LoadRawTextureData(_pulpit.Klatka.Dane);
+            _tekstura.Apply(false);
+            PokazNapisyHud(napisy);
+            UkryjKonsole();
         }
 
         private void Rysuj()

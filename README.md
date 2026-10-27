@@ -34,6 +34,11 @@ spacja (albo E) robi to, co podpowiada napis na dole; numery z menu nadal dział
 Paczkę buduje się z kodu w `unity/` (menu *Gra Simply → Zbuduj grę (Windows)*); plik jest w Releases,
 a nie w repozytorium, bo ma ok. 90 MB.
 
+## Zomboid fantasy (Unity)
+
+W menu głównym wersji Unity jest drugi tryb: **[2] Przetrwanie** — wielki świat w czasie rzeczywistym, start
+ze śpiworem, zbieranie zasobów, ognisko i namiot, a docelowo osada. Opis, sterowanie i plan: `ZOMBOID-FANTASY.md`.
+
 ## Uruchomienie
 
 Na Windowsie kliknij dwukrotnie **`uruchom.bat`**. Albo:

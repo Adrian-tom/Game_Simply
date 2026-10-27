@@ -168,6 +168,47 @@ namespace GraSimply.Grafika
             return new List<Napis>(_napisy);
         }
 
+        /// <summary>
+        /// Klatka trybu „Zomboid fantasy”: scena narysowana już do <see cref="Natywne"/>, a tu dochodzi
+        /// pasek stanu, plecak w lewym górnym rogu, dziennik zdarzeń i podpowiedź klawiszy na dole.
+        /// </summary>
+        public List<Napis> ZlozWolny(Plotno cel, StanHud hud, string klasa, IReadOnlyList<string> plecak,
+                                     IReadOnlyList<string> dziennik, string podpowiedz)
+        {
+            _napisy.Clear();
+            _przyciski.Clear();
+            _mysz = null;
+            Naglowek(hud);
+            Postac(hud, klasa);
+
+            int znakow = 0;
+            foreach (string l in plecak)
+            {
+                znakow = Math.Max(znakow, l.Length);
+            }
+            if (plecak.Count > 0)
+            {
+                Przyciemnij(4, 42, znakow * Znak + 14, plecak.Count * Wiersz + 8, 170);
+                int y = 46;
+                foreach (string l in plecak)
+                {
+                    Tekst(l, 10, y, Styl.Aktywny.Tekst);
+                    y += Wiersz;
+                }
+            }
+
+            _dziennik.Clear();
+            _dziennik.AddRange(dziennik);
+            Dziennik(false);
+
+            if (!string.IsNullOrEmpty(podpowiedz))
+            {
+                Plakietka(podpowiedz, W / 2 - (podpowiedz.Length * Znak + 10) / 2, H - 20, Styl.Aktywny.Wyrozniony, false);
+            }
+            Powieksz(_natywne, cel);
+            return new List<Napis>(_napisy);
+        }
+
         private static int NajdluzszaLinia(List<string> linie)
         {
             int m = 0;

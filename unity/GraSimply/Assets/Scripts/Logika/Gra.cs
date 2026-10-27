@@ -49,6 +49,10 @@ namespace GraSimply.Logika
                             PetlaObozu(gracz);
                         }
                     }
+                    else if (wybor == "2")
+                    {
+                        Przetrwanie_();
+                    }
                     else if (wybor == "0")
                     {
                         _konsola.Pisz("\n  Do zobaczenia przy ogniu.");
@@ -70,16 +74,46 @@ namespace GraSimply.Logika
             }
         }
 
+        /// <summary>
+        /// Tryb „Zomboid fantasy”: świat w czasie rzeczywistym liczy wątek główny (klatka po klatce),
+        /// a ten wątek tylko czeka. Esc w oknie wysyła „koniec” i wraca do menu głównego.
+        /// Bez okna (testy) tryb nie ma kto aktualizować, więc od razu wracamy.
+        /// </summary>
+        private void Przetrwanie_()
+        {
+            if (_ekran == null)
+            {
+                return;
+            }
+            _ekran.Wolny = new Wolny.SwiatWolny(_rng.Zakres(1, int.MaxValue));
+            try
+            {
+                while (true)
+                {
+                    string odp = (_konsola.Czytaj("") ?? "").Trim();
+                    if (odp == "koniec")
+                    {
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                _ekran.Wolny = null;
+            }
+        }
+
         private string MenuGlowne()
         {
             while (true)
             {
                 Utils.BanerTytulowy(_konsola);
-                _konsola.Pisz("  [1]  🎮  Nowa gra");
+                _konsola.Pisz("  [1]  🎮  Nowa gra (fabuła, obóz, wyprawy)");
+                _konsola.Pisz("  [2]  🏕  Przetrwanie — świat w czasie rzeczywistym");
                 _konsola.Pisz("  [0]  🚪  Wyjście");
                 _konsola.Pisz();
                 string wybor = (_konsola.Czytaj("  Twój wybór: ") ?? "").Trim();
-                if (wybor == "1" || wybor == "0")
+                if (wybor == "1" || wybor == "2" || wybor == "0")
                 {
                     return wybor;
                 }

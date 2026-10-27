@@ -19,6 +19,12 @@ namespace GraSimply.Logika
             return h / 4294967296.0;
         }
 
+        /// <summary>Pseudolosowa wartość 0–1 przypisana do jednego węzła (do rozmieszczania obiektów na polach).</summary>
+        public static double Losowa(int ix, int iy, long ziarno)
+        {
+            return Skrot(ix, iy, ziarno);
+        }
+
         private static double Wygladz(double t)
         {
             return t * t * (3.0 - 2.0 * t);

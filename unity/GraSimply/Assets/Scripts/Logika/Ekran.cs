@@ -22,6 +22,12 @@ namespace GraSimply.Logika
         private Gracz _gracz;
         private Dictionary<string, string> _skroty = new Dictionary<string, string>();
         private string _widok;
+
+        /// <summary>
+        /// Świat trybu „Zomboid fantasy”, gdy gra jest w tym trybie, inaczej null. Aktualizuje go wątek
+        /// główny (klatka po klatce), a wątek logiki tylko czeka na koniec — dlatego pole jest zmienne.
+        /// </summary>
+        public volatile Wolny.SwiatWolny Wolny;
         private string _rozmowa;
 
         /// <summary>Postać, której świat rysuje widok. null = ekran tytułowy.</summary>

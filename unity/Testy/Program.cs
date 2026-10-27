@@ -34,6 +34,11 @@ namespace GraSimply.Testy
                 return Podglad.Zapisz(cel);
             }
 
+            if (argumenty.Length >= 2 && argumenty[0] == "--wolny")
+            {
+                return PodgladWolny.Zapisz(argumenty[1]);
+            }
+
             string katalog = KatalogWzorcow(argumenty);
             Console.WriteLine($"Wzorce: {katalog}");
 
@@ -44,6 +49,7 @@ namespace GraSimply.Testy
             TestyRuchu.Uruchom(Wczytaj(katalog, "ruch.json"));
             TestyOsady.Uruchom(Wczytaj(katalog, "osada.json"));
             TestyChodzenia.Uruchom();
+            TestyWolnego.Uruchom();
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
             TestyInterfejsu.Uruchom();

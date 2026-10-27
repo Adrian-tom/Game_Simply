@@ -126,6 +126,18 @@ namespace GraSimply.Grafika
         }
 
         /// <summary>
+        /// Klatka trybu „Zomboid fantasy” (układ fantasy): scena świata, pasek stanu, plecak,
+        /// dziennik i podpowiedź klawiszy. Zwraca napisy w pikselach pulpitu.
+        /// </summary>
+        public List<Napis> ZlozWolny(Wolny.ScenaWolna scenaWolna, Logika.Wolny.SwiatWolny swiat, double t, StanHud hud,
+                                     IReadOnlyList<string> plecak, IReadOnlyList<string> dziennik, string podpowiedz)
+        {
+            _fantasy = _fantasy ?? new PulpitFantasy();
+            scenaWolna.Rysuj(_fantasy.Natywne, swiat, t);
+            return _fantasy.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz);
+        }
+
+        /// <summary>
         /// Składa klatkę. Zwraca napisy do narysowania przez Unity w pikselach
         /// płótna (lewy górny róg to (0, 0)).
         /// </summary>
