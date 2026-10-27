@@ -26,6 +26,14 @@ Architektura, pętle gry i liczby z symulacji balansu: **[ANALIZA.md](ANALIZA.md
 
 ---
 
+## Gotowa gra na Windows (Unity)
+
+Bez Pythona i bez Unity: wejdź w **Releases** repozytorium, pobierz `GraSimply-Windows.zip`,
+rozpakuj i uruchom `GraSimply.exe` (podwójne kliknięcie). W obozie chodzisz strzałkami lub WASD,
+spacja (albo E) robi to, co podpowiada napis na dole; numery z menu nadal działają.
+Paczkę buduje się z kodu w `unity/` (menu *Gra Simply → Zbuduj grę (Windows)*); plik jest w Releases,
+a nie w repozytorium, bo ma ok. 90 MB.
+
 ## Uruchomienie
 
 Na Windowsie kliknij dwukrotnie **`uruchom.bat`**. Albo:
