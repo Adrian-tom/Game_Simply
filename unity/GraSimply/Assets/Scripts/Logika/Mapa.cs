@@ -87,40 +87,47 @@ namespace GraSimply.Logika
             return n & 0x7FFF_FFFFL;
         }
 
-        /// <summary>Klastry biomów (Voronoi) — region wygląda jak mapa, nie jak szum.</summary>
-        private static string[][] SiatkaBiomow(Losowanie rng)
+        /// <summary>
+        /// Biom pola o współrzędnych świata — te same w każdym regionie i po wczytaniu.
+        /// Cechy terenu (rzeźba, wilgotność, temperatura, ruiny) pochodzą z szumu na współrzędnych
+        /// świata, a biom wybiera tabela progów; pola tuż przy obozie to zawsze równiny.
+        /// </summary>
+        public static string BiomSwiata(long seed, int gx, int gy)
+        {
+            if (Math.Max(Math.Abs(gx - Srodek), Math.Abs(gy - Srodek)) <= 2)
+            {
+                return "równiny";
+            }
+            long s = seed & 0x7FFFFFFFL;
+            double rzezba = Szum.Fbm(gx / 7.0, gy / 7.0, s + 1);
+            double wilgoc = Szum.Fbm(gx / 8.5, gy / 8.5, s + 2);
+            double temp = Szum.Fbm(gx / 10.0, gy / 10.0, s + 3);
+            double ruiny = Szum.Szum2(gx / 3.0, gy / 3.0, s + 4);
+            if (ruiny > 0.84 && rzezba <= 0.64)
+            {
+                return "ruiny";
+            }
+            if (rzezba > 0.64)
+            {
+                return temp > 0.5 && wilgoc < 0.5 ? "kanion" : "wzgórza";
+            }
+            if (wilgoc > 0.62)
+            {
+                return rzezba < 0.47 ? "bagna" : "las";
+            }
+            return wilgoc > 0.52 ? "las" : "równiny";
+        }
+
+        private static string[][] SiatkaBiomow(long seed, int rx, int ry)
         {
             const int n = Rozmiar;
-            int ile = rng.Calkowita(4, 6);
-            List<string> wybrane = rng.Probka(BiomyNazwy, ile);
-            var ziarna = new List<(int X, int Y, string Biom)>();
-            foreach (string biom in wybrane)
-            {
-                int zx = rng.Calkowita(0, n - 1);
-                int zy = rng.Calkowita(0, n - 1);
-                ziarna.Add((zx, zy, biom));
-            }
-
             var siatka = new string[n][];
             for (int y = 0; y < n; y++)
             {
                 siatka[y] = new string[n];
                 for (int x = 0; x < n; x++)
                 {
-                    // Python wybiera min() — przy remisie zostaje pierwszy
-                    // z listy, więc tu też porównujemy ostro większym.
-                    int najlepszy = int.MaxValue;
-                    string biom = ziarna[0].Biom;
-                    foreach ((int zx, int zy, string b) in ziarna)
-                    {
-                        int d = (zx - x) * (zx - x) + (zy - y) * (zy - y);
-                        if (d < najlepszy)
-                        {
-                            najlepszy = d;
-                            biom = b;
-                        }
-                    }
-                    siatka[y][x] = biom;
+                    siatka[y][x] = BiomSwiata(seed, rx * n + x, ry * n + y);
                 }
             }
             return siatka;
@@ -134,7 +141,7 @@ namespace GraSimply.Logika
         public static Pole[][] GenerujMape(int mapaGen = 1, long seed = 0, int rx = 0, int ry = 0)
         {
             var rng = new Losowanie(ZiarnoRegionu(seed, rx, ry));
-            string[][] biomy = SiatkaBiomow(rng);
+            string[][] biomy = SiatkaBiomow(seed, rx, ry);
             bool startowy = rx == 0 && ry == 0;
 
             var pola = new Pole[Rozmiar][];

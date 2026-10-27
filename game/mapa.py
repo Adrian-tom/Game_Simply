@@ -11,6 +11,7 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from game.szum import fbm, szum2
 from game import ekran
 from game.ikony import (
     GRACZ_MAPA,
@@ -61,23 +62,36 @@ def _puste_pole(biom: str, punkt: str | None = None) -> dict:
     }
 
 
-def _siatka_biomow(rng: random.Random) -> list[list[str]]:
-    """Klastry biomów (Voronoi) — region wygląda jak mapa, nie jak szum."""
+def biom_swiata(seed: int, gx: int, gy: int) -> str:
+    """Biom pola o współrzędnych świata (gx, gy) — te same w każdym regionie i po wczytaniu.
+
+    Wzorzec z Project Zomboid: cechy terenu (rzeźba, wilgotność, temperatura, ruiny) pochodzą
+    z gładkiego szumu na współrzędnych **świata**, a biom wybiera tabela progów. Dzięki temu
+    las czy bagno przechodzą przez granicę regionu bez szwu (wcześniej każdy region miał własne,
+    niezależne klastry). Pola tuż przy obozie to zawsze równiny — bezpieczna łąka na start.
+    """
+    if max(abs(gx - SRODEK), abs(gy - SRODEK)) <= 2:
+        return "równiny"
+    s = int(seed) & 0x7FFFFFFF
+    rzezba = fbm(gx / 7.0, gy / 7.0, s + 1)
+    wilgoc = fbm(gx / 8.5, gy / 8.5, s + 2)
+    temp = fbm(gx / 10.0, gy / 10.0, s + 3)
+    ruiny = szum2(gx / 3.0, gy / 3.0, s + 4)
+    if ruiny > 0.84 and rzezba <= 0.64:
+        return "ruiny"
+    if rzezba > 0.64:
+        return "kanion" if (temp > 0.5 and wilgoc < 0.5) else "wzgórza"
+    if wilgoc > 0.62:
+        return "bagna" if rzezba < 0.47 else "las"
+    if wilgoc > 0.52:
+        return "las"
+    return "równiny"
+
+
+def _siatka_biomow(seed: int, rx: int, ry: int) -> list[list[str]]:
+    """Biomy pól regionu (rx, ry) z szumu świata — patrz ``biom_swiata``."""
     n = ROZMIAR
-    ile = rng.randint(4, 6)
-    wybrane = rng.sample(list(BIOMY_NAZWY), k=ile)
-    ziarna = [
-        (rng.randint(0, n - 1), rng.randint(0, n - 1), biom)
-        for biom in wybrane
-    ]
-    siatka: list[list[str]] = []
-    for y in range(n):
-        wiersz: list[str] = []
-        for x in range(n):
-            naj = min(ziarna, key=lambda z: (z[0] - x) ** 2 + (z[1] - y) ** 2)
-            wiersz.append(naj[2])
-        siatka.append(wiersz)
-    return siatka
+    return [[biom_swiata(seed, rx * n + x, ry * n + y) for x in range(n)] for y in range(n)]
 
 
 def liczba_pol() -> int:
@@ -101,7 +115,7 @@ def generuj_mape(mapa_gen: int = 1, seed: int = 0, rx: int = 0, ry: int = 0) -> 
     powtarzalny przy powrocie, ale inny w każdej nowej rozgrywce.
     """
     rng = random.Random(_ziarno_regionu(seed, rx, ry))
-    biomy = _siatka_biomow(rng)
+    biomy = _siatka_biomow(seed, rx, ry)
     startowy = (rx == 0 and ry == 0)
     pola: list[list[dict]] = []
     for y in range(ROZMIAR):

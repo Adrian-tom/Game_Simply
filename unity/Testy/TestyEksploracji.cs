@@ -46,9 +46,9 @@ namespace GraSimply.Testy
             odpowiedzi.AddRange(new[] { "0", "" });      // powrót do obozu
 
             var konsola = new KonsolaTestowa(odpowiedzi);
-            var gracz = new Gracz("Test", "Wojownik", new Losowanie(1)) { Seed = 2024 };
+            var gracz = new Gracz("Test", "Wojownik", new Losowanie(1)) { Seed = 314 };
             Mapa.ZapewnijMape(gracz);
-            var wyprawa = new Eksploracja(gracz, konsola, null, new Losowanie(2026));
+            var wyprawa = new Eksploracja(gracz, konsola, null, new Losowanie(2042));
             wyprawa.Uruchom();
 
             string wyjscie = konsola.Wyjscie;
@@ -108,7 +108,7 @@ namespace GraSimply.Testy
         private static int PrzejdzPrzezKrawedz(Losowanie rng, bool regionZnany,
                                                out string wyjscie)
         {
-            var gracz = new Gracz("Test", "Wojownik", new Losowanie(1)) { Seed = 2024 };
+            var gracz = new Gracz("Test", "Wojownik", new Losowanie(1)) { Seed = 314 };
             Mapa.ZapewnijMape(gracz);
             if (regionZnany)
             {
@@ -187,7 +187,7 @@ namespace GraSimply.Testy
 
             foreach (string klasa in new[] { "Wojownik", "Mag", "Lotrzyk", "Druid", "Nekromanta" })
             {
-                var g = new Gracz("Test", klasa, new Losowanie(1)) { Seed = 7 };
+                var g = new Gracz("Test", klasa, new Losowanie(1)) { Seed = 314 };
                 Mapa.ZapewnijMape(g);
                 g.Hp = 1;
                 var konsola = new KonsolaTestowa(new[] { "" });
@@ -195,7 +195,7 @@ namespace GraSimply.Testy
                 Harness.Rowne($"{klasa}: odpoczynek bez budynków leczy 30 HP", 31, g.Hp);
             }
 
-            var zDomem = new Gracz("Test", "Mag", new Losowanie(1)) { Seed = 7 };
+            var zDomem = new Gracz("Test", "Mag", new Losowanie(1)) { Seed = 314 };
             Mapa.ZapewnijMape(zDomem);
             zDomem.Hp = 1;
             zDomem.PoziomyBudynkow["dom"] = 1;

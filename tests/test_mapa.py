@@ -126,3 +126,44 @@ class TestMigracjaStarychZapisow(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBiomowZSzumu(unittest.TestCase):
+    """Biomy z szumu na współrzędnych świata (wzorzec z Project Zomboid): ciągłe i zróżnicowane."""
+
+    def test_wszystkie_biomy_wystepuja_i_zaden_nie_dominuje(self):
+        from collections import Counter
+        from game.mapa import BIOMY_NAZWY, biom_swiata
+        for seed in (1, 42, 988_061):
+            licznik = Counter(biom_swiata(seed, x, y) for x in range(-60, 60) for y in range(-60, 60))
+            self.assertEqual(set(licznik), set(BIOMY_NAZWY), seed)
+            self.assertLess(max(licznik.values()) / sum(licznik.values()), 0.45, seed)
+            self.assertGreater(min(licznik.values()) / sum(licznik.values()), 0.02, seed)
+
+    def test_biom_przechodzi_przez_granice_regionu(self):
+        from game.mapa import ROZMIAR, generuj_mape
+        zgodne = razem = 0
+        for seed in range(1, 9):
+            for rx, ry in ((1, 0), (2, 1), (-1, 3), (3, -2)):
+                lewy = generuj_mape(3, seed, rx, ry)
+                prawy = generuj_mape(3, seed, rx + 1, ry)
+                for y in range(ROZMIAR):
+                    razem += 1
+                    zgodne += lewy[y][ROZMIAR - 1]["biom"] == prawy[y][0]["biom"]
+        # niezależne klastry dawały tu ok. 1/4 zgodności; szum świata — wyraźnie ponad połowę
+        self.assertGreater(zgodne / razem, 0.6)
+
+    def test_start_na_lace_i_powtarzalnosc(self):
+        from game.mapa import SRODEK, biom_swiata, generuj_mape
+        for seed in (3, 77, 5_000_001):
+            self.assertEqual(biom_swiata(seed, SRODEK + 2, SRODEK - 2), "równiny")
+            self.assertEqual(generuj_mape(1, seed, 0, 0)[SRODEK][SRODEK]["biom"], "równiny")
+        self.assertEqual(generuj_mape(2, 9, -4, 7), generuj_mape(2, 9, -4, 7))
+
+    def test_szum_jest_gladki_i_w_zakresie(self):
+        from game.szum import fbm, szum2
+        wartosci = [szum2(x * 0.37, y * 0.41, 5) for x in range(-30, 30) for y in range(-30, 30)]
+        self.assertTrue(all(0.0 <= v < 1.0 for v in wartosci))
+        skok = max(abs(szum2(x * 0.05, 0.3, 9) - szum2(x * 0.05 + 0.05, 0.3, 9)) for x in range(200))
+        self.assertLess(skok, 0.2)
+        self.assertTrue(all(0.0 <= fbm(x * 0.9, -x * 0.7, 3) < 1.0 for x in range(-50, 50)))
