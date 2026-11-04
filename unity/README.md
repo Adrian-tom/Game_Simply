@@ -6,10 +6,13 @@ i dalej jest grywalna (`python main.py`).
 
 ![Styl mroczny: mapa na cały ekran, strzałki ruchu, kule życia i many](podglad/mroczny/dzien.png)
 
-Gra ma trzy style grafiki, do wyboru w inspektorze komponentu *Silnik gry*
+Gra ma cztery style grafiki, do wyboru w inspektorze komponentu *Silnik gry*
 (pole **Styl grafiki**):
 
-* **Hybrydowy** (domyślny) — pixelart i Mroczny w jednym obrazie: rzut skośny,
+* **Trojwymiar** (domyślny) — modele 3D z darmowych paczek CC0 i kamera
+  izometryczna; interfejs fantasy leży na obrazie z kamery. Opis niżej w sekcji
+  „Grafika 3D”.
+* **Hybrydowy** — pixelart i Mroczny w jednym obrazie: rzut skośny,
   ciągły grunt gasnący w czerń, noc ze światłem tylko ognia i okien, wspólna
   paleta i interfejs fantasy z Mrocznego, ale chaty, namiot i ludzie jako
   pixelart. Jedyny styl ze **sceną osady z bliska**, po której chodzą osadnicy
@@ -36,6 +39,36 @@ Styl hybrydowy — plac osady w południe i w nocy:
 Styl klasyczny:
 
 ![Mapa regionu, HUD i konsola w dzień](podglad/dzien.png)
+
+## Grafika 3D
+
+| Otwarty świat | Budowanie | Obóz |
+| --- | --- | --- |
+| ![](podglad/3d/swiat.png) | ![](podglad/3d/budowanie.png) | ![](podglad/3d/oboz.png) |
+
+Logika gry się nie zmieniła. Warstwa `Gra/Trojwymiar` co klatkę czyta stan gry i ustawia modele:
+`Wolny3D` (otwarty świat), `Osada3D` (plac osady) i `Mapa3D` (mapa regionu, także tło menu).
+Interfejs nadal rysuje `PulpitFantasy`, tyle że na przezroczystym płótnie nakładanym na obraz z kamery.
+Przypisanie rzeczy z gry do modeli jest w `Grafika/Trojwymiar/KatalogModeli.cs`, a testy sprawdzają,
+czy każdy wskazany plik istnieje.
+
+Modele leżą w `Assets/Resources/Modele`, a licencje autorów w `Assets/Licencje-modeli`. Wszystkie są na CC0:
+
+| Autor | Paczka (wersja darmowa) | Do czego |
+| --- | --- | --- |
+| Kay Lousberg | [Adventurers](https://kaylousberg.itch.io/kaykit-adventurers), [Skeletons](https://kaylousberg.itch.io/kaykit-skeletons) | postacie i animacje |
+| Kay Lousberg | [Forest Nature](https://kaylousberg.itch.io/kaykit-forest), [Medieval Hexagon](https://kaylousberg.itch.io/kaykit-medieval-hexagon) | natura, budynki osady, punkty mapy |
+| Kenney | [Survival Kit](https://kenney.nl/assets/survival-kit) | śpiwór, ognisko, namiot, płot, rusztowanie |
+| Quaternius | [Medieval Village MegaKit](https://quaternius.com/packs/medievalvillagemegakit.html) | chaty i dwór składane z części |
+
+Zrzuty scen bez uruchamiania gry (bez `-nographics`, napisy dorysowuje dopiero Unity UI):
+
+```bash
+Unity.exe -batchmode -quit -projectPath unity/GraSimply -executeMethod GraSimply.Edytor.PodgladSwiata.Zrob
+```
+
+Pliki trafiają do `Build/PodgladSwiata`. Plansze wszystkich modeli i ich rozmiary daje
+`GraSimply.Edytor.PodgladModeli.Zrob` (`Build/PodgladModeli`).
 
 ## Jak to uruchomić
 

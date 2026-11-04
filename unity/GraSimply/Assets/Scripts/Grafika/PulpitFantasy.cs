@@ -83,6 +83,18 @@ namespace GraSimply.Grafika
 
         public List<Przycisk> Przyciski => _przyciski;
 
+        /// <summary>
+        /// Scena leży pod spodem jako obraz z kamery 3D: <see cref="Natywne"/> startuje przezroczyste
+        /// i trzyma sam interfejs, a na pulpit idzie razem z kanałem alfa.
+        /// </summary>
+        public bool Nakladka;
+
+        /// <summary>Skąd brać pozycję bohatera dla strzałek, gdy scenę rysuje nie styl, lecz kamera 3D.</summary>
+        public IKadrPostaci Kadr;
+
+        /// <summary>Pasek postępu nad obiektem (piksele natywne, 0–1); rysowany raz, potem się czyści.</summary>
+        public (int X, int Y, double Postep)? PasekSwiata;
+
         /// <summary>Płótno sceny w natywnej rozdzielczości — scena rysuje się wprost do niego.</summary>
         public Plotno Natywne => _natywne;
 
@@ -247,6 +259,13 @@ namespace GraSimply.Grafika
                 }
             }
 
+            if (PasekSwiata.HasValue)
+            {
+                (int bx, int by, double postep) = PasekSwiata.Value;
+                _natywne.Wypelnij(Cien, bx - 18, by - 1, 36, 7);
+                _natywne.Wypelnij(ZlotoJ, bx - 17, by, (int)(34 * Math.Max(0.0, Math.Min(1.0, postep))), 5);
+                PasekSwiata = null;
+            }
             int gora = H;
             if (kafelki != null)
             {
@@ -504,7 +523,8 @@ namespace GraSimply.Grafika
 
         private void Strzalki(EkranGry ekran)
         {
-            if (!(Styl.Aktywny.Generator is IKadrPostaci gen) || !gen.PozycjaPostaci.HasValue)
+            IKadrPostaci gen = Kadr ?? Styl.Aktywny.Generator as IKadrPostaci;
+            if (gen == null || !gen.PozycjaPostaci.HasValue)
             {
                 StosPrzyciskow(ekran.Opcje.FindAll(o => o.Kierunek.HasValue), null, false);
                 return;
@@ -938,9 +958,19 @@ namespace GraSimply.Grafika
                 for (int px = Math.Max(0, x); px < Math.Min(W, x + w); px++)
                 {
                     int i = (py * W + px) * 4;
+                    if (d[i + 3] == 0)
+                    {
+                        // Na przezroczystym tle (nakładka na 3D) sam kolor i alfa: scena prześwituje w Unity.
+                        d[i] = k.R;
+                        d[i + 1] = k.G;
+                        d[i + 2] = k.B;
+                        d[i + 3] = (byte)alfa;
+                        continue;
+                    }
                     d[i] = (byte)((d[i] * (255 - alfa) + k.R * alfa) / 255);
                     d[i + 1] = (byte)((d[i + 1] * (255 - alfa) + k.G * alfa) / 255);
                     d[i + 2] = (byte)((d[i + 2] * (255 - alfa) + k.B * alfa) / 255);
+                    d[i + 3] = (byte)Math.Max((int)d[i + 3], alfa);
                 }
             }
         }
@@ -962,7 +992,7 @@ namespace GraSimply.Grafika
         }
 
         /// <summary>Powiększenie ×2 wprost do płótna pulpitu — bez nowego płótna co klatkę.</summary>
-        private static void Powieksz(Plotno z, Plotno cel)
+        private void Powieksz(Plotno z, Plotno cel)
         {
             byte[] zd = z.Dane, cd = cel.Dane;
             int cw = cel.Szerokosc;
@@ -978,7 +1008,7 @@ namespace GraSimply.Grafika
                         cd[ci + r * 4] = zd[zi];
                         cd[ci + r * 4 + 1] = zd[zi + 1];
                         cd[ci + r * 4 + 2] = zd[zi + 2];
-                        cd[ci + r * 4 + 3] = 255;
+                        cd[ci + r * 4 + 3] = Nakladka ? zd[zi + 3] : (byte)255;
                     }
                 }
                 Buffer.BlockCopy(cd, wiersz, cd, wiersz + cw * 4, cw * 4);

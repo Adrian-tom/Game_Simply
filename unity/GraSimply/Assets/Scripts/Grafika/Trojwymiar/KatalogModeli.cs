@@ -1,0 +1,344 @@
+using System;
+using System.Collections.Generic;
+using GraSimply.Logika.Wolny;
+
+namespace GraSimply.Grafika.Trojwymiar
+{
+    /// <summary>Który model z <c>Resources/Modele</c> postawić i jak wysoki ma być (w jednostkach świata).</summary>
+    public struct WpisModelu
+    {
+        public string Sciezka;
+        public float Wysokosc;
+        public bool LosowyObrot;
+
+        public WpisModelu(string sciezka, float wysokosc, bool losowyObrot = false)
+        {
+            Sciezka = sciezka;
+            Wysokosc = wysokosc;
+            LosowyObrot = losowyObrot;
+        }
+    }
+
+    /// <summary>Element budynku złożonego z części Quaterniusa (współrzędne autora, 1 jednostka = 1 m).</summary>
+    public struct CzescBudynku
+    {
+        public string Sciezka;
+        public float X, Y, Z, Obrot;
+
+        public CzescBudynku(string sciezka, float x, float y, float z, float obrot = 0f)
+        {
+            Sciezka = sciezka;
+            X = x;
+            Y = y;
+            Z = z;
+            Obrot = obrot;
+        }
+    }
+
+    /// <summary>
+    /// Przypisanie rzeczy z gry do modeli: drzewa, budowle, postacie, punkty mapy i kolory gruntu.
+    /// Bez Unity, więc testy sprawdzają, czy każdy wpis wskazuje plik, który naprawdę jest w projekcie.
+    /// </summary>
+    public static class KatalogModeli
+    {
+        public const string Chata = "zloz:chata";
+        public const string Dwor = "zloz:dwor";
+
+        private static readonly string[] Drzewa =
+        {
+            "Natura/Tree_1_A_Color1", "Natura/Tree_1_B_Color1", "Natura/Tree_2_A_Color1", "Natura/Tree_2_B_Color1",
+            "Natura/Tree_2_C_Color1", "Natura/Tree_3_A_Color1", "Natura/Tree_3_B_Color1", "Natura/Tree_4_A_Color1",
+        };
+
+        private static readonly string[] Skaly =
+        {
+            "Natura/Rock_2_A_Color1", "Natura/Rock_2_B_Color1", "Natura/Rock_3_A_Color1", "Natura/Rock_3_B_Color1",
+            "Natura/Rock_3_C_Color1", "Natura/Rock_1_A_Color1",
+        };
+
+        private static readonly string[] Krzaki =
+        {
+            "Natura/Bush_1_A_Color1", "Natura/Bush_2_A_Color1", "Natura/Bush_3_A_Color1", "Natura/Bush_4_A_Color1",
+        };
+
+        private static readonly string[] Ziola = { "Natura/Grass_1_A_Color1", "Natura/Grass_2_A_Color1", "Natura/Grass_1_B_Color1" };
+
+        private static readonly string[] Suche =
+        {
+            "Natura/Tree_Bare_1_A_Color1", "Natura/Tree_Bare_1_B_Color1", "Natura/Tree_Bare_2_A_Color1", "Natura/Tree_Bare_2_B_Color1",
+        };
+
+        /// <summary>Stabilny „los” z pozycji: ten sam kafel zawsze dostaje ten sam model.</summary>
+        public static int Mieszaj(int x, int y)
+        {
+            unchecked
+            {
+                int h = x * 73856093 ^ y * 19349663;
+                h ^= h >> 13;
+                h *= 1274126177;
+                return (h ^ (h >> 16)) & 0x7FFFFFFF;
+            }
+        }
+
+        private static string Z(string[] lista, int x, int y)
+        {
+            return lista[Mieszaj(x, y) % lista.Length];
+        }
+
+        /// <summary>Obiekt kafla w otwartym świecie. Null, gdy nie ma czego stawiać (woda jest kolorem gruntu).</summary>
+        public static WpisModelu? DlaObiektu(Obiekt o, int x, int y, string biom = "")
+        {
+            switch (o)
+            {
+                case Obiekt.Drzewo:
+                    bool suche = biom == "bagna" || biom == "ruiny";
+                    return new WpisModelu(Z(suche ? Suche : Drzewa, x, y), 2.0f + Mieszaj(y, x) % 8 * 0.07f, true);
+                case Obiekt.Skala:
+                    return new WpisModelu(Z(Skaly, x, y), 0.85f, true);
+                case Obiekt.Krzak:
+                    return new WpisModelu(Z(Krzaki, x, y), 0.5f, true);
+                case Obiekt.Ziolo:
+                    return new WpisModelu(Z(Ziola, x, y), 0.4f, true);
+                case Obiekt.Sciana:
+                    return new WpisModelu("Budynki/mountain_A", 2.2f, true);
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>Budowla gracza w otwartym świecie.</summary>
+        public static WpisModelu DlaBudowli(string klucz)
+        {
+            switch (klucz)
+            {
+                case "spiwor": return new WpisModelu("Oboz/bedroll", 0.22f);
+                case "ognisko": return new WpisModelu("Oboz/campfire-pit", 0.3f);
+                case "namiot": return new WpisModelu("Oboz/tent-canvas", 1.0f);
+                case "chata": return new WpisModelu(Chata, 1.5f);
+                default: throw new ArgumentException("Nieznana budowla: " + klucz);
+            }
+        }
+
+        /// <summary>Budynek na placu osady.</summary>
+        public static WpisModelu DlaBudynku(string klucz, int poziom)
+        {
+            float w = 1.7f + Math.Min(poziom, 3) * 0.2f;
+            switch (klucz)
+            {
+                case "dom": return new WpisModelu(Dwor, 2.5f);
+                case "kuznia": return new WpisModelu("Budynki/building_blacksmith_blue", w);
+                case "huta": return new WpisModelu("Budynki/building_mine_blue", w);
+                case "spichlerz": return new WpisModelu("Budynki/building_windmill_blue", w + 0.5f);
+                case "karawanseraj": return new WpisModelu("Budynki/building_market_blue", w);
+                case "tartak": return new WpisModelu("Budynki/building_lumbermill_blue", w);
+                case "sklep": return new WpisModelu("Budynki/building_home_B_blue", w);
+                case "warsztat": return new WpisModelu("Budynki/building_home_A_blue", w);
+                case "stajnie": return new WpisModelu("Budynki/building_barracks_blue", w);
+                case "laboratorium": return new WpisModelu("Budynki/building_tower_A_blue", w + 0.6f);
+                case "tawerna": return new WpisModelu("Budynki/building_tavern_blue", w);
+                case "lecznica": return new WpisModelu("Budynki/building_well_blue", w - 0.4f);
+                case "targ": return new WpisModelu("Budynki/building_market_blue", w);
+                case "wieza": return new WpisModelu("Budynki/building_tower_B_blue", w + 1.2f);
+                case "skryptorium": return new WpisModelu("Budynki/building_church_blue", w + 0.4f);
+                case "farma": return new WpisModelu("Budynki/resource_lumber", 0.4f);
+                default: return new WpisModelu("Budynki/building_home_A_blue", w);
+            }
+        }
+
+        /// <summary>Punkt orientacyjny na mapie regionu.</summary>
+        public static WpisModelu DlaPunktu(string punkt)
+        {
+            switch (punkt)
+            {
+                case "obóz": return new WpisModelu("Oboz/tent-canvas", 1.8f);
+                case "karczma": return new WpisModelu("Budynki/building_tavern_blue", 2.6f);
+                case "kuźnia": return new WpisModelu("Budynki/building_blacksmith_blue", 2.6f);
+                case "świątynia": return new WpisModelu("Budynki/building_church_blue", 3.2f);
+                case "miasto": return new WpisModelu("Budynki/building_castle_blue", 4.6f);
+                case "jaskinia": return new WpisModelu("Budynki/building_mine_blue", 2.6f);
+                case "boss": return new WpisModelu("Postacie/Skeleton_Warrior", 2.2f);
+                case "portal": return new WpisModelu("Budynki/building_tower_A_blue", 3.6f);
+                case "leze_smoka": return new WpisModelu("Budynki/mountain_B_grass_trees", 3.4f);
+                case "latajaca_wyspa": return new WpisModelu("Budynki/hills_A_trees", 2.6f);
+                default: return new WpisModelu("Budynki/weaponrack", 1.1f);
+            }
+        }
+
+        /// <summary>Co rośnie na polu mapy regionu: lista (model, przesunięcie w polu 0–1).</summary>
+        public static List<(WpisModelu Model, float U, float V)> Roslinnosc(string biom, int x, int y)
+        {
+            var wynik = new List<(WpisModelu, float, float)>();
+            int ile, h = Mieszaj(x, y);
+            string[] lista;
+            float wysokosc;
+            switch (biom)
+            {
+                case "las": lista = Drzewa; ile = 7; wysokosc = 2.6f; break;
+                case "bagna": lista = Suche; ile = 3; wysokosc = 2.2f; break;
+                case "wzgórza": lista = new[] { "Budynki/hill_single_A", "Budynki/hill_single_B", "Budynki/hill_single_C" }; ile = 3; wysokosc = 1.1f; break;
+                case "kanion": lista = Skaly; ile = 5; wysokosc = 1.3f; break;
+                case "ruiny": lista = Skaly; ile = 3; wysokosc = 0.8f; break;
+                default: lista = Krzaki; ile = 3; wysokosc = 0.5f; break;
+            }
+            for (int i = 0; i < ile; i++)
+            {
+                int m = Mieszaj(h + i * 31, i * 17 + x);
+                string sciezka = lista[m % lista.Length];
+                float u = 0.1f + (m >> 4) % 80 / 100f, v = 0.1f + (m >> 11) % 80 / 100f;
+                wynik.Add((new WpisModelu(sciezka, wysokosc * (0.85f + (m >> 18) % 30 / 100f), true), u, v));
+            }
+            return wynik;
+        }
+
+        public static string PostacKlasy(string klasa)
+        {
+            switch (klasa)
+            {
+                case "Mag": return "Postacie/Mage";
+                case "Lotrzyk": return "Postacie/Rogue";
+                case "Druid": return "Postacie/Ranger";
+                case "Nekromanta": return "Postacie/Skeleton_Mage";
+                default: return "Postacie/Knight";
+            }
+        }
+
+        public static string PostacZajecia(string zajecie)
+        {
+            switch (zajecie)
+            {
+                case "drwal": return "Postacie/Barbarian";
+                case "kamieniarz":
+                case "gornik":
+                case "hutnik": return "Postacie/Knight";
+                case "zielarz":
+                case "uczony": return "Postacie/Mage";
+                case "mysliwy":
+                case "rolnik": return "Postacie/Ranger";
+                case "bezczynny": return "Postacie/Rogue_Hooded";
+                default: return "Postacie/Rogue";
+            }
+        }
+
+        /// <summary>Części domu: cztery ściany, drzwi, okna i dach. Wspólny układ dla chaty i dworu.</summary>
+        public static List<CzescBudynku> Czesci(string zlozenie)
+        {
+            bool dwor = zlozenie == Dwor;
+            string sciana = dwor ? "Wioska/Wall_UnevenBrick_Straight" : "Wioska/Wall_Plaster_Straight";
+            string drzwi = dwor ? "Wioska/Wall_UnevenBrick_Door_Round" : "Wioska/Wall_Plaster_Door_Round";
+            string okno = dwor ? "Wioska/Wall_UnevenBrick_Window_Wide_Round" : "Wioska/Wall_Plaster_Window_Wide_Round";
+            string naroznik = dwor ? "Wioska/Corner_Exterior_Brick" : "Wioska/Corner_Exterior_Wood";
+            var c = new List<CzescBudynku>
+            {
+                // Przód widać z kamery, więc tam idą drzwi i okno; tyłu prawie nie widać.
+                new CzescBudynku(drzwi, -1f, 0f, -2f, 180f), new CzescBudynku(okno, 1f, 0f, -2f, 180f),
+                new CzescBudynku(sciana, -1f, 0f, 2f), new CzescBudynku(sciana, 1f, 0f, 2f),
+                new CzescBudynku(okno, 2f, 0f, -1f, 90f), new CzescBudynku(sciana, 2f, 0f, 1f, 90f),
+                new CzescBudynku(sciana, -2f, 0f, -1f, -90f), new CzescBudynku(sciana, -2f, 0f, 1f, -90f),
+                new CzescBudynku(naroznik, 2f, 0f, 2f), new CzescBudynku(naroznik, -2f, 0f, 2f),
+                new CzescBudynku(naroznik, 2f, 0f, -2f), new CzescBudynku(naroznik, -2f, 0f, -2f),
+                new CzescBudynku("Wioska/Roof_RoundTiles_4x4", 0f, 3f, 0f),
+            };
+            if (dwor)
+            {
+                c.Add(new CzescBudynku("Wioska/Prop_Chimney", 1.2f, 3.6f, 1.2f));
+            }
+            return c;
+        }
+
+        /// <summary>Kolor gruntu dla biomu, z delikatnym odcieniem i porą roku. Żywy, żeby pasował do modeli.</summary>
+        public static Barwa KolorGruntu(string biom, double odcien = 0.5, string pora = "lato")
+        {
+            (double r, double g, double b) k;
+            switch (biom)
+            {
+                case "las": k = (0.34, 0.56, 0.27); break;
+                case "bagna": k = (0.33, 0.43, 0.29); break;
+                case "wzgórza": k = (0.60, 0.61, 0.36); break;
+                case "kanion": k = (0.71, 0.44, 0.29); break;
+                case "ruiny": k = (0.58, 0.56, 0.47); break;
+                case "woda": k = (0.27, 0.57, 0.74); break;
+                case "plac": k = (0.62, 0.54, 0.38); break;
+                default: k = (0.53, 0.70, 0.32); break;
+            }
+            if (biom != "woda")
+            {
+                if (pora == "jesien")
+                {
+                    k = (k.r * 1.15, k.g * 0.88, k.b * 0.75);
+                }
+                else if (pora == "zima")
+                {
+                    k = (0.5 * k.r + 0.45, 0.5 * k.g + 0.47, 0.5 * k.b + 0.5);
+                }
+                else if (pora == "wiosna")
+                {
+                    k = (k.r * 0.96, k.g * 1.06, k.b * 1.02);
+                }
+            }
+            double d = 0.92 + 0.16 * Math.Max(0.0, Math.Min(1.0, odcien));
+            return new Barwa(Bajt(k.r * d), Bajt(k.g * d), Bajt(k.b * d));
+        }
+
+        private static int Bajt(double v)
+        {
+            return (int)Math.Max(0.0, Math.Min(255.0, v * 255.0));
+        }
+
+        /// <summary>Wszystkie ścieżki modeli używane przez grę — dla testu „czy pliki istnieją”.</summary>
+        public static IEnumerable<string> WszystkieSciezki()
+        {
+            var lista = new List<string>();
+            lista.AddRange(Drzewa);
+            lista.AddRange(Skaly);
+            lista.AddRange(Krzaki);
+            lista.AddRange(Ziola);
+            lista.AddRange(Suche);
+            lista.Add(DlaObiektu(Obiekt.Sciana, 0, 0).Value.Sciezka);
+            foreach (string k in new[] { "spiwor", "ognisko", "namiot" })
+            {
+                lista.Add(DlaBudowli(k).Sciezka);
+            }
+            foreach (string k in new[]
+                     {
+                         "kuznia", "huta", "spichlerz", "karawanseraj", "tartak", "sklep", "warsztat", "stajnie",
+                         "laboratorium", "tawerna", "lecznica", "targ", "wieza", "skryptorium", "farma",
+                     })
+            {
+                lista.Add(DlaBudynku(k, 1).Sciezka);
+            }
+            foreach (string p in new[]
+                     {
+                         "obóz", "karczma", "kuźnia", "świątynia", "miasto", "jaskinia", "boss", "portal",
+                         "leze_smoka", "latajaca_wyspa", "inny",
+                     })
+            {
+                lista.Add(DlaPunktu(p).Sciezka);
+            }
+            foreach (string b in new[] { "las", "bagna", "wzgórza", "kanion", "ruiny", "równiny" })
+            {
+                foreach ((WpisModelu m, float _, float _) in Roslinnosc(b, 2, 3))
+                {
+                    lista.Add(m.Sciezka);
+                }
+            }
+            foreach (string k in new[] { "Wojownik", "Mag", "Lotrzyk", "Druid", "Nekromanta" })
+            {
+                lista.Add(PostacKlasy(k));
+            }
+            foreach (string z in new[] { "drwal", "kamieniarz", "zielarz", "mysliwy", "bezczynny", "inny" })
+            {
+                lista.Add(PostacZajecia(z));
+            }
+            foreach (string z in new[] { Chata, Dwor })
+            {
+                foreach (CzescBudynku c in Czesci(z))
+                {
+                    lista.Add(c.Sciezka);
+                }
+            }
+            lista.Add("Oboz/structure");
+            lista.Add("Oboz/fence");
+            return lista;
+        }
+    }
+}

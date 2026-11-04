@@ -140,6 +140,34 @@ namespace GraSimply.Grafika
                                       kafelki, mysz);
         }
 
+        /// <summary>Klatka otwartego świata z samym interfejsem: scenę pod spodem rysuje kamera 3D.</summary>
+        public List<Napis> ZlozWolnyNaklad(StanHud hud, IReadOnlyList<string> plecak, IReadOnlyList<string> dziennik,
+                                           string podpowiedz, IReadOnlyList<string> panel,
+                                           IReadOnlyList<PodpisOsadnika> podpisy, Logika.Wolny.KafelkiWolne kafelki,
+                                           (int X, int Y)? mysz, (int X, int Y, double Postep)? pasek)
+        {
+            PulpitFantasy f = Nakladka();
+            f.PasekSwiata = pasek;
+            return f.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, podpisy, kafelki, mysz);
+        }
+
+        /// <summary>Klatka mapy, osady albo menu z samym interfejsem: scenę pod spodem rysuje kamera 3D.</summary>
+        public List<Napis> ZlozNaklad(StanHud hud, string klasa, (int X, int Y)? graczXy, StanKonsoli konsola,
+                                      (int X, int Y)? mysz, IReadOnlyList<PodpisOsadnika> podpisy, IKadrPostaci kadr)
+        {
+            PulpitFantasy f = Nakladka();
+            f.Kadr = kadr;
+            return f.Zloz(_plotno, hud, klasa, graczXy, konsola, mysz, podpisy);
+        }
+
+        private PulpitFantasy Nakladka()
+        {
+            _fantasy = _fantasy ?? new PulpitFantasy();
+            _fantasy.Nakladka = true;
+            _fantasy.Natywne.Wypelnij(Barwa.Pusta);
+            return _fantasy;
+        }
+
         /// <summary>Kafel świata pod kursorem (piksele pulpitu) przy bohaterze w (hx, hy).</summary>
         public static (int X, int Y) KafelPodMysza(double mx, double my, double hx, double hy)
         {

@@ -55,6 +55,18 @@ namespace GraSimply.Grafika.Hybryda
         //  Klatka                                                             //
         // ------------------------------------------------------------------ //
 
+        /// <summary>Sam ruch i pora dnia, bez rysowania — dla sceny 3D. Zwraca plan placu.</summary>
+        public Dictionary<(int X, int Y), ElementPlacu> Aktualizuj(StanOsady osada, double t, bool zmierzch)
+        {
+            Dictionary<(int X, int Y), ElementPlacu> plan = UkladPlacu.Rozklad(
+                osada, out Dictionary<(int X, int Y), double> nakladki);
+            _nakladki = nakladki;
+            double czasDnia = t + PrzesuniecieDnia;
+            Ruszaj(osada, plan, t, czasDnia);
+            Jasnosc = zmierzch ? 0.12 : RytmDnia.Swiatlo(czasDnia);
+            return plan;
+        }
+
         public void Rysuj(Plotno cel, StanOsady osada, double t, bool zmierzch)
         {
             Dictionary<(int X, int Y), ElementPlacu> plan = UkladPlacu.Rozklad(

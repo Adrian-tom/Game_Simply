@@ -39,13 +39,17 @@ namespace GraSimply.Gra
             /// Dopisany na końcu, żeby wartości zapisane w scenach się nie przesunęły.
             /// </summary>
             Hybrydowy,
+
+            /// <summary>Modele 3D z darmowych paczek (KayKit, Kenney, Quaternius) pod interfejsem fantasy.</summary>
+            Trojwymiar,
         }
 
         [Header("Wygląd")]
-        [Tooltip("Hybrydowy — pixelart w światłach Mrocznego, ze sceną osady i chodzącymi osadnikami. " +
+        [Tooltip("Trojwymiar — modele 3D i kamera izometryczna. " +
+                 "Hybrydowy — pixelart w światłach Mrocznego, ze sceną osady i chodzącymi osadnikami. " +
                  "Mroczny — styl w duchu Fallouta z motywem fantasy. " +
                  "Klasyczny — pixelart z wersji pythonowej.")]
-        public WyborStylu StylGrafiki = WyborStylu.Hybrydowy;
+        public WyborStylu StylGrafiki = WyborStylu.Trojwymiar;
 
         [Header("Krój pisma")]
         [Tooltip("Czcionki systemowe o stałej szerokości, w kolejności prób — " +
@@ -131,6 +135,10 @@ namespace GraSimply.Gra
             // po co chodzic 144 razy na sekunde.
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = Mathf.Max(15, KlatekNaSekunde);
+            if (StylGrafiki == WyborStylu.Trojwymiar)
+            {
+                _grafika3D = new Trojwymiar.Grafika3D();
+            }
             Styl.Aktywny = StylGrafiki == WyborStylu.Klasyczny ? Styl.Klasyczny
                          : StylGrafiki == WyborStylu.Mroczny ? Styl.Mroczny
                          : Styl.Hybrydowy;
@@ -251,6 +259,17 @@ namespace GraSimply.Gra
             _znacznikGory = NowyNapis("Znacznik", _krojKonsoli, RozmiarKonsoli);
             Rozciagnij(_znacznikGory.rectTransform, kx + 20, ky + 18, kszer - 40, _wysokoscWiersza);
             _znacznikGory.color = Barwa2Kolor(Pulpit.Przygaszony);
+            if (_grafika3D != null)
+            {
+                _grafika3D.Scena.EkranNaPulpit = e =>
+                {
+                    if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_korzen, e, null, out Vector2 l))
+                    {
+                        return null;
+                    }
+                    return new Vector2(l.x, -l.y);
+                };
+            }
         }
 
         private Text NowyNapis(string nazwa, Font krój, int rozmiar)
@@ -395,6 +414,8 @@ namespace GraSimply.Gra
         // ------------------------------------------------------------------ //
 
         private Grafika.Wolny.ScenaWolna _scenaWolna;
+        private Trojwymiar.Grafika3D _grafika3D;
+        private string _klasaWolnego = "Wojownik";
 
         /// <summary>
         /// Sterowanie: WASD albo strzałki (względem ekranu — w rzucie skośnym to przekątne siatki),
@@ -459,7 +480,8 @@ namespace GraSimply.Gra
                 }
                 else if (swiat.TrybBudowy)
                 {
-                    kursor = Pulpit.KafelPodMysza(mysz.x, mysz.y, swiat.X, swiat.Y);
+                    kursor = _grafika3D != null ? _grafika3D.KafelPodKursorem(Input.mousePosition)
+                                                : Pulpit.KafelPodMysza(mysz.x, mysz.y, swiat.X, swiat.Y);
                     poloz |= Input.GetMouseButtonDown(0);
                 }
             }
@@ -478,12 +500,29 @@ namespace GraSimply.Gra
 
         private void RysujWolny(Logika.Wolny.SwiatWolny swiat)
         {
-            _scenaWolna = _scenaWolna ?? new Grafika.Wolny.ScenaWolna();
             (int X, int Y)? mysz = null;
             if (PozycjaMyszy(out Vector2 p))
             {
                 mysz = ((int)p.x, (int)p.y);
             }
+            if (_grafika3D != null)
+            {
+                _grafika3D.RysujWolny(swiat, _czas, Time.unscaledDeltaTime, _klasaWolnego);
+                List<Napis> nakladka = _pulpit.ZlozWolnyNaklad(Logika.Wolny.WidokWolny.Hud(swiat),
+                                                               Logika.Wolny.WidokWolny.Plecak(swiat),
+                                                               Logika.Wolny.WidokWolny.Dziennik(swiat),
+                                                               Logika.Wolny.WidokWolny.Podpowiedz(swiat),
+                                                               Logika.Wolny.WidokWolny.Panel(swiat),
+                                                               swiat.PanelOtwarty ? null : _grafika3D.PodpisyWolnego,
+                                                               Logika.Wolny.KafelkiWolne.Z(swiat), mysz,
+                                                               _grafika3D.PasekZbioru);
+                _tekstura.LoadRawTextureData(_pulpit.Klatka.Dane);
+                _tekstura.Apply(false);
+                PokazNapisyHud(nakladka);
+                UkryjKonsole();
+                return;
+            }
+            _scenaWolna = _scenaWolna ?? new Grafika.Wolny.ScenaWolna();
             List<Napis> napisy = _pulpit.ZlozWolny(_scenaWolna, swiat, _czas,
                                                    Logika.Wolny.WidokWolny.Hud(swiat),
                                                    Logika.Wolny.WidokWolny.Plecak(swiat),
@@ -526,6 +565,19 @@ namespace GraSimply.Gra
                 }
             }
 
+            if (_grafika3D != null)
+            {
+                bool plac = !string.IsNullOrEmpty(m.Widok) && m.Plac != null;
+                _grafika3D.Rysuj(m, plac, _czas, Time.unscaledDeltaTime, _pulpit.Scena.Zmierzch);
+                _klasaWolnego = m.Klasa ?? _klasaWolnego;
+                List<Napis> nakladka = _pulpit.ZlozNaklad(m.Hud, m.Klasa, m.GraczXy, konsola, mysz,
+                                                          plac ? _grafika3D.PodpisyOsady : null, _grafika3D.Kadr);
+                _tekstura.LoadRawTextureData(_pulpit.Klatka.Dane);
+                _tekstura.Apply(false);
+                PokazNapisyHud(nakladka);
+                UkryjKonsole();
+                return;
+            }
             List<Napis> napisy = _pulpit.Zloz(m.Pola, _czas, m.Hud, m.Region, m.GraczXy,
                                               m.Klasa, m.WszystkoOdkryte, m.Osada, konsola, mysz,
                                               string.IsNullOrEmpty(m.Widok) ? null : m.Plac);
