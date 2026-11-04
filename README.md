@@ -32,7 +32,7 @@ Bez Pythona i bez Unity: wejdź w **Releases** repozytorium, pobierz `GraSimply-
 rozpakuj i uruchom `GraSimply.exe` (podwójne kliknięcie). W obozie chodzisz strzałkami lub WASD,
 spacja (albo E) robi to, co podpowiada napis na dole; numery z menu nadal działają.
 Paczkę buduje się z kodu w `unity/` (menu *Gra Simply → Zbuduj grę (Windows)*); plik jest w Releases,
-a nie w repozytorium, bo ma ok. 90 MB.
+a nie w repozytorium, bo jest za duży. Od wersji 0.4.0 gra ma grafikę 3D.
 
 ## Zomboid fantasy (Unity)
 
