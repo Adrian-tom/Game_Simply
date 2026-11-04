@@ -131,12 +131,24 @@ namespace GraSimply.Grafika
         /// </summary>
         public List<Napis> ZlozWolny(Wolny.ScenaWolna scenaWolna, Logika.Wolny.SwiatWolny swiat, double t, StanHud hud,
                                      IReadOnlyList<string> plecak, IReadOnlyList<string> dziennik, string podpowiedz,
-                                     IReadOnlyList<string> panel = null)
+                                     IReadOnlyList<string> panel = null, Logika.Wolny.KafelkiWolne kafelki = null,
+                                     (int X, int Y)? mysz = null)
         {
             _fantasy = _fantasy ?? new PulpitFantasy();
             scenaWolna.Rysuj(_fantasy.Natywne, swiat, t);
-            return _fantasy.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, scenaWolna.Podpisy);
+            return _fantasy.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, scenaWolna.Podpisy,
+                                      kafelki, mysz);
         }
+
+        /// <summary>Kafel świata pod kursorem (piksele pulpitu) przy bohaterze w (hx, hy).</summary>
+        public static (int X, int Y) KafelPodMysza(double mx, double my, double hx, double hy)
+        {
+            (double x, double y) = Wolny.ScenaWolna.NaSwiat(mx / PulpitFantasy.K, my / PulpitFantasy.K, hx, hy);
+            return ((int)System.Math.Floor(x), (int)System.Math.Floor(y));
+        }
+
+        /// <summary>Kafelki trybu „Zomboid fantasy” z ostatniej klatki — działają w każdym stylu pulpitu.</summary>
+        public List<Przycisk> PrzyciskiWolne => _fantasy != null ? _fantasy.Przyciski : BrakPrzyciskow;
 
         /// <summary>
         /// Składa klatkę. Zwraca napisy do narysowania przez Unity w pikselach

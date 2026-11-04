@@ -14,9 +14,15 @@ namespace GraSimply.Logika.Wolny
                 return;
             }
             dt = Math.Min(dt, 0.1);
+            _kursor = w.Kursor;
             if (w.Panel)
             {
                 PanelOtwarty = !PanelOtwarty;
+            }
+            Kliknij(w.Klik);
+            if (w.Poloz)
+            {
+                PostawWybrana();
             }
             RuszPostacie(dt);
             if (PanelOtwarty)
@@ -204,21 +210,21 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Stawia budowlę przed bohaterem, jeśli jest miejsce i składniki. Zwraca powodzenie.</summary>
         public bool Postaw(string klucz)
         {
+            (int x, int y) = KaflPrzed();
+            return PostawNa(klucz, x, y);
+        }
+
+        /// <summary>Stawia budowlę na wskazanym kaflu. Zwraca powodzenie; powód odmowy trafia do dziennika.</summary>
+        public bool PostawNa(string klucz, int x, int y)
+        {
             if (!Koszty.TryGetValue(klucz, out KeyValuePair<string, int>[] koszt))
             {
                 return false;
             }
-            (int x, int y) = KaflPrzed();
-            if (!GeneratorSwiata.WGranicach(x, y) || Zajety(x, y) || Budowle.ContainsKey((x, y))
-                || ObiektNa(x, y) != Obiekt.Brak)
+            string powod = PowodBudowy(klucz, x, y);
+            if (powod != null)
             {
-                Pisz("Tu nie da się nic postawić.");
-                return false;
-            }
-            if (!Stac(koszt))
-            {
-                string braki = string.Join(", ", koszt.Select(p => $"{p.Value} {Nazwa(p.Key)}"));
-                Pisz($"Brakuje składników. Potrzeba: {braki}.");
+                Pisz(powod);
                 return false;
             }
             foreach (KeyValuePair<string, int> p in koszt)

@@ -7,7 +7,7 @@ namespace GraSimply.Logika.Wolny
     public static class WidokWolny
     {
         public const string Klawisze =
-            "WASD E:zbieraj 1-4:buduj T:magazyn Tab:osada F:jedz Z:śpij";
+            "WASD ruch · E zbieraj";
 
         /// <summary>Pasek stanu: życie, energia (jako „mana”), głód, pora doby i to, co niesie bohater.</summary>
         public static StanHud Hud(SwiatWolny s)
@@ -92,10 +92,6 @@ namespace GraSimply.Logika.Wolny
             {
                 linie.Add($"Najlepszy w: {Kompetencje.OpisKrotki(ludzie[s.Wybrany], 3).Replace("🔥", "*")}   (* = pasja)");
             }
-            linie.Add("");
-            linie.Add("BUDOWA: 1 śpiwór · 2 ognisko (5 drewna, 3 kamienie)");
-            linie.Add("3 namiot (8 drewna, 6 włókna, 2 miejsca)");
-            linie.Add("4 chata (12 drewna, 6 kamieni, 3 miejsca)");
             return linie;
         }
 
@@ -117,7 +113,16 @@ namespace GraSimply.Logika.Wolny
             }
             if (s.PanelOtwarty)
             {
-                return "W/S osadnik · A/D zajęcie · Tab zamknij";
+                return "Kliknij osadnika, potem zajęcie · Tab zamknij";
+            }
+            if (s.TrybBudowy)
+            {
+                if (s.WybranaBudowla == null)
+                {
+                    return "Wybierz budowlę z kafelków · B wyjdź";
+                }
+                (int x, int y) = s.KafelBudowy();
+                return s.PowodBudowy(s.WybranaBudowla, x, y) ?? "Lewy klik stawia · prawy klik wycofuje";
             }
             (int X, int Y)? cel = s.ZnajdzCel();
             if (cel.HasValue && SwiatWolny.Zbiory.TryGetValue(s.ObiektNa(cel.Value.X, cel.Value.Y), out OpisZbioru o))

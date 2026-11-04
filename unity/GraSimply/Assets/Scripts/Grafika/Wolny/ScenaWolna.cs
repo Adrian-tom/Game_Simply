@@ -27,6 +27,7 @@ namespace GraSimply.Grafika.Wolny
 
         private readonly SpriteOsady _sprite = new SpriteOsady();
         private readonly List<PodpisOsadnika> _podpisy = new List<PodpisOsadnika>();
+        private Plotno _duch;
 
         /// <summary>Imiona osadników z ostatniej klatki — tekst rysuje warstwa interfejsu.</summary>
         public IReadOnlyList<PodpisOsadnika> Podpisy => _podpisy;
@@ -145,6 +146,44 @@ namespace GraSimply.Grafika.Wolny
                 Oswietlenie.Zastosuj(cel, swiatla, t, otoczenie);
             }
             Oswietlenie.Paleta().Kwantyzuj(cel);
+            // Duch na końcu, po świetle i palecie: ma być czytelny także nocą.
+            if (s.PodgladBudowy() is (int gx, int gy, string klucz, bool mozna))
+            {
+                (int dx, int dy) = NaEkran(gx + 0.5, gy + 0.5, s.X, s.Y);
+                RysujDucha(cel, klucz, dx, dy, mozna, t);
+            }
+        }
+
+        /// <summary>Półprzezroczysta budowla w kolorze zgody (zielony) albo odmowy (czerwony) z obrysem kafla.</summary>
+        private void RysujDucha(Plotno cel, string klucz, int cx, int cy, bool mozna, double t)
+        {
+            Barwa kolor = mozna ? new Barwa(110, 230, 120) : new Barwa(240, 80, 70);
+            const int bok = 90, podstawa = 70;
+            if (_duch == null)
+            {
+                _duch = new Plotno(bok, bok);
+            }
+            _duch.Wypelnij(Barwa.Pusta);
+            RysujBudowle(_duch, klucz, bok / 2, podstawa, t, new List<Swiatlo>());
+            for (int y = 0; y < bok; y++)
+            {
+                for (int x = 0; x < bok; x++)
+                {
+                    int ex = cx - bok / 2 + x, ey = cy - podstawa + y;
+                    if (_duch.Alfa(x, y) > 120 && cel.WSrodku(ex, ey))
+                    {
+                        Barwa b = _duch.Wez(x, y), tlo = cel.Wez(ex, ey);
+                        cel.Ustaw(ex, ey, new Barwa((b.R + kolor.R + tlo.R) / 3, (b.G + kolor.G + tlo.G) / 3,
+                                                    (b.B + kolor.B + tlo.B) / 3));
+                    }
+                }
+            }
+            for (int r = 0; r < 16; r++)
+            {
+                int pol = r < 8 ? 2 * r + 2 : 2 * (15 - r) + 2;
+                cel.Wypelnij(kolor, cx - pol, cy - 8 + r, 2, 1);
+                cel.Wypelnij(kolor, cx + pol - 2, cy - 8 + r, 2, 1);
+            }
         }
 
         private static void PasekPostepu(Plotno cel, int cx, int y, double postep)

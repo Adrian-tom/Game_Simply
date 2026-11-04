@@ -407,10 +407,14 @@ namespace GraSimply.Gra
             {
                 Screen.fullScreen = !Screen.fullScreen;
             }
-            if (Input.GetKeyDown(KeyCode.Escape) && _konsola.CzekaNaWejscie)
+            if (Input.GetKeyDown(KeyCode.Escape) && !swiat.Wycofaj() && _konsola.CzekaNaWejscie)
             {
                 Odpowiedz("koniec");
                 return;
+            }
+            if (Input.GetMouseButtonDown(1))
+            {
+                swiat.Wycofaj();
             }
             double dx = 0, dy = 0;
             if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) { dx -= 1; dy -= 1; }
@@ -425,21 +429,48 @@ namespace GraSimply.Gra
                 if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow)) { zmien = -1; }
                 if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow)) { zmien = 1; }
             }
-            int buduj = 0;
-            if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) { buduj = 1; }
-            if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) { buduj = 2; }
-            if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) { buduj = 3; }
-            if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) { buduj = 4; }
+            // Skróty wysyłają te same identyfikatory co kafelki.
+            string klik = null;
+            if (Input.GetKeyDown(KeyCode.B)) { klik = "a:buduj"; }
+            if (Input.GetKeyDown(KeyCode.T)) { klik = "a:magazyn"; }
+            if (Input.GetKeyDown(KeyCode.Tab)) { klik = "a:osada"; }
+            if (Input.GetKeyDown(KeyCode.F)) { klik = "a:jedz"; }
+            if (Input.GetKeyDown(KeyCode.Z)) { klik = "a:spij"; }
+
+            bool poloz = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+            (int X, int Y)? kursor = null;
+            if (PozycjaMyszy(out Vector2 mysz))
+            {
+                string kafelek = null;
+                foreach (Przycisk p in _pulpit.PrzyciskiWolne)
+                {
+                    if (p.Zawiera(mysz.x, mysz.y))
+                    {
+                        kafelek = p.Klawisz;
+                        break;
+                    }
+                }
+                if (kafelek != null)
+                {
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        klik = kafelek;
+                    }
+                }
+                else if (swiat.TrybBudowy)
+                {
+                    kursor = Pulpit.KafelPodMysza(mysz.x, mysz.y, swiat.X, swiat.Y);
+                    poloz |= Input.GetMouseButtonDown(0);
+                }
+            }
             swiat.Aktualizuj(Time.unscaledDeltaTime, new Logika.Wolny.Wejscie
             {
                 Dx = dx,
                 Dy = dy,
                 Dzialaj = Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.Space),
-                Buduj = buduj,
-                Jedz = Input.GetKeyDown(KeyCode.F),
-                Spij = Input.GetKeyDown(KeyCode.Z),
-                Zloz = Input.GetKeyDown(KeyCode.T),
-                Panel = Input.GetKeyDown(KeyCode.Tab),
+                Klik = klik,
+                Kursor = kursor,
+                Poloz = poloz,
                 Nawig = nawig,
                 Zmien = zmien,
             });
@@ -448,12 +479,18 @@ namespace GraSimply.Gra
         private void RysujWolny(Logika.Wolny.SwiatWolny swiat)
         {
             _scenaWolna = _scenaWolna ?? new Grafika.Wolny.ScenaWolna();
+            (int X, int Y)? mysz = null;
+            if (PozycjaMyszy(out Vector2 p))
+            {
+                mysz = ((int)p.x, (int)p.y);
+            }
             List<Napis> napisy = _pulpit.ZlozWolny(_scenaWolna, swiat, _czas,
                                                    Logika.Wolny.WidokWolny.Hud(swiat),
                                                    Logika.Wolny.WidokWolny.Plecak(swiat),
                                                    Logika.Wolny.WidokWolny.Dziennik(swiat),
                                                    Logika.Wolny.WidokWolny.Podpowiedz(swiat),
-                                                   Logika.Wolny.WidokWolny.Panel(swiat));
+                                                   Logika.Wolny.WidokWolny.Panel(swiat),
+                                                   Logika.Wolny.KafelkiWolne.Z(swiat), mysz);
             _tekstura.LoadRawTextureData(_pulpit.Klatka.Dane);
             _tekstura.Apply(false);
             PokazNapisyHud(napisy);

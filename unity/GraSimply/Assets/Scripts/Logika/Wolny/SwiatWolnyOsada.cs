@@ -366,15 +366,9 @@ namespace GraSimply.Logika.Wolny
             Wybrany = (Wybrany + w.Nawig + ludzie.Count) % ludzie.Count;
             if (w.Zmien != 0)
             {
-                Osadnik o = ludzie[Wybrany];
-                int i = Array.IndexOf(ZajeciaPanelu, o.Zajecie);
+                int i = Array.IndexOf(ZajeciaPanelu, ludzie[Wybrany].Zajecie);
                 int nowy = ((i < 0 ? 0 : i) + w.Zmien + ZajeciaPanelu.Length) % ZajeciaPanelu.Length;
-                Pisz(Osada.UstawZajecie(Obozowisko, o, ZajeciaPanelu[nowy]));
-                PostacOsadnika p = Postacie.FirstOrDefault(q => q.O == o);
-                if (p != null && SrodekObozu().HasValue)
-                {
-                    NowyCel(p, SrodekObozu().Value, false);
-                }
+                UstawZajecieWybranego(ZajeciaPanelu[nowy]);
             }
         }
     }

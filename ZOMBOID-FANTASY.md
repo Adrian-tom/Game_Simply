@@ -12,12 +12,14 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 |---|---|
 | WASD albo strzałki | ruch względem ekranu (w rzucie skośnym to przekątne siatki), ślizg wzdłuż przeszkód |
 | E albo spacja (przytrzymaj) | zbieraj to, co jest przed bohaterem: ścinaj drzewa, łup skały, zrywaj jagody i zioła |
-| 1 / 2 / 3 / 4 | rozłóż śpiwór / zapal ognisko (5 drewna, 3 kamienie) / postaw namiot (8 drewna, 6 włókna) / postaw chatę (12 drewna, 6 kamieni) |
-| T | odłóż plecak do magazynu (przy obozie) |
-| Tab | panel osady: W/S osadnik, A/D zajęcie |
+| B albo kafelek Buduj | tryb budowania: kafelki śpiwór, ognisko (5 drewna, 3 kamienie), namiot (8 drewna, 6 włókna), chata (12 drewna, 6 kamieni); duch na mapie pokazuje miejsce (zielony: wolno, czerwony: nie) |
+| lewy klik / Enter | postaw wybraną budowlę pod kursorem, do 6 kafli od bohatera |
+| prawy klik / Esc | wycofaj wybór, potem wyjdź z trybu albo zamknij panel |
+| T albo kafelek Magazyn | odłóż plecak do magazynu (przy obozie) |
+| Tab albo kafelek Osada | panel osady: klik w osadnika, potem kafelek zajęcia (W/S i A/D też działają) |
 | F | zjedz jagody |
 | Z | śpij (przy śpiworze albo namiocie; czas płynie 40× szybciej, w namiocie regeneracja jest szybsza) |
-| Esc | powrót do menu głównego |
+| Esc (gdy nic nie jest otwarte) | powrót do menu głównego |
 
 ## Faza 1: przetrwanie (zrobione)
 - **Świat 2001×2001 kafli**, generowany z ziarna, bez zapisanych danych (`Logika/Wolny/GeneratorSwiata.cs`):
@@ -36,9 +38,9 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 ![osada](unity/podglad/wolny/wolny-osada.png)
 ![panel](unity/podglad/wolny/wolny-panel.png)
 
-- **Przybysze:** gdy stoją namiot i ognisko, o północy przychodzi pierwszy człowiek, potem kolejni (40% dziennie), o ile jest miejsce. Namiot daje 2 miejsca, **chata** (klawisz 4: 12 drewna, 6 kamieni) 3.
+- **Przybysze:** gdy stoją namiot i ognisko, o północy przychodzi pierwszy człowiek, potem kolejni (40% dziennie), o ile jest miejsce. Namiot daje 2 miejsca, **chata** (kafelek w trybie budowania: 12 drewna, 6 kamieni) 3.
 - **Magazyn:** T przy obozie odkłada drewno, kamień, zioła i jagody (jako żywność). Budowanie bierze najpierw z plecaka, potem z magazynu; F przy obozie je z zapasów, gdy plecak jest pusty. Włókno zostaje w plecaku.
-- **Zarządzanie:** Tab otwiera panel: W/S wybiera osadnika, A/D zmienia zajęcie (bez zajęcia, drwal, kamieniarz, zielarz, myśliwy, górnik). Świat w tym czasie płynie dalej.
+- **Zarządzanie:** Tab otwiera panel: klik wybiera osadnika, kafelek ustawia zajęcie (bez zajęcia, drwal, kamieniarz, zielarz, myśliwy, górnik). Świat w tym czasie płynie dalej.
 - **Gospodarka:** ten sam `Osada.DzienOsady` co w grze fabularnej, raz na dobę: produkcja do magazynu, jedzenie, opał zimą, morale, choroby, umiejętności i pasje. Bez jedzenia ludzie głodują i odchodzą.
 - **Życie na mapie:** osadnicy idą trasą po kaflach (BFS omija przeszkody) do drzewa, skały, ziół lub krzaka właściwego dla zawodu, kręcą się przy pracy, a nocą śpią przy budowlach. Nad głowami mają imiona.
 

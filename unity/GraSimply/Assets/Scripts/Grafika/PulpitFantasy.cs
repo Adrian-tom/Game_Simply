@@ -175,11 +175,12 @@ namespace GraSimply.Grafika
         public List<Napis> ZlozWolny(Plotno cel, StanHud hud, string klasa, IReadOnlyList<string> plecak,
                                      IReadOnlyList<string> dziennik, string podpowiedz,
                                      IReadOnlyList<string> panel = null,
-                                     IReadOnlyList<PodpisOsadnika> podpisy = null)
+                                     IReadOnlyList<PodpisOsadnika> podpisy = null,
+                                     Logika.Wolny.KafelkiWolne kafelki = null, (int X, int Y)? mysz = null)
         {
             _napisy.Clear();
             _przyciski.Clear();
-            _mysz = null;
+            _mysz = mysz.HasValue ? (mysz.Value.X / K, mysz.Value.Y / K) : ((int, int)?)null;
             if (podpisy != null && panel == null)     // imiona nie mogą wchodzić na otwarty panel
             {
                 foreach (PodpisOsadnika p in podpisy)
@@ -230,19 +231,89 @@ namespace GraSimply.Grafika
                 for (int i = 0; i < panel.Count; i++)
                 {
                     bool wyroznij = i == 0 || panel[i].StartsWith(">", StringComparison.Ordinal);
-                    Tekst(panel[i], px + 7, y, wyroznij ? Styl.Aktywny.Wyrozniony : Styl.Aktywny.Tekst);
+                    bool osadnik = kafelki != null && i >= 1 && i <= kafelki.Osadnikow;
+                    bool nad = osadnik && Nad(px, y, szer * Znak + 14, Wiersz);
+                    if (nad)
+                    {
+                        Przyciemnij(px + 1, y, szer * Znak + 12, Wiersz, 235, Hx(0x3C2410));
+                    }
+                    Tekst(panel[i], px + 7, y, wyroznij || nad ? Styl.Aktywny.Wyrozniony : Styl.Aktywny.Tekst);
+                    if (osadnik)
+                    {
+                        _przyciski.Add(new Przycisk { X = px * K, Y = y * K, Szer = (szer * Znak + 14) * K, Wys = Wiersz * K,
+                                                      Klawisz = "o:" + (i - 1) });
+                    }
                     y += Wiersz;
                 }
             }
 
+            int gora = H;
+            if (kafelki != null)
+            {
+                gora = Kafelki(kafelki);
+            }
             if (!string.IsNullOrEmpty(podpowiedz))
             {
-                // Na prawo od kul życia i energii, które zajmują lewy dolny róg.
+                // Na prawo od kul życia i energii, które zajmują lewy dolny róg, nad kafelkami.
                 int szerPod = podpowiedz.Length * Znak + 10;
-                Plakietka(podpowiedz, Math.Max(192, W / 2 - szerPod / 2), H - 20, Styl.Aktywny.Wyrozniony, false);
+                int dolnaPolowa = (LewaKafelkow + W) / 2;
+                Plakietka(podpowiedz, Math.Max(LewaKafelkow, dolnaPolowa - szerPod / 2), gora - 20,
+                          Styl.Aktywny.Wyrozniony, false);
             }
             Powieksz(_natywne, cel);
             return new List<Napis>(_napisy);
+        }
+
+        private const int LewaKafelkow = 192;     // kule życia i energii kończą się przed tą kolumną
+        private const int OdstepKafelkow = 4;
+
+        /// <summary>Pasek akcji na dole, a nad nim rząd budowli albo zajęć. Zwraca górną krawędź całości.</summary>
+        private int Kafelki(Logika.Wolny.KafelkiWolne k)
+        {
+            int y = H - 4 - 38;
+            RzadKafelkow(k.Akcje, y, 38);
+            if (k.Budowle.Count > 0)
+            {
+                y -= OdstepKafelkow + 50;
+                RzadKafelkow(k.Budowle, y, 50);
+            }
+            if (k.Zajecia.Count > 0)
+            {
+                // Dwa rzędy po trzy: nazwy zawodów są za długie na sześć kafelków w jednym rzędzie.
+                y -= OdstepKafelkow + 26;
+                RzadKafelkow(k.Zajecia.GetRange(3, k.Zajecia.Count - 3), y, 26);
+                y -= OdstepKafelkow + 26;
+                RzadKafelkow(k.Zajecia.GetRange(0, 3), y, 26);
+            }
+            return y;
+        }
+
+        private void RzadKafelkow(List<Logika.Wolny.Kafelek> rzad, int y, int h)
+        {
+            int szer = (W - 4 - LewaKafelkow - OdstepKafelkow * (rzad.Count - 1)) / rzad.Count;
+            for (int i = 0; i < rzad.Count; i++)
+            {
+                Kafel(rzad[i], LewaKafelkow + i * (szer + OdstepKafelkow), y, szer, h);
+            }
+        }
+
+        /// <summary>Kafelek: ikona z lewej, nazwa i opis z prawej. Pod kursorem jaśnieje, wybrany ma grubą ramkę.</summary>
+        private void Kafel(Logika.Wolny.Kafelek k, int x, int y, int w, int h)
+        {
+            bool nad = Nad(x, y, w, h);
+            Przyciemnij(x, y, w, h, nad || k.Wybrany ? 240 : 205, k.Wybrany ? Hx(0x4A3210) : nad ? Hx(0x3C2410) : Hx(0x0A0604));
+            _natywne.Obramowanie(nad || k.Wybrany ? ZlotoJ : ZlotoC, x, y, w, h, k.Wybrany ? 2 : 1);
+            Wolny.IkonyWolne.Rysuj(_natywne, k.Ikona, x + 16, y + h / 2);
+            int tx = x + 31;
+            int ty = y + (h - (1 + k.Opis.Count) * Wiersz) / 2;
+            Barwa nazwa = !k.Dostepny ? Styl.Aktywny.Przygaszony : nad ? Hx(0xFFF4C0) : Styl.Aktywny.Tekst;
+            Tekst(k.Nazwa, tx, ty, nazwa);
+            foreach ((string tekst, bool ok) in k.Opis)
+            {
+                ty += Wiersz;
+                Tekst(tekst, tx, ty, ok ? Styl.Aktywny.Wyrozniony : new Barwa(232, 96, 80));
+            }
+            _przyciski.Add(new Przycisk { X = x * K, Y = y * K, Szer = w * K, Wys = h * K, Klawisz = k.Id });
         }
 
         private static int NajdluzszaLinia(List<string> linie)

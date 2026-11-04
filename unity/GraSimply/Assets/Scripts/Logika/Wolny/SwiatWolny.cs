@@ -25,6 +25,15 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Otwórz albo zamknij panel osady.</summary>
         public bool Panel;
 
+        /// <summary>Identyfikator klikniętego kafelka albo wciśniętego skrótu (patrz <see cref="SwiatWolny.Kliknij"/>).</summary>
+        public string Klik;
+
+        /// <summary>Kafel pod kursorem myszy; null = gracz steruje klawiaturą.</summary>
+        public (int X, int Y)? Kursor;
+
+        /// <summary>Postaw wybraną budowlę (lewy klik w świat, Enter).</summary>
+        public bool Poloz;
+
         /// <summary>W panelu: −1/+1 wybór osadnika.</summary>
         public int Nawig;
 

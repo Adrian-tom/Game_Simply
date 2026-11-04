@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using GraSimply.Grafika;
 using GraSimply.Grafika.Wolny;
 using GraSimply.Logika;
@@ -83,13 +84,40 @@ namespace GraSimply.Testy
             }
             var scena = new ScenaWolna();
             var pulpit = new Pulpit();
-            List<Napis> napisy = pulpit.ZlozWolny(scena, s, 7.0, WidokWolny.Hud(s), WidokWolny.Plecak(s),
-                                                  WidokWolny.Dziennik(s), WidokWolny.Podpowiedz(s));
-            Podglad.ZapiszKlatke(katalog, "wolny-osada", pulpit, napisy);
+            Klatka(katalog, "wolny-osada", pulpit, scena, s);
             s.Aktualizuj(0.01, new Wejscie { Panel = true });
-            napisy = pulpit.ZlozWolny(scena, s, 7.0, WidokWolny.Hud(s), WidokWolny.Plecak(s),
-                                      WidokWolny.Dziennik(s), WidokWolny.Podpowiedz(s), WidokWolny.Panel(s));
-            Podglad.ZapiszKlatke(katalog, "wolny-panel", pulpit, napisy);
+            Klatka(katalog, "wolny-panel", pulpit, scena, s);
+            s.Aktualizuj(0.01, new Wejscie { Klik = "a:buduj" });
+            Klatka(katalog, "wolny-tryb-budowy", pulpit, scena, s);
+            s.Plecak["drewno"] = 8;
+            s.Plecak["wlokno"] = 6;
+            s.Aktualizuj(0.01, new Wejscie { Klik = "b:namiot" });
+            (int X, int Y) wolny = (0, 0);
+            for (int r = 2; r <= 5 && s.PowodBudowy("namiot", wolny.X, wolny.Y) != null; r++)
+            {
+                for (int x = -r; x <= r; x++)
+                {
+                    for (int y = -r; y <= r; y++)
+                    {
+                        if (s.PowodBudowy("namiot", (int)s.X + x, (int)s.Y + y) == null)
+                        {
+                            wolny = ((int)s.X + x, (int)s.Y + y);
+                        }
+                    }
+                }
+            }
+            s.Aktualizuj(0.01, new Wejscie { Kursor = wolny });
+            Klatka(katalog, "wolny-duch-zielony", pulpit, scena, s);
+            s.Aktualizuj(0.01, new Wejscie { Kursor = s.Budowle.Keys.First() });
+            Klatka(katalog, "wolny-duch-czerwony", pulpit, scena, s);
+        }
+
+        private static void Klatka(string katalog, string nazwa, Pulpit pulpit, ScenaWolna scena, SwiatWolny s)
+        {
+            List<Napis> napisy = pulpit.ZlozWolny(scena, s, 7.0, WidokWolny.Hud(s), WidokWolny.Plecak(s),
+                                                  WidokWolny.Dziennik(s), WidokWolny.Podpowiedz(s), WidokWolny.Panel(s),
+                                                  KafelkiWolne.Z(s));
+            Podglad.ZapiszKlatke(katalog, nazwa, pulpit, napisy);
         }
 
         private static void Zapisz(string katalog, string nazwa, ScenaWolna scena, SwiatWolny s, double t)
