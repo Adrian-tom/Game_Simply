@@ -130,11 +130,12 @@ namespace GraSimply.Grafika
         /// dziennik i podpowiedź klawiszy. Zwraca napisy w pikselach pulpitu.
         /// </summary>
         public List<Napis> ZlozWolny(Wolny.ScenaWolna scenaWolna, Logika.Wolny.SwiatWolny swiat, double t, StanHud hud,
-                                     IReadOnlyList<string> plecak, IReadOnlyList<string> dziennik, string podpowiedz)
+                                     IReadOnlyList<string> plecak, IReadOnlyList<string> dziennik, string podpowiedz,
+                                     IReadOnlyList<string> panel = null)
         {
             _fantasy = _fantasy ?? new PulpitFantasy();
             scenaWolna.Rysuj(_fantasy.Natywne, swiat, t);
-            return _fantasy.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz);
+            return _fantasy.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, scenaWolna.Podpisy);
         }
 
         /// <summary>

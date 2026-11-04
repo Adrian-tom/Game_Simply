@@ -12,12 +12,14 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 |---|---|
 | WASD albo strzałki | ruch względem ekranu (w rzucie skośnym to przekątne siatki), ślizg wzdłuż przeszkód |
 | E albo spacja (przytrzymaj) | zbieraj to, co jest przed bohaterem: ścinaj drzewa, łup skały, zrywaj jagody i zioła |
-| 1 / 2 / 3 | rozłóż śpiwór / zapal ognisko (5 drewna, 3 kamienie) / postaw namiot (8 drewna, 6 włókna) |
+| 1 / 2 / 3 / 4 | rozłóż śpiwór / zapal ognisko (5 drewna, 3 kamienie) / postaw namiot (8 drewna, 6 włókna) / postaw chatę (12 drewna, 6 kamieni) |
+| T | odłóż plecak do magazynu (przy obozie) |
+| Tab | panel osady: W/S osadnik, A/D zajęcie |
 | F | zjedz jagody |
 | Z | śpij (przy śpiworze albo namiocie; czas płynie 40× szybciej, w namiocie regeneracja jest szybsza) |
 | Esc | powrót do menu głównego |
 
-## Co jest zrobione (faza 1)
+## Faza 1: przetrwanie (zrobione)
 - **Świat 2001×2001 kafli**, generowany z ziarna, bez zapisanych danych (`Logika/Wolny/GeneratorSwiata.cs`):
   biomy z szumu na współrzędnych świata (wzorzec z Project Zomboid, patrz `PROJECT-ZOMBOID-ANALIZA.md`) z rozmytymi,
   nieregularnymi granicami; woda w bagnach, ściany w ruinach, drzewa, skały, krzaki z jagodami, zioła.
@@ -29,12 +31,24 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 - **Scena** izometryczna 32×16 px z drzewami, skałami, wodą, namiotem, ogniskiem; interfejs fantasy (pasek stanu, plecak,
   dziennik, podpowiedź).
 
-## Co dalej (faza 2 i dalej — jeszcze niezrobione)
-1. **Osada**: po założeniu obozu przybywają osadnicy (system z `Osada.cs`: zawody, umiejętności, pasje), budowa
-   kafel po kaflu z rusztowaniami, skryptorium i badania jako warstwa zarządzania.
+## Faza 2: osada (zrobione)
+
+![osada](unity/podglad/wolny/wolny-osada.png)
+![panel](unity/podglad/wolny/wolny-panel.png)
+
+- **Przybysze:** gdy stoją namiot i ognisko, o północy przychodzi pierwszy człowiek, potem kolejni (40% dziennie), o ile jest miejsce. Namiot daje 2 miejsca, **chata** (klawisz 4: 12 drewna, 6 kamieni) 3.
+- **Magazyn:** T przy obozie odkłada drewno, kamień, zioła i jagody (jako żywność). Budowanie bierze najpierw z plecaka, potem z magazynu; F przy obozie je z zapasów, gdy plecak jest pusty. Włókno zostaje w plecaku.
+- **Zarządzanie:** Tab otwiera panel: W/S wybiera osadnika, A/D zmienia zajęcie (bez zajęcia, drwal, kamieniarz, zielarz, myśliwy, górnik). Świat w tym czasie płynie dalej.
+- **Gospodarka:** ten sam `Osada.DzienOsady` co w grze fabularnej, raz na dobę: produkcja do magazynu, jedzenie, opał zimą, morale, choroby, umiejętności i pasje. Bez jedzenia ludzie głodują i odchodzą.
+- **Życie na mapie:** osadnicy idą trasą po kaflach (BFS omija przeszkody) do drzewa, skały, ziół lub krzaka właściwego dla zawodu, kręcą się przy pracy, a nocą śpią przy budowlach. Nad głowami mają imiona.
+
+Świadome uproszczenia: praca osadników nie zużywa drzew i skał na mapie (produkcja idzie wprost do magazynu), chata stawia się od razu (bez rusztowań i budowniczych), skryptorium i budynki z gry fabularnej nie są jeszcze w tym trybie, a więzi i myśli są nieaktywne jak w całym porcie.
+
+## Co dalej (jeszcze niezrobione)
+1. Budowa kafel po kaflu z rusztowaniami, budynki produkcyjne (pola, tartak, skryptorium z badaniami).
 2. Zagrożenia nocą (wilki, bandyci), obrona, palisada.
-3. Zapis świata i postaci, narzędzia (siekiera, kilof) skracające zbiory, wędrowni kupcy, drogi między punktami.
-4. Wielka mapa z punktami zainteresowania (ruiny, jaskinie, miasta) z istniejącego generatora regionów.
+3. Zapis świata i postaci, narzędzia (siekiera, kilof), kupcy, drogi.
+4. Punkty zainteresowania (ruiny, jaskinie, miasta) z istniejącego generatora regionów.
 
 ## Techniczne
 `SwiatWolny.Aktualizuj(dt, Wejscie)` to czysta logika bez Unity (testy: `unity/Testy/TestyWolnego.cs`), `ScenaWolna` rysuje

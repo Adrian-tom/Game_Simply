@@ -26,6 +26,10 @@ namespace GraSimply.Grafika.Wolny
         public const int CentrumY = 196;
 
         private readonly SpriteOsady _sprite = new SpriteOsady();
+        private readonly List<PodpisOsadnika> _podpisy = new List<PodpisOsadnika>();
+
+        /// <summary>Imiona osadników z ostatniej klatki — tekst rysuje warstwa interfejsu.</summary>
+        public IReadOnlyList<PodpisOsadnika> Podpisy => _podpisy;
 
         /// <summary>Piksel środka kafla (tx, ty) przy bohaterze w (hx, hy).</summary>
         public static (int X, int Y) NaEkran(double tx, double ty, double hx, double hy)
@@ -111,6 +115,16 @@ namespace GraSimply.Grafika.Wolny
                 }
             }
 
+            _podpisy.Clear();
+            foreach (PostacOsadnika p in s.Postacie)
+            {
+                PostacOsadnika postac = p;
+                (int ox, int oy) = NaEkran(p.X, p.Y, s.X, s.Y);
+                if (ox > -30 && ox < Szer + 30 && oy > -30 && oy < Wys + 50)
+                {
+                    obiekty.Add(((p.X - s.X) + (p.Y - s.Y), () => RysujOsadnika(cel, postac, ox, oy, t)));
+                }
+            }
             double gb = 0.0;
             obiekty.Add((gb + 0.2, () => RysujBohatera(cel, s, klasa, swiatla)));
             foreach ((double _, Action rysuj) in obiekty.OrderBy(o => o.Glebokosc))
@@ -230,6 +244,14 @@ namespace GraSimply.Grafika.Wolny
                     GeneratorMroczny.Plomien(cel, cx, cy, t);
                     swiatla.Add(new Swiatlo { X = cx, Y = cy - 8, Promien = 150, Kolor = (1.0, 0.64, 0.36), Migocze = true });
                     break;
+                case "chata":
+                {
+                    Plotno spr = _sprite.Chata(1, out (int X, int Y) podstawa);
+                    Cien(cel, cx, cy + 3, 36);
+                    cel.Nalóż(spr, cx - podstawa.X, cy - podstawa.Y);
+                    swiatla.Add(new Swiatlo { X = cx, Y = cy - 8, Promien = 46, Kolor = (0.95, 0.74, 0.46) });
+                    break;
+                }
                 case "namiot":
                     Cien(cel, cx, cy + 3, 34);
                     for (int r = 0; r < 22; r++)
@@ -242,6 +264,18 @@ namespace GraSimply.Grafika.Wolny
                     cel.Wypelnij(Materialy.Deski[6], cx - 1, cy - 25, 2, 4);
                     break;
             }
+        }
+
+        private void RysujOsadnika(Plotno cel, PostacOsadnika p, int sx, int sy, double t)
+        {
+            int krok = p.Idzie && (int)(p.Dystans * 2.4) % 2 == 1 ? 1 : 0;
+            Plotno spr = _sprite.Osadnika(p.O.Zajecie, p.O.Chory > 0, krok, p.Spi);
+            int odbicie = !p.Idzie && !p.Spi && (int)(t * 2.6 + p.O.Imie.Length) % 2 == 1 ? 1 : 0;
+            Plotno cien = _sprite.Cien(spr.Szerokosc + 4, 6, 110);
+            cel.Nalóż(cien, sx - cien.Szerokosc / 2 + 2, sy - 3);
+            cel.Nalóż(spr, sx - spr.Szerokosc / 2, sy - spr.Wysokosc - odbicie + 2);
+            Barwa kolor = p.O.Morale < 35 ? Materialy.SukmanaCzerwona[6] : Styl.Aktywny.Tekst;
+            _podpisy.Add(new PodpisOsadnika(sx, sy - spr.Wysokosc - 4, p.O.Imie, kolor));
         }
 
         private void RysujBohatera(Plotno cel, SwiatWolny s, string klasa, List<Swiatlo> swiatla)

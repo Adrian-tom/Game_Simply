@@ -14,6 +14,17 @@ namespace GraSimply.Logika.Wolny
                 return;
             }
             dt = Math.Min(dt, 0.1);
+            if (w.Panel)
+            {
+                PanelOtwarty = !PanelOtwarty;
+            }
+            RuszPostacie(dt);
+            if (PanelOtwarty)
+            {
+                // Panel nie zatrzymuje świata, ale klawisze idą do niego, a nie do bohatera.
+                ObsluzPanel(w);
+                w = new Wejscie();
+            }
             double dlugosc = Math.Sqrt(w.Dx * w.Dx + w.Dy * w.Dy);
             bool rusza = dlugosc > 1e-9;
 
@@ -36,6 +47,10 @@ namespace GraSimply.Logika.Wolny
                 else
                 {
                     AkcjaStojac(dt, w);
+                }
+                if (w.Zloz)
+                {
+                    Zloz();
                 }
                 if (w.Jedz)
                 {
@@ -183,7 +198,7 @@ namespace GraSimply.Logika.Wolny
 
         private bool Stac(KeyValuePair<string, int>[] koszt)
         {
-            return koszt.All(p => Ile(p.Key) >= p.Value);
+            return koszt.All(p => Razem(p.Key) >= p.Value);
         }
 
         /// <summary>Stawia budowlę przed bohaterem, jeśli jest miejsce i składniki. Zwraca powodzenie.</summary>
@@ -208,29 +223,39 @@ namespace GraSimply.Logika.Wolny
             }
             foreach (KeyValuePair<string, int> p in koszt)
             {
-                Plecak[p.Key] = Ile(p.Key) - p.Value;
+                Zabierz(p.Key, p.Value);
             }
             Budowle[(x, y)] = klucz;
-            string nazwa = klucz == "spiwor" ? "Rozkładasz śpiwór." : klucz == "ognisko" ? "Palisz ognisko." : "Stawiasz namiot.";
+            string nazwa = klucz == "spiwor" ? "Rozkładasz śpiwór." : klucz == "ognisko" ? "Palisz ognisko."
+                         : klucz == "chata" ? $"Stawiasz chatę (+{MiejscaChaty} miejsca)." : "Stawiasz namiot.";
             Pisz(nazwa);
+            PrzeliczMiejsca();
             if (!ObozZalozony && Budowle.ContainsValue("namiot") && Budowle.ContainsValue("ognisko"))
             {
                 ObozZalozony = true;
-                Pisz("Obóz stoi: namiot i ognisko. To dobre miejsce na osadę — niedługo ktoś do was dołączy.");
+                Pisz("Obóz stoi: namiot i ognisko. To dobre miejsce na osadę — jutro ktoś do ciebie dołączy.");
             }
             return true;
         }
 
         private void Jedz()
         {
-            if (Ile("jagody") <= 0)
+            if (Ile("jagody") > 0)
+            {
+                Plecak["jagody"] = Ile("jagody") - 1;
+                Glod = Math.Min(100.0, Glod + 18.0);
+                Pisz("Zjadasz jagody.");
+            }
+            else if (PrzyObozie() && Obozowisko.Surowce.Wez("zywnosc") > 0)
+            {
+                Obozowisko.Surowce["zywnosc"] -= 1;
+                Glod = Math.Min(100.0, Glod + 18.0);
+                Pisz("Jesz z zapasów osady.");
+            }
+            else
             {
                 Pisz("Nie masz nic do jedzenia.");
-                return;
             }
-            Plecak["jagody"] = Ile("jagody") - 1;
-            Glod = Math.Min(100.0, Glod + 18.0);
-            Pisz("Zjadasz jagody.");
         }
 
         /// <summary>Śpiwór lub namiot w zasięgu dwóch kafli i kilka kroków do odpoczynku.</summary>
@@ -278,6 +303,7 @@ namespace GraSimply.Logika.Wolny
                 Godzina -= 24.0;
                 Dzien++;
                 Pisz($"Zaczyna się dzień {Dzien}.");
+                DzienObozu();
             }
 
             if (Spi)

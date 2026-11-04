@@ -398,8 +398,8 @@ namespace GraSimply.Gra
 
         /// <summary>
         /// Sterowanie: WASD albo strzałki (względem ekranu — w rzucie skośnym to przekątne siatki),
-        /// E albo spacja zbiera (przytrzymanie powtarza), 1/2/3 stawia śpiwór, ognisko, namiot,
-        /// F je, Z śpi, Esc wraca do menu głównego.
+        /// E albo spacja zbiera (przytrzymanie powtarza), 1–4 stawia śpiwór, ognisko, namiot, chatę,
+        /// T odkłada plecak do magazynu, Tab otwiera panel osady, F je, Z śpi, Esc wraca do menu głównego.
         /// </summary>
         private void ObsluzWolny(Logika.Wolny.SwiatWolny swiat)
         {
@@ -417,10 +417,19 @@ namespace GraSimply.Gra
             if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) { dx += 1; dy += 1; }
             if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) { dx -= 1; dy += 1; }
             if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) { dx += 1; dy -= 1; }
+            int nawig = 0, zmien = 0;
+            if (swiat.PanelOtwarty)
+            {
+                if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow)) { nawig = -1; }
+                if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow)) { nawig = 1; }
+                if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow)) { zmien = -1; }
+                if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow)) { zmien = 1; }
+            }
             int buduj = 0;
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) { buduj = 1; }
             if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) { buduj = 2; }
             if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) { buduj = 3; }
+            if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) { buduj = 4; }
             swiat.Aktualizuj(Time.unscaledDeltaTime, new Logika.Wolny.Wejscie
             {
                 Dx = dx,
@@ -429,6 +438,10 @@ namespace GraSimply.Gra
                 Buduj = buduj,
                 Jedz = Input.GetKeyDown(KeyCode.F),
                 Spij = Input.GetKeyDown(KeyCode.Z),
+                Zloz = Input.GetKeyDown(KeyCode.T),
+                Panel = Input.GetKeyDown(KeyCode.Tab),
+                Nawig = nawig,
+                Zmien = zmien,
             });
         }
 
@@ -439,7 +452,8 @@ namespace GraSimply.Gra
                                                    Logika.Wolny.WidokWolny.Hud(swiat),
                                                    Logika.Wolny.WidokWolny.Plecak(swiat),
                                                    Logika.Wolny.WidokWolny.Dziennik(swiat),
-                                                   Logika.Wolny.WidokWolny.Podpowiedz(swiat));
+                                                   Logika.Wolny.WidokWolny.Podpowiedz(swiat),
+                                                   Logika.Wolny.WidokWolny.Panel(swiat));
             _tekstura.LoadRawTextureData(_pulpit.Klatka.Dane);
             _tekstura.Apply(false);
             PokazNapisyHud(napisy);

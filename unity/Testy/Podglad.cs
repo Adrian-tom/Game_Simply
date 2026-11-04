@@ -218,7 +218,7 @@ namespace GraSimply.Testy
             return ekran.Migawke();
         }
 
-        private static void ZapiszKlatke(string katalog, string nazwa, Pulpit pulpit, List<Napis> napisy)
+        internal static void ZapiszKlatke(string katalog, string nazwa, Pulpit pulpit, List<Napis> napisy)
         {
             File.WriteAllBytes(Path.Combine(katalog, nazwa + ".raw"), pulpit.Klatka.Dane);
             var opis = new StringBuilder();

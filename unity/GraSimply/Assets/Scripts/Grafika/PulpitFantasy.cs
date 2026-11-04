@@ -173,11 +173,20 @@ namespace GraSimply.Grafika
         /// pasek stanu, plecak w lewym górnym rogu, dziennik zdarzeń i podpowiedź klawiszy na dole.
         /// </summary>
         public List<Napis> ZlozWolny(Plotno cel, StanHud hud, string klasa, IReadOnlyList<string> plecak,
-                                     IReadOnlyList<string> dziennik, string podpowiedz)
+                                     IReadOnlyList<string> dziennik, string podpowiedz,
+                                     IReadOnlyList<string> panel = null,
+                                     IReadOnlyList<PodpisOsadnika> podpisy = null)
         {
             _napisy.Clear();
             _przyciski.Clear();
             _mysz = null;
+            if (podpisy != null && panel == null)     // imiona nie mogą wchodzić na otwarty panel
+            {
+                foreach (PodpisOsadnika p in podpisy)
+                {
+                    TekstSrodek(p.Tekst, p.X, p.Y - Wiersz + 2, p.Kolor);
+                }
+            }
             Naglowek(hud);
             Postac(hud, klasa);
 
@@ -186,6 +195,7 @@ namespace GraSimply.Grafika
             {
                 znakow = Math.Max(znakow, l.Length);
             }
+            int prawaPlecaka = 4 + znakow * Znak + 14;
             if (plecak.Count > 0)
             {
                 Przyciemnij(4, 42, znakow * Znak + 14, plecak.Count * Wiersz + 8, 170);
@@ -198,12 +208,38 @@ namespace GraSimply.Grafika
             }
 
             _dziennik.Clear();
-            _dziennik.AddRange(dziennik);
-            Dziennik(false);
+            foreach (string d in dziennik)
+            {
+                _dziennik.Add(Konsola.BezEmoji(d).Trim());
+            }
+            if (panel == null)
+            {
+                Dziennik(false);
+            }
+            else
+            {
+                int szer = 0;
+                foreach (string l in panel)
+                {
+                    szer = Math.Max(szer, l.Length);
+                }
+                int px = Math.Max((W - (szer * Znak + 14)) / 2, prawaPlecaka + 6);   // obok plecaka, nie na nim
+                Przyciemnij(px, 70, szer * Znak + 14, panel.Count * Wiersz + 8, 215);
+                _natywne.Obramowanie(ZlotoC, px, 70, szer * Znak + 14, panel.Count * Wiersz + 8, 1);
+                int y = 74;
+                for (int i = 0; i < panel.Count; i++)
+                {
+                    bool wyroznij = i == 0 || panel[i].StartsWith(">", StringComparison.Ordinal);
+                    Tekst(panel[i], px + 7, y, wyroznij ? Styl.Aktywny.Wyrozniony : Styl.Aktywny.Tekst);
+                    y += Wiersz;
+                }
+            }
 
             if (!string.IsNullOrEmpty(podpowiedz))
             {
-                Plakietka(podpowiedz, W / 2 - (podpowiedz.Length * Znak + 10) / 2, H - 20, Styl.Aktywny.Wyrozniony, false);
+                // Na prawo od kul życia i energii, które zajmują lewy dolny róg.
+                int szerPod = podpowiedz.Length * Znak + 10;
+                Plakietka(podpowiedz, Math.Max(192, W / 2 - szerPod / 2), H - 20, Styl.Aktywny.Wyrozniony, false);
             }
             Powieksz(_natywne, cel);
             return new List<Napis>(_napisy);

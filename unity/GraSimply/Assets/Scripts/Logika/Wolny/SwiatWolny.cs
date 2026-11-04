@@ -14,10 +14,22 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Zbieraj / użyj tego, co jest przed bohaterem.</summary>
         public bool Dzialaj;
 
-        /// <summary>Co postawić przed sobą: 0 nic, 1 śpiwór, 2 ognisko, 3 namiot.</summary>
+        /// <summary>Co postawić przed sobą: 0 nic, 1 śpiwór, 2 ognisko, 3 namiot, 4 chata.</summary>
         public int Buduj;
         public bool Jedz;
         public bool Spij;
+
+        /// <summary>Odłóż plecak do magazynu osady.</summary>
+        public bool Zloz;
+
+        /// <summary>Otwórz albo zamknij panel osady.</summary>
+        public bool Panel;
+
+        /// <summary>W panelu: −1/+1 wybór osadnika.</summary>
+        public int Nawig;
+
+        /// <summary>W panelu: −1/+1 zmiana zajęcia wybranego osadnika.</summary>
+        public int Zmien;
     }
 
     /// <summary>Opis zbieractwa: ile razy można użyć obiektu i co daje jedno użycie.</summary>
@@ -67,9 +79,10 @@ namespace GraSimply.Logika.Wolny
                 { "spiwor", new[] { new KeyValuePair<string, int>("spiwor", 1) } },
                 { "ognisko", new[] { new KeyValuePair<string, int>("drewno", 5), new KeyValuePair<string, int>("kamien", 3) } },
                 { "namiot", new[] { new KeyValuePair<string, int>("drewno", 8), new KeyValuePair<string, int>("wlokno", 6) } },
+                { "chata", new[] { new KeyValuePair<string, int>("drewno", 12), new KeyValuePair<string, int>("kamien", 6) } },
             };
 
-        public static readonly string[] KluczeBudowli = { "", "spiwor", "ognisko", "namiot" };
+        public static readonly string[] KluczeBudowli = { "", "spiwor", "ognisko", "namiot", "chata" };
 
         public readonly GeneratorSwiata Swiat;
         public readonly long Seed;
@@ -109,6 +122,7 @@ namespace GraSimply.Logika.Wolny
         {
             Seed = seed;
             Swiat = new GeneratorSwiata(seed);
+            ZalozStanOsady(seed);
             X = 0.5;
             Y = 0.5;
             Pisz("Budzisz się na ziemi. Masz tylko śpiwór. Zbierz drewno, włókno i kamienie — przed nocą postaw obóz.");

@@ -50,6 +50,7 @@ namespace GraSimply.Testy
             TestyOsady.Uruchom(Wczytaj(katalog, "osada.json"));
             TestyChodzenia.Uruchom();
             TestyWolnego.Uruchom();
+            TestyOsadyWolnej.Uruchom();
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
             TestyInterfejsu.Uruchom();
