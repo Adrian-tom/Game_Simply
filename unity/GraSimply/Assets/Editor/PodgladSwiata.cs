@@ -30,7 +30,8 @@ namespace GraSimply.Edytor
                     m.SetTexture("_" + warstwa + "N", AssetDatabase.LoadAssetAtPath<Texture2D>(w + "_Normalne.jpg"));
                 }
             });
-            Utworz("Roslina", "GraSimply/Roslina", m => m.enableInstancing = true);
+            Utworz("Natura", "GraSimply/Natura", m => m.enableInstancing = true);
+            Utworz("Detal", "GraSimply/Detal", m => m.SetTexture("_Detal", AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Resources/Tekstury/Grunt/Skala_Kolor.jpg")));
             Utworz("Filtr", "GraSimply/Filtr", m => { });
             Utworz("Drobina", "Legacy Shaders/Particles/Additive", m => { });
             Utworz("Plomien", "Unlit/Color", m => m.color = new Color(1f, 0.6f, 0.15f));

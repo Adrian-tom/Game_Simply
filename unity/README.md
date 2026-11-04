@@ -57,15 +57,24 @@ Modele leżą w `Assets/Resources/Modele`, a licencje autorów w `Assets/Licencj
 | Autor | Paczka (wersja darmowa) | Do czego |
 | --- | --- | --- |
 | Kay Lousberg | [Adventurers](https://kaylousberg.itch.io/kaykit-adventurers), [Skeletons](https://kaylousberg.itch.io/kaykit-skeletons) | postacie i animacje |
-| Kay Lousberg | [Forest Nature](https://kaylousberg.itch.io/kaykit-forest), [Medieval Hexagon](https://kaylousberg.itch.io/kaykit-medieval-hexagon) | natura, budynki osady, punkty mapy |
+| Kay Lousberg | [Medieval Hexagon](https://kaylousberg.itch.io/kaykit-medieval-hexagon) | budynki osady, punkty mapy |
+| Poly Haven | [modele natury](https://polyhaven.com/models/nature) | drzewa, skały, krzaki i trawa, wypieczone do obrazków |
 | Kenney | [Survival Kit](https://kenney.nl/assets/survival-kit) | śpiwór, ognisko, namiot, płot, rusztowanie |
 | Quaternius | [Medieval Village MegaKit](https://quaternius.com/packs/medievalvillagemegakit.html) | chaty i dwór składane z części |
 
 Ziemia to cztery zdjęciowe tekstury CC0 z [ambientCG](https://docs.ambientcg.com/license/)
 (Grass004, Ground037, Rock030, Ground054) mieszane w shaderze `Assets/Shaders/Grunt.shader`,
 który rysuje też falującą wodę z pianą przy brzegu. Pozostałe efekty:
-`Roslina.shader` (wiatr w drzewach, krzakach i trawie), `Filtr.shader` z `FiltrObrazu.cs` (poświata, kolor,
+`Natura.shader` (wypieczona natura z wiatrem), `Detal.shader` (stonowane budynki i postacie z fakturą ze zdjęcia), `Filtr.shader` z `FiltrObrazu.cs` (poświata, kolor,
 winieta) oraz `Klimat.cs` (cienie chmur, pyłki w dzień i świetliki w nocy). To tylko wygląd, zasady gry są te same.
+
+Natura jest wypieczona, bo skany z Poly Haven mają nawet miliony trójkątów. Kamera się nie obraca, więc
+`GraSimply.Edytor.WypiekNatury.Zrob` renderuje każdy model raz, dokładnie z jej kąta, do `Resources/Natura`,
+a w grze jest on dwoma trójkątami. Modele źródłowe (ok. 330 MB) nie są w repozytorium; żeby wypiec je od nowa, najpierw:
+
+```bash
+python unity/narzedzia/pobierz_nature.py
+```
 
 Zrzuty scen bez uruchamiania gry (bez `-nographics`, napisy dorysowuje dopiero Unity UI):
 

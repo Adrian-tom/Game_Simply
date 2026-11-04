@@ -1,0 +1,5 @@
+Modele natury (wypieczone do obrazkow): island_tree_01, island_tree_02, tree_small_02, fir_sapling_medium,
+shrub_01, shrub_03, shrub_04, fern_02, rock_moss_set_01, rock_moss_set_02, boulder_01,
+rock_07, stone_01, grass_medium_01, dandelion_01, nettle_plant z polyhaven.com
+Licencja: Creative Commons CC0 1.0 Universal
+https://polyhaven.com/license

@@ -46,26 +46,40 @@ namespace GraSimply.Grafika.Trojwymiar
 
         private static readonly string[] Drzewa =
         {
-            "Natura/Tree_1_A_Color1", "Natura/Tree_1_B_Color1", "Natura/Tree_2_A_Color1", "Natura/Tree_2_B_Color1",
-            "Natura/Tree_2_C_Color1", "Natura/Tree_3_A_Color1", "Natura/Tree_3_B_Color1", "Natura/Tree_4_A_Color1",
+            "Natura/island_tree_01_0", "Natura/island_tree_01_1", "Natura/island_tree_02_0", "Natura/island_tree_02_1",
+            "Natura/tree_small_02_0", "Natura/tree_small_02_1", "Natura/fir_sapling_medium_0", "Natura/fir_sapling_medium_1",
+            "Natura/fir_sapling_medium_2",
         };
 
         private static readonly string[] Skaly =
         {
-            "Natura/Rock_2_A_Color1", "Natura/Rock_2_B_Color1", "Natura/Rock_3_A_Color1", "Natura/Rock_3_B_Color1",
-            "Natura/Rock_3_C_Color1", "Natura/Rock_1_A_Color1",
+            "Natura/rock_moss_set_01_0", "Natura/rock_moss_set_01_1", "Natura/rock_moss_set_01_2", "Natura/rock_moss_set_02_0",
+            "Natura/rock_moss_set_02_1", "Natura/rock_moss_set_02_2", "Natura/boulder_01_0", "Natura/boulder_01_1",
+            "Natura/rock_07_0", "Natura/rock_07_1",
         };
 
         private static readonly string[] Krzaki =
         {
-            "Natura/Bush_1_A_Color1", "Natura/Bush_2_A_Color1", "Natura/Bush_3_A_Color1", "Natura/Bush_4_A_Color1",
+            "Natura/shrub_01_0", "Natura/shrub_01_1", "Natura/shrub_04_0", "Natura/shrub_04_1", "Natura/shrub_04_2",
+            "Natura/fern_02_0", "Natura/fern_02_1", "Natura/fern_02_2",
         };
 
-        private static readonly string[] Ziola = { "Natura/Grass_1_A_Color1", "Natura/Grass_2_A_Color1", "Natura/Grass_1_B_Color1" };
+        private static readonly string[] Ziola =
+        {
+            "Natura/nettle_plant_0", "Natura/nettle_plant_1", "Natura/nettle_plant_2", "Natura/dandelion_01_0",
+            "Natura/shrub_03_0", "Natura/shrub_03_1", "Natura/shrub_03_2",
+        };
 
         private static readonly string[] Suche =
         {
-            "Natura/Tree_Bare_1_A_Color1", "Natura/Tree_Bare_1_B_Color1", "Natura/Tree_Bare_2_A_Color1", "Natura/Tree_Bare_2_B_Color1",
+            "Natura/fir_sapling_medium_0", "Natura/fir_sapling_medium_1", "Natura/fir_sapling_medium_2", "Natura/tree_small_02_0",
+        };
+
+        private static readonly string[] Trawy =
+        {
+            "Natura/grass_medium_01_0", "Natura/grass_medium_01_1", "Natura/grass_medium_01_2", "Natura/grass_medium_01_3",
+            "Natura/grass_medium_01_0", "Natura/grass_medium_01_1", "Natura/grass_medium_01_2", "Natura/grass_medium_01_3",
+            "Natura/grass_medium_01_0", "Natura/grass_medium_01_1", "Natura/grass_medium_01_2", "Natura/grass_medium_01_3",
         };
 
         /// <summary>Stabilny „los” z pozycji: ten sam kafel zawsze dostaje ten sam model.</summary>
@@ -92,13 +106,13 @@ namespace GraSimply.Grafika.Trojwymiar
             {
                 case Obiekt.Drzewo:
                     bool suche = biom == "bagna" || biom == "ruiny";
-                    return new WpisModelu(Z(suche ? Suche : Drzewa, x, y), 2.0f + Mieszaj(y, x) % 8 * 0.07f, true);
+                    return new WpisModelu(Z(suche ? Suche : Drzewa, x, y), 2.7f + Mieszaj(y, x) % 8 * 0.1f);
                 case Obiekt.Skala:
-                    return new WpisModelu(Z(Skaly, x, y), 0.85f, true);
+                    return new WpisModelu(Z(Skaly, x, y), 0.72f);
                 case Obiekt.Krzak:
-                    return new WpisModelu(Z(Krzaki, x, y), 0.5f, true);
+                    return new WpisModelu(Z(Krzaki, x, y), 0.72f);
                 case Obiekt.Ziolo:
-                    return new WpisModelu(Z(Ziola, x, y), 0.4f, true);
+                    return new WpisModelu(Z(Ziola, x, y), 0.5f);
                 case Obiekt.Sciana:
                     return new WpisModelu("Budynki/mountain_A", 2.2f, true);
                 default:
@@ -173,19 +187,42 @@ namespace GraSimply.Grafika.Trojwymiar
             float wysokosc;
             switch (biom)
             {
-                case "las": lista = Drzewa; ile = 7; wysokosc = 2.6f; break;
-                case "bagna": lista = Suche; ile = 3; wysokosc = 2.2f; break;
+                case "las": lista = Drzewa; ile = 7; wysokosc = 3.4f; break;
+                case "bagna": lista = Suche; ile = 4; wysokosc = 3.0f; break;
                 case "wzgórza": lista = new[] { "Budynki/hill_single_A", "Budynki/hill_single_B", "Budynki/hill_single_C" }; ile = 3; wysokosc = 1.1f; break;
                 case "kanion": lista = Skaly; ile = 5; wysokosc = 1.3f; break;
                 case "ruiny": lista = Skaly; ile = 3; wysokosc = 0.8f; break;
-                default: lista = Krzaki; ile = 3; wysokosc = 0.5f; break;
+                default: lista = Krzaki; ile = 4; wysokosc = 0.8f; break;
             }
             for (int i = 0; i < ile; i++)
             {
                 int m = Mieszaj(h + i * 31, i * 17 + x);
                 string sciezka = lista[m % lista.Length];
                 float u = 0.1f + (m >> 4) % 80 / 100f, v = 0.1f + (m >> 11) % 80 / 100f;
-                wynik.Add((new WpisModelu(sciezka, wysokosc * (0.85f + (m >> 18) % 30 / 100f), true), u, v));
+                bool model = !sciezka.StartsWith("Natura/");
+                wynik.Add((new WpisModelu(sciezka, wysokosc * (0.85f + (m >> 18) % 30 / 100f), model), u, v));
+            }
+            return wynik;
+        }
+
+        /// <summary>Drobne kępki na polu danego biomu: obraz, miejsce w polu 0–1 i wysokość. Skała i pustynia są gołe.</summary>
+        public static List<(string Sciezka, float U, float V, float Wysokosc)> Kepki(string biom, int x, int y)
+        {
+            var wynik = new List<(string, float, float, float)>();
+            int ile;
+            switch (biom)
+            {
+                case "las": ile = 3; break;
+                case "bagna": ile = 2; break;
+                case "wzgórza": ile = 1; break;
+                case "ruiny": ile = 1; break;
+                case "równiny": ile = 3; break;
+                default: return wynik;
+            }
+            for (int i = 0; i < ile; i++)
+            {
+                int m = Mieszaj(x * 3 + i * 41 + 7, y * 5 - i * 23);
+                wynik.Add((Trawy[m % Trawy.Length], (m >> 5) % 100 / 100f, (m >> 12) % 100 / 100f, 0.24f + (m >> 19) % 20 / 100f));
             }
             return wynik;
         }
@@ -309,6 +346,7 @@ namespace GraSimply.Grafika.Trojwymiar
             lista.AddRange(Krzaki);
             lista.AddRange(Ziola);
             lista.AddRange(Suche);
+            lista.AddRange(Trawy);
             lista.Add(DlaObiektu(Obiekt.Sciana, 0, 0).Value.Sciezka);
             foreach (string k in new[] { "spiwor", "ognisko", "namiot" })
             {

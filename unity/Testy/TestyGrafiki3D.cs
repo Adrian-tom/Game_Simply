@@ -44,12 +44,12 @@ namespace GraSimply.Testy
         {
             string korzen = KatalogModeliNaDysku();
             List<string> brak = KatalogModeli.WszystkieSciezki().Distinct()
-                                             .Where(s => !File.Exists(Path.Combine(korzen, s + ".fbx"))).ToList();
+                                             .Where(s => !File.Exists(s.StartsWith("Natura/") ? Path.Combine(korzen, "..", s + ".png") : Path.Combine(korzen, s + ".fbx"))).ToList();
             Harness.Sprawdz("każdy model z katalogu jest w projekcie" + (brak.Count > 0 ? ": brak " + string.Join(", ", brak) : ""),
                             brak.Count == 0);
             string licencje = Path.Combine(korzen, "..", "..", "Licencje-modeli");
             Harness.Rowne("licencje wszystkich paczek modeli i tekstur leżą w projekcie", 7, Directory.GetFiles(licencje, "*.txt").Length);
-            foreach (string p in new[] { "Grunt", "Plomien", "Duch", "Roslina", "Filtr", "Drobina" })
+            foreach (string p in new[] { "Grunt", "Plomien", "Duch", "Natura", "Detal", "Filtr", "Drobina" })
             {
                 Harness.Sprawdz($"materiał {p} jest w Resources", File.Exists(Path.Combine(korzen, "..", "Materialy", p + ".mat")));
             }
@@ -61,7 +61,17 @@ namespace GraSimply.Testy
             Harness.Rowne("ten sam kafel daje ten sam model", a.Value.Sciezka, KatalogModeli.DlaObiektu(Obiekt.Drzewo, 5, 9, "las").Value.Sciezka);
             int rozne = Enumerable.Range(0, 40).Select(x => KatalogModeli.DlaObiektu(Obiekt.Drzewo, x, 3, "las").Value.Sciezka).Distinct().Count();
             Harness.Sprawdz($"las nie jest jednym drzewem ({rozne} rodzajów)", rozne >= 4);
-            Harness.Sprawdz("na bagnach drzewa są suche", KatalogModeli.DlaObiektu(Obiekt.Drzewo, 1, 1, "bagna").Value.Sciezka.Contains("Bare"));
+            Harness.Sprawdz("na bagnach drzewa są inne niż w lesie",
+                            !Enumerable.Range(0, 40).Any(x => KatalogModeli.DlaObiektu(Obiekt.Drzewo, x, 3, "bagna").Value.Sciezka.Contains("island_tree")));
+            string[] opisy = File.ReadAllLines(Path.Combine(KatalogModeliNaDysku(), "..", "Natura", "natura.txt"));
+            List<string> bezOpisu = KatalogModeli.WszystkieSciezki().Distinct().Where(s => s.StartsWith("Natura/"))
+                                                 .Where(s => !opisy.Any(l => l.StartsWith(s.Substring(7) + ";"))).ToList();
+            Harness.Sprawdz("każdy obraz natury ma opis podstawy" + (bezOpisu.Count > 0 ? ": brak " + string.Join(", ", bezOpisu) : ""), bezOpisu.Count == 0);
+            Harness.Sprawdz("wypieczona natura zawsze patrzy na kamerę, więc nie losuje obrotu", !KatalogModeli.DlaObiektu(Obiekt.Drzewo, 1, 1, "las").Value.LosowyObrot);
+            Harness.Sprawdz("równina ma trawę", KatalogModeli.Kepki("równiny", 3, 4).Count > 0);
+            Harness.Sprawdz("kanion jest goły", KatalogModeli.Kepki("kanion", 3, 4).Count == 0);
+            Harness.Sprawdz("kępka stoi wewnątrz pola", KatalogModeli.Kepki("las", 9, 2).All(k => k.U >= 0f && k.U < 1f && k.V >= 0f && k.V < 1f));
+            Harness.Rowne("kępki są powtarzalne", KatalogModeli.Kepki("las", 9, 2)[0].Sciezka, KatalogModeli.Kepki("las", 9, 2)[0].Sciezka);
             Harness.Sprawdz("woda to kolor gruntu, nie model", KatalogModeli.DlaObiektu(Obiekt.Woda, 1, 1) == null);
             Harness.Sprawdz("pusty kafel nie ma modelu", KatalogModeli.DlaObiektu(Obiekt.Brak, 1, 1) == null);
             foreach (string b in SwiatWolny.Budowlane)

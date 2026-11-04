@@ -42,6 +42,9 @@ namespace GraSimply.Gra.Trojwymiar
             Kamera.clearFlags = CameraClearFlags.SolidColor;
             Kamera.backgroundColor = new Color(0.07f, 0.09f, 0.1f);
             Kamera.transform.rotation = Quaternion.Euler(32f, -45f, 0f);
+            Shader.SetGlobalVector("_KameraPrawo", Kamera.transform.right);
+            Shader.SetGlobalVector("_KameraGora", Kamera.transform.up);
+            Shader.SetGlobalVector("_KameraDo", -Kamera.transform.forward);
 
             _slonce = new GameObject("Slonce").AddComponent<Light>();
             _slonce.transform.SetParent(Korzen, false);

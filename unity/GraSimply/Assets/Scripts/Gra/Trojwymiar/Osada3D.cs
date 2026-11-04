@@ -100,12 +100,21 @@ namespace GraSimply.Gra.Trojwymiar
         private void Las()
         {
             int n = UkladPlacu.SiatkaRuchu;
+            var trawnik = new Trawnik(_scena.Modele, _korzen);
             for (int y = -Tlo; y < n + Tlo; y++)
             {
                 for (int x = -Tlo; x < n + Tlo; x++)
                 {
                     bool wPolanie = x >= -1 && y >= -1 && x <= n && y <= n;
                     int h = KatalogModeli.Mieszaj(x + 40, y + 90);
+                    if (!(x >= 0 && y >= 0 && x < UkladPlacu.Siatka && y < UkladPlacu.Siatka))
+                    {
+                        foreach ((string sciezka, float u, float v, float wys) in KatalogModeli.Kepki("równiny", x, y))
+                        {
+                            trawnik.Dodaj(sciezka, (x + u) * Pole, (y + v) * Pole, wys * 1.2f);
+                            trawnik.Dodaj(sciezka, (x + v) * Pole, (y + u) * Pole, wys);
+                        }
+                    }
                     if (wPolanie || h % 100 > 62)
                     {
                         continue;
@@ -116,6 +125,7 @@ namespace GraSimply.Gra.Trojwymiar
                     o.transform.rotation = Quaternion.Euler(0f, h % 360, 0f);
                 }
             }
+            trawnik.Zbuduj();
         }
 
         private void Ognisko()

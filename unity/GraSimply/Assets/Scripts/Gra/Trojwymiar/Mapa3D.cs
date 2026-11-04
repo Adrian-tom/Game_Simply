@@ -26,6 +26,7 @@ namespace GraSimply.Gra.Trojwymiar
         private readonly List<GameObject> _stoi = new List<GameObject>();
 
         private Grunt3D _grunt;
+        private Trawnik _trawnik;
         private string _klucz;
         private Postac3D _bohater;
         private double _hx, _hy;
@@ -161,6 +162,8 @@ namespace GraSimply.Gra.Trojwymiar
             _grunt.Prostokat(-margines * PolePola, -margines * PolePola,
                                    (n + margines) * PolePola, (n + margines) * PolePola);
 
+            _trawnik = _trawnik ?? new Trawnik(_scena.Modele, _korzen);
+            _trawnik.Wyczysc();
             for (int y = 0; y < n; y++)
             {
                 for (int x = 0; x < n; x++)
@@ -169,6 +172,25 @@ namespace GraSimply.Gra.Trojwymiar
                     if (m.WszystkoOdkryte || p.Odkryte)
                     {
                         Pole(m, p, x, y);
+                        Kepki(p.Biom, x, y, m.Region);
+                    }
+                }
+            }
+            _trawnik.Zbuduj();
+        }
+
+        /// <summary>Pole mapy jest duże: zbiera kępki z kilku drobnych kratek, żeby nie świeciło gołą ziemią.</summary>
+        private void Kepki(string biom, int x, int y, (int X, int Y) region)
+        {
+            string b = string.IsNullOrEmpty(biom) ? "równiny" : biom;
+            for (int kx = 0; kx < 3; kx++)
+            {
+                for (int ky = 0; ky < 3; ky++)
+                {
+                    int gx = x * 3 + kx + region.X * 97, gy = y * 3 + ky + region.Y * 89;
+                    foreach ((string sciezka, float u, float v, float h) in KatalogModeli.Kepki(b, gx, gy))
+                    {
+                        _trawnik.Dodaj(sciezka, (x + (kx + u) / 3f) * PolePola, (y + (ky + v) / 3f) * PolePola, h * 1.25f);
                     }
                 }
             }

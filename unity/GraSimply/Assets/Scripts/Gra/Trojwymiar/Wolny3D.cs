@@ -20,6 +20,7 @@ namespace GraSimply.Gra.Trojwymiar
         private readonly Scena3D _scena;
         private readonly Transform _korzen;
         private readonly Grunt3D _grunt;
+        private readonly Trawnik _trawnik;
 
         private readonly Dictionary<(int X, int Y), (string Klucz, GameObject Obiekt)> _stoi =
             new Dictionary<(int X, int Y), (string Klucz, GameObject Obiekt)>();
@@ -46,6 +47,7 @@ namespace GraSimply.Gra.Trojwymiar
             _korzen = new GameObject("Wolny").transform;
             _korzen.SetParent(scena.Korzen, false);
             _grunt = scena.NowyGrunt("GruntWolny", 2 * Zasieg + 1, _korzen);
+            _trawnik = new Trawnik(scena.Modele, _korzen);
         }
 
         public void Pokaz(bool tak)
@@ -69,6 +71,7 @@ namespace GraSimply.Gra.Trojwymiar
                 if (ruch)
                 {
                     Grunt(s, kafel);
+                    Kepki(s, kafel);
                 }
                 Obiekty(s, kafel);
             }
@@ -105,6 +108,26 @@ namespace GraSimply.Gra.Trojwymiar
             _grunt.Zastosuj();
             // Środki tekseli wypadają w środkach pól, więc kolory zlewają się płynnie między sąsiadami.
             _grunt.Prostokat(c.X - Zasieg, c.Y - Zasieg, c.X + Zasieg + 1, c.Y + Zasieg + 1);
+        }
+
+        private void Kepki(SwiatWolny s, (int X, int Y) c)
+        {
+            _trawnik.Wyczysc();
+            for (int y = c.Y - Zasieg; y <= c.Y + Zasieg; y++)
+            {
+                for (int x = c.X - Zasieg; x <= c.X + Zasieg; x++)
+                {
+                    if (!GeneratorSwiata.WGranicach(x, y) || s.ObiektNa(x, y) == Obiekt.Woda)
+                    {
+                        continue;
+                    }
+                    foreach ((string sciezka, float u, float v, float h) in KatalogModeli.Kepki(s.Swiat.Biom(x, y), x, y))
+                    {
+                        _trawnik.Dodaj(sciezka, x + u, y + v, h);
+                    }
+                }
+            }
+            _trawnik.Zbuduj();
         }
 
         private void Obiekty(SwiatWolny s, (int X, int Y) c)

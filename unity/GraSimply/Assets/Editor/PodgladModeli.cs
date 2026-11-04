@@ -18,7 +18,7 @@ namespace GraSimply.Edytor
             string wyjscie = Path.Combine(Directory.GetParent(Application.dataPath)!.FullName, "Build", "PodgladModeli");
             Directory.CreateDirectory(wyjscie);
             var raport = new StringBuilder();
-            foreach (string katalog in new[] { "Postacie", "Natura", "Budynki", "Oboz", "Wioska", "Bronie" })
+            foreach (string katalog in new[] { "Postacie", "Budynki", "Oboz", "Wioska", "Bronie" })
             {
                 Plansza(katalog, wyjscie, raport);
             }

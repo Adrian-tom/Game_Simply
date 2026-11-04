@@ -17,6 +17,15 @@ namespace GraSimply.Edytor
 
         private void OnPreprocessModel()
         {
+            if (assetPath.StartsWith("Assets/_Wypiek/"))
+            {
+                var ciezki = (ModelImporter)assetImporter;
+                ciezki.importAnimation = false;
+                ciezki.animationType = ModelImporterAnimationType.None;
+                ciezki.indexFormat = ModelImporterIndexFormat.UInt32;
+                ciezki.meshCompression = ModelImporterMeshCompression.Off;
+                return;
+            }
             if (!assetPath.StartsWith(Korzen))
             {
                 return;
@@ -38,6 +47,22 @@ namespace GraSimply.Edytor
 
         private void OnPreprocessTexture()
         {
+            if (assetPath.StartsWith("Assets/_Wypiek/") && assetPath.Contains("_nor_gl_"))
+            {
+                ((TextureImporter)assetImporter).textureType = TextureImporterType.NormalMap;
+                return;
+            }
+            if (assetPath.StartsWith("Assets/Resources/Natura/"))
+            {
+                var natura = (TextureImporter)assetImporter;
+                natura.alphaIsTransparency = true;
+                // Bez tego drobne liście w mniejszych mipmapach znikają i korona robi się dziurawa.
+                natura.mipMapsPreserveCoverage = true;
+                natura.alphaTestReferenceValue = 0.3f;
+                natura.textureCompression = TextureImporterCompression.Compressed;
+                natura.wrapMode = TextureWrapMode.Clamp;
+                return;
+            }
             if (assetPath.StartsWith(Tekstury))
             {
                 var tekstura = (TextureImporter)assetImporter;
