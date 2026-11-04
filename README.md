@@ -1,5 +1,8 @@
 # Pro RPG – survival city builder RPG fantasy po polsku
 
+> Ta gra jest tworzona przez AI: to luźny projekt bez wielkich planów, powstały dla frajdy
+> i w sam raz na miłe zabicie wolnego czasu.
+
 Gra fantasy w Pythonie 3, w której prowadzisz **bohatera i jego osadę**. Wyprawy dają surowce,
 łup i doświadczenie; osada daje jedzenie, rzemiosło i ludzi — ale je, marznie zimą,
 choruje i przyciąga bandy. Wszystkie komunikaty są **po polsku**.

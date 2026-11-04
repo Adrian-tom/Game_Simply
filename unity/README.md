@@ -1,5 +1,8 @@
 # Port na Unity
 
+> Ta gra jest tworzona przez AI: to luźny projekt bez wielkich planów, powstały dla frajdy
+> i w sam raz na miłe zabicie wolnego czasu.
+
 Przeniesienie gry z Pythona na Unity i C#. Wersja pythonowa w katalogu głównym
 **zostaje nietknięta** — służy jako wzorzec, do którego port się porównuje,
 i dalej jest grywalna (`python main.py`).
