@@ -21,7 +21,18 @@ namespace GraSimply.Edytor
         public static void UtworzMaterialy()
         {
             Directory.CreateDirectory("Assets/Resources/Materialy");
-            Utworz("Grunt", "Standard", m => { m.SetFloat("_Glossiness", 0f); m.SetFloat("_Metallic", 0f); });
+            Utworz("Grunt", "GraSimply/Grunt", m =>
+            {
+                foreach (string warstwa in new[] { "Trawa", "Ziemia", "Skala", "Piasek" })
+                {
+                    string w = "Assets/Resources/Tekstury/Grunt/" + warstwa;
+                    m.SetTexture("_" + warstwa, AssetDatabase.LoadAssetAtPath<Texture2D>(w + "_Kolor.jpg"));
+                    m.SetTexture("_" + warstwa + "N", AssetDatabase.LoadAssetAtPath<Texture2D>(w + "_Normalne.jpg"));
+                }
+            });
+            Utworz("Roslina", "GraSimply/Roslina", m => m.enableInstancing = true);
+            Utworz("Filtr", "GraSimply/Filtr", m => { });
+            Utworz("Drobina", "Legacy Shaders/Particles/Additive", m => { });
             Utworz("Plomien", "Unlit/Color", m => m.color = new Color(1f, 0.6f, 0.15f));
             Utworz("Duch", "Legacy Shaders/Transparent/Diffuse", m => m.color = new Color(0.35f, 1f, 0.45f, 0.55f));
             AssetDatabase.SaveAssets();
@@ -30,13 +41,15 @@ namespace GraSimply.Edytor
         private static void Utworz(string nazwa, string shader, System.Action<Material> ustaw)
         {
             string sciezka = $"Assets/Resources/Materialy/{nazwa}.mat";
-            if (AssetDatabase.LoadAssetAtPath<Material>(sciezka) != null)
+            Material m = AssetDatabase.LoadAssetAtPath<Material>(sciezka);
+            if (m == null)
             {
-                return;
+                m = new Material(Shader.Find(shader));
+                AssetDatabase.CreateAsset(m, sciezka);
             }
-            var m = new Material(Shader.Find(shader));
+            m.shader = Shader.Find(shader);
             ustaw(m);
-            AssetDatabase.CreateAsset(m, sciezka);
+            EditorUtility.SetDirty(m);
         }
 
         public static void Zrob()
@@ -83,6 +96,29 @@ namespace GraSimply.Edytor
 
             s.Godzina = 22.0;
             KlatkaWolna(g, pulpit, cel, s, "swiat-noc");
+
+            var w = new SwiatWolny(42);
+            (w.X, w.Y) = BrzegWody(w);
+            KlatkaWolna(g, pulpit, cel, w, "swiat-woda");
+        }
+
+        /// <summary>Wolny kafel, od którego najbliżej do wody: tam widać brzeg i fale.</summary>
+        private static (double X, double Y) BrzegWody(SwiatWolny s)
+        {
+            for (int r = 1; r < 400; r++)
+            {
+                for (int x = -r; x <= r; x++)
+                {
+                    foreach (int y in new[] { -r, r })
+                    {
+                        if (s.ObiektNa(x, y) == Obiekt.Woda && s.ObiektNa(x + 4, y + 2) == Obiekt.Brak)
+                        {
+                            return (x + 4.5, y + 2.5);
+                        }
+                    }
+                }
+            }
+            return (0.5, 0.5);
         }
 
         private static void KlatkaWolna(Grafika3D g, Pulpit pulpit, RenderTexture cel, SwiatWolny s, string nazwa)
@@ -113,6 +149,11 @@ namespace GraSimply.Edytor
             g.Rysuj(m, true, 20.2, 0.1, true);
             pulpit.ZlozNaklad(null, "Mag", null, default, null, g.PodpisyOsady, g.Kadr);
             Zapisz(g, pulpit, cel, "osada-noc");
+            plac.Pora = "zima";
+            g.Rysuj(m, true, 20.4, 0.1, false);
+            pulpit.ZlozNaklad(null, "Mag", null, default, null, g.PodpisyOsady, g.Kadr);
+            Zapisz(g, pulpit, cel, "osada-zima");
+            plac.Pora = "lato";
         }
 
         private static void Mapa(Grafika3D g, Pulpit pulpit, RenderTexture cel)

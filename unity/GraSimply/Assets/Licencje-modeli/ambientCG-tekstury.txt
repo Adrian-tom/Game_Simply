@@ -1,0 +1,3 @@
+Tekstury gruntu: Grass004, Ground037, Rock030, Ground054 z ambientCG.com
+Licencja: Creative Commons CC0 1.0 Universal
+https://docs.ambientcg.com/license/

@@ -17,7 +17,7 @@ namespace GraSimply.Gra.Trojwymiar
     {
         public const float PolePola = 4f;
         private const float RozmiarKadru = 11.5f;
-        private const int Gestosc = 8;        // tekseli gruntu na pole
+        private const int Gestosc = 3;        // pól danych gruntu na pole mapy
         private const double Szybkosc = 14.0;
 
         private readonly Scena3D _scena;
@@ -25,8 +25,7 @@ namespace GraSimply.Gra.Trojwymiar
         private readonly Transform _obiekty;
         private readonly List<GameObject> _stoi = new List<GameObject>();
 
-        private MeshRenderer _grunt;
-        private Texture2D _tekstura;
+        private Grunt3D _grunt;
         private string _klucz;
         private Postac3D _bohater;
         private double _hx, _hy;
@@ -139,18 +138,10 @@ namespace GraSimply.Gra.Trojwymiar
             int n = pola.Length;
             int margines = 3;                  // pola za krawędzią regionu: mapa nie urywa się w próżni
             int bok = (n + 2 * margines) * Gestosc;
-            if (_tekstura == null || _tekstura.width != bok)
+            if (_grunt == null || _grunt.Bok != bok)
             {
-                _tekstura = new Texture2D(bok, bok, TextureFormat.RGBA32, false)
-                {
-                    filterMode = FilterMode.Bilinear,
-                    wrapMode = TextureWrapMode.Clamp,
-                };
-                _grunt = _scena.NowyGrunt("GruntMapy", _tekstura);
-                _grunt.transform.SetParent(_korzen, false);
+                _grunt = _scena.NowyGrunt("GruntMapy", bok, _korzen);
             }
-            var piksele = new Color32[bok * bok];
-            var ciemno = new Color32(16, 20, 26, 255);
             for (int py = 0; py < bok; py++)
             {
                 for (int px = 0; px < bok; px++)
@@ -158,17 +149,16 @@ namespace GraSimply.Gra.Trojwymiar
                     int x = px / Gestosc - margines, y = py / Gestosc - margines;
                     if (x < 0 || y < 0 || x >= n || y >= n || !(m.WszystkoOdkryte || pola[y][x].Odkryte))
                     {
-                        piksele[py * bok + px] = ciemno;
+                        _grunt.Ciemno(px, py);
                         continue;
                     }
                     string biom = string.IsNullOrEmpty(pola[y][x].Biom) ? "równiny" : pola[y][x].Biom;
                     double odcien = KatalogModeli.Mieszaj(px + m.Region.X * 7, py + m.Region.Y * 13) % 100 / 100.0;
-                    piksele[py * bok + px] = Scena3D.Kolor(KatalogModeli.KolorGruntu(biom, odcien));
+                    _grunt.Pole(px, py, biom, odcien);
                 }
             }
-            _tekstura.SetPixels32(piksele);
-            _tekstura.Apply(false);
-            Scena3D.UstawProstokat(_grunt, -margines * PolePola, -margines * PolePola,
+            _grunt.Zastosuj();
+            _grunt.Prostokat(-margines * PolePola, -margines * PolePola,
                                    (n + margines) * PolePola, (n + margines) * PolePola);
 
             for (int y = 0; y < n; y++)

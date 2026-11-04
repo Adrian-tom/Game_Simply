@@ -187,4 +187,4 @@ CI uruchamia je na Pythonie 3.10 i 3.13 — najpierw bez pygame, potem z grafik�
 
 Projekt otwarty – możesz dowolnie rozbudowywać i modyfikować kod.
 
-Modele 3D w wersji Unity pochodzą z darmowych paczek na licencji CC0 (KayKit, Kenney, Quaternius). Lista i linki są w [unity/README.md](unity/README.md).
+Modele 3D i tekstury ziemi w wersji Unity pochodzą z darmowych paczek na licencji CC0 (KayKit, Kenney, Quaternius, ambientCG). Lista i linki są w [unity/README.md](unity/README.md).

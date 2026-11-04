@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Grunt
-  m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+  m_Shader: {fileID: 4800000, guid: 7825e6cfa735ddc439073386611cf8bf, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -23,6 +23,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Barwa:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -59,6 +63,42 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Piasek:
+        m_Texture: {fileID: 2800000, guid: bc739734bacc04d4d99585829b887595, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _PiasekN:
+        m_Texture: {fileID: 2800000, guid: 0a64ebaf5c2cf1446b71948ab4113830, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Skala:
+        m_Texture: {fileID: 2800000, guid: 5227fb0605b4e1341ae4c0ee011d718f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SkalaN:
+        m_Texture: {fileID: 2800000, guid: 0dfa726a4e4c6aa4fbf9add3d1d86e10, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Sklad:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Trawa:
+        m_Texture: {fileID: 2800000, guid: 30ec647fa4d482043a5fc9322f5278ab, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TrawaN:
+        m_Texture: {fileID: 2800000, guid: c0826e28cf5c6d84fb6d391da1bdb5af, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Ziemia:
+        m_Texture: {fileID: 2800000, guid: d3bbe004402bba34aaff9877fe2b189e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ZiemiaN:
+        m_Texture: {fileID: 2800000, guid: bde286f46a623ac418376fafabb29172, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _BumpScale: 1
@@ -72,7 +112,9 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _Skalowanie: 0.28
     - _SmoothnessTextureChannel: 0
+    - _Snieg: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0

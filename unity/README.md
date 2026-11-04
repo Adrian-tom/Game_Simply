@@ -61,6 +61,12 @@ Modele leżą w `Assets/Resources/Modele`, a licencje autorów w `Assets/Licencj
 | Kenney | [Survival Kit](https://kenney.nl/assets/survival-kit) | śpiwór, ognisko, namiot, płot, rusztowanie |
 | Quaternius | [Medieval Village MegaKit](https://quaternius.com/packs/medievalvillagemegakit.html) | chaty i dwór składane z części |
 
+Ziemia to cztery zdjęciowe tekstury CC0 z [ambientCG](https://docs.ambientcg.com/license/)
+(Grass004, Ground037, Rock030, Ground054) mieszane w shaderze `Assets/Shaders/Grunt.shader`,
+który rysuje też falującą wodę z pianą przy brzegu. Pozostałe efekty:
+`Roslina.shader` (wiatr w drzewach, krzakach i trawie), `Filtr.shader` z `FiltrObrazu.cs` (poświata, kolor,
+winieta) oraz `Klimat.cs` (cienie chmur, pyłki w dzień i świetliki w nocy). To tylko wygląd, zasady gry są te same.
+
 Zrzuty scen bez uruchamiania gry (bez `-nographics`, napisy dorysowuje dopiero Unity UI):
 
 ```bash

@@ -48,8 +48,8 @@ namespace GraSimply.Testy
             Harness.Sprawdz("każdy model z katalogu jest w projekcie" + (brak.Count > 0 ? ": brak " + string.Join(", ", brak) : ""),
                             brak.Count == 0);
             string licencje = Path.Combine(korzen, "..", "..", "Licencje-modeli");
-            Harness.Rowne("licencje wszystkich sześciu paczek leżą w projekcie", 6, Directory.GetFiles(licencje, "*.txt").Length);
-            foreach (string p in new[] { "Grunt", "Plomien", "Duch" })
+            Harness.Rowne("licencje wszystkich paczek modeli i tekstur leżą w projekcie", 7, Directory.GetFiles(licencje, "*.txt").Length);
+            foreach (string p in new[] { "Grunt", "Plomien", "Duch", "Roslina", "Filtr", "Drobina" })
             {
                 Harness.Sprawdz($"materiał {p} jest w Resources", File.Exists(Path.Combine(korzen, "..", "Materialy", p + ".mat")));
             }
@@ -74,6 +74,17 @@ namespace GraSimply.Testy
                             && !KatalogModeli.Czesci(KatalogModeli.Chata).Any(c => c.Sciezka.Contains("Chimney")));
             Harness.Sprawdz("zimą grunt jest jaśniejszy",
                             KatalogModeli.KolorGruntu("las", 0.5, "zima").B > KatalogModeli.KolorGruntu("las", 0.5, "lato").B);
+            foreach (string b in new[] { "las", "bagna", "wzgórza", "kanion", "ruiny", "woda", "plac", "równiny" })
+            {
+                (double t, double z, double s, double p) = KatalogModeli.SkladGruntu(b);
+                Harness.Sprawdz($"skład gruntu {b} sumuje się do 1", Math.Abs(t + z + s + p - 1.0) < 1e-9);
+            }
+            foreach (string warstwa in new[] { "Trawa", "Ziemia", "Skala", "Piasek" })
+            {
+                string d = Path.Combine(KatalogModeliNaDysku(), "..", "Tekstury", "Grunt", warstwa);
+                Harness.Sprawdz($"warstwa {warstwa} ma teksturę i normalne",
+                                File.Exists(d + "_Kolor.jpg") && File.Exists(d + "_Normalne.jpg"));
+            }
             Harness.Sprawdz("woda nie zamarza w kolorze", KatalogModeli.KolorGruntu("woda", 0.5, "zima").B == KatalogModeli.KolorGruntu("woda", 0.5, "lato").B);
         }
 

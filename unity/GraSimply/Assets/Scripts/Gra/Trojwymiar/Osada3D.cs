@@ -27,8 +27,7 @@ namespace GraSimply.Gra.Trojwymiar
         private readonly List<GameObject> _palisada = new List<GameObject>();
         private readonly List<PodpisOsadnika> _podpisy = new List<PodpisOsadnika>();
 
-        private MeshRenderer _grunt;
-        private Texture2D _tekstura;
+        private Grunt3D _grunt;
         private string _pora;
         private int _poziomPalisady = -1;
         private Postac3D _bohater;
@@ -76,19 +75,12 @@ namespace GraSimply.Gra.Trojwymiar
                 return;
             }
             _pora = pora;
-            int n = UkladPlacu.SiatkaRuchu + 2 * Tlo, gestosc = 6, bok = n * gestosc;
-            if (_tekstura == null)
+            int n = UkladPlacu.SiatkaRuchu + 2 * Tlo, gestosc = 3, bok = n * gestosc;
+            if (_grunt == null)
             {
-                _tekstura = new Texture2D(bok, bok, TextureFormat.RGBA32, false)
-                {
-                    filterMode = FilterMode.Bilinear,
-                    wrapMode = TextureWrapMode.Clamp,
-                };
-                _grunt = _scena.NowyGrunt("GruntOsady", _tekstura);
-                _grunt.transform.SetParent(_korzen, false);
+                _grunt = _scena.NowyGrunt("GruntOsady", bok, _korzen);
                 Las();
             }
-            var piksele = new Color32[bok * bok];
             for (int py = 0; py < bok; py++)
             {
                 for (int px = 0; px < bok; px++)
@@ -96,12 +88,12 @@ namespace GraSimply.Gra.Trojwymiar
                     int x = px / gestosc - Tlo, y = py / gestosc - Tlo;
                     bool plac = x >= 0 && y >= 0 && x < UkladPlacu.Siatka && y < UkladPlacu.Siatka;
                     double odcien = KatalogModeli.Mieszaj(px, py) % 100 / 100.0;
-                    piksele[py * bok + px] = Scena3D.Kolor(KatalogModeli.KolorGruntu(plac ? "plac" : "równiny", odcien, pora));
+                    _grunt.Pole(px, py, plac ? "plac" : "równiny", odcien, pora);
                 }
             }
-            _tekstura.SetPixels32(piksele);
-            _tekstura.Apply(false);
-            Scena3D.UstawProstokat(_grunt, -Tlo * Pole, -Tlo * Pole, (n - Tlo) * Pole, (n - Tlo) * Pole);
+            _grunt.Zastosuj();
+            _grunt.Snieg(pora == "zima" ? 0.85f : 0f);
+            _grunt.Prostokat(-Tlo * Pole, -Tlo * Pole, (n - Tlo) * Pole, (n - Tlo) * Pole);
         }
 
         /// <summary>Drzewa dookoła: osada stoi na polanie, a nie w próżni.</summary>

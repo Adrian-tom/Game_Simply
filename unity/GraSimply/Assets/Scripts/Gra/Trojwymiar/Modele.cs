@@ -14,6 +14,8 @@ namespace GraSimply.Gra.Trojwymiar
         private readonly Dictionary<string, float> _wysokosci = new Dictionary<string, float>();
         private readonly Dictionary<string, Stack<GameObject>> _pula = new Dictionary<string, Stack<GameObject>>();
         private readonly Dictionary<GameObject, string> _klucze = new Dictionary<GameObject, string>();
+        private readonly Dictionary<Material, Material> _wiatr = new Dictionary<Material, Material>();
+        private readonly Material _szablonWiatru = Resources.Load<Material>("Materialy/Roslina");
         private readonly Transform _schowek;
 
         public Modele(Transform rodzic)
@@ -81,7 +83,30 @@ namespace GraSimply.Gra.Trojwymiar
                 _wysokosci[wpis.Sciezka] = h;
             }
             o.transform.localScale *= wpis.Wysokosc / h;
+            if (wpis.Sciezka.StartsWith("Natura/"))
+            {
+                NaWietrze(o);
+            }
             return Opakuj(o);
+        }
+
+        /// <summary>Rośliny dostają materiał z wiatrem; ta sama tekstura, a jeden wspólny materiał na atlas.</summary>
+        private void NaWietrze(GameObject o)
+        {
+            foreach (Renderer r in o.GetComponentsInChildren<Renderer>())
+            {
+                Material[] m = r.sharedMaterials;
+                for (int i = 0; i < m.Length; i++)
+                {
+                    if (!_wiatr.TryGetValue(m[i], out Material w))
+                    {
+                        w = new Material(_szablonWiatru) { mainTexture = m[i].mainTexture };
+                        _wiatr[m[i]] = w;
+                    }
+                    m[i] = w;
+                }
+                r.sharedMaterials = m;
+            }
         }
 
         /// <summary>Dom z części Quaterniusa: współrzędne autora w metrach, całość skalowana do wysokości.</summary>

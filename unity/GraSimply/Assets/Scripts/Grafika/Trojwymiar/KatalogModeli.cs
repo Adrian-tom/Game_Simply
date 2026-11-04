@@ -245,20 +245,36 @@ namespace GraSimply.Grafika.Trojwymiar
             return c;
         }
 
-        /// <summary>Kolor gruntu dla biomu, z delikatnym odcieniem i porą roku. Żywy, żeby pasował do modeli.</summary>
+        /// <summary>Udział warstw zdjęciowych na polu biomu: trawa, ziemia, skała, piasek. Sumują się do 1.</summary>
+        public static (double Trawa, double Ziemia, double Skala, double Piasek) SkladGruntu(string biom)
+        {
+            switch (biom)
+            {
+                case "las": return (0.55, 0.45, 0.0, 0.0);
+                case "bagna": return (0.25, 0.75, 0.0, 0.0);
+                case "wzgórza": return (0.55, 0.2, 0.25, 0.0);
+                case "kanion": return (0.0, 0.15, 0.55, 0.3);
+                case "ruiny": return (0.2, 0.35, 0.45, 0.0);
+                case "woda": return (0.0, 0.2, 0.0, 0.8);
+                case "plac": return (0.0, 0.65, 0.05, 0.3);
+                default: return (0.85, 0.15, 0.0, 0.0);
+            }
+        }
+
+        /// <summary>Odcień mnożony przez teksturę gruntu: biom, delikatna zmienność i pora roku.</summary>
         public static Barwa KolorGruntu(string biom, double odcien = 0.5, string pora = "lato")
         {
             (double r, double g, double b) k;
             switch (biom)
             {
-                case "las": k = (0.34, 0.56, 0.27); break;
-                case "bagna": k = (0.33, 0.43, 0.29); break;
-                case "wzgórza": k = (0.60, 0.61, 0.36); break;
-                case "kanion": k = (0.71, 0.44, 0.29); break;
-                case "ruiny": k = (0.58, 0.56, 0.47); break;
-                case "woda": k = (0.27, 0.57, 0.74); break;
-                case "plac": k = (0.62, 0.54, 0.38); break;
-                default: k = (0.53, 0.70, 0.32); break;
+                case "las": k = (0.58, 0.82, 0.58); break;
+                case "bagna": k = (0.58, 0.66, 0.48); break;
+                case "wzgórza": k = (0.84, 0.92, 0.68); break;
+                case "kanion": k = (0.98, 0.66, 0.48); break;
+                case "ruiny": k = (0.8, 0.77, 0.7); break;
+                case "woda": k = (0.9, 0.9, 0.85); break;
+                case "plac": k = (0.92, 0.84, 0.7); break;
+                default: k = (0.78, 1.0, 0.74); break;
             }
             if (biom != "woda")
             {

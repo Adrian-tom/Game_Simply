@@ -19,9 +19,7 @@ namespace GraSimply.Gra.Trojwymiar
 
         private readonly Scena3D _scena;
         private readonly Transform _korzen;
-        private readonly MeshRenderer _grunt;
-        private readonly Texture2D _tekstura;
-        private readonly Color32[] _piksele;
+        private readonly Grunt3D _grunt;
 
         private readonly Dictionary<(int X, int Y), (string Klucz, GameObject Obiekt)> _stoi =
             new Dictionary<(int X, int Y), (string Klucz, GameObject Obiekt)>();
@@ -47,15 +45,7 @@ namespace GraSimply.Gra.Trojwymiar
             _scena = scena;
             _korzen = new GameObject("Wolny").transform;
             _korzen.SetParent(scena.Korzen, false);
-            int bok = 2 * Zasieg + 1;
-            _tekstura = new Texture2D(bok, bok, TextureFormat.RGBA32, false)
-            {
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-            };
-            _piksele = new Color32[bok * bok];
-            _grunt = scena.NowyGrunt("GruntWolny", _tekstura);
-            _grunt.transform.SetParent(_korzen, false);
+            _grunt = scena.NowyGrunt("GruntWolny", 2 * Zasieg + 1, _korzen);
         }
 
         public void Pokaz(bool tak)
@@ -109,13 +99,12 @@ namespace GraSimply.Gra.Trojwymiar
                     int tx = c.X - Zasieg + x, ty = c.Y - Zasieg + y;
                     string biom = !GeneratorSwiata.WGranicach(tx, ty) ? "ruiny"
                                 : s.ObiektNa(tx, ty) == Obiekt.Woda ? "woda" : s.Swiat.Biom(tx, ty);
-                    _piksele[y * bok + x] = Scena3D.Kolor(KatalogModeli.KolorGruntu(biom, s.Swiat.Odcien(tx, ty)));
+                    _grunt.Pole(x, y, biom, s.Swiat.Odcien(tx, ty));
                 }
             }
-            _tekstura.SetPixels32(_piksele);
-            _tekstura.Apply(false);
+            _grunt.Zastosuj();
             // Środki tekseli wypadają w środkach pól, więc kolory zlewają się płynnie między sąsiadami.
-            Scena3D.UstawProstokat(_grunt, c.X - Zasieg, c.Y - Zasieg, c.X + Zasieg + 1, c.Y + Zasieg + 1);
+            _grunt.Prostokat(c.X - Zasieg, c.Y - Zasieg, c.X + Zasieg + 1, c.Y + Zasieg + 1);
         }
 
         private void Obiekty(SwiatWolny s, (int X, int Y) c)

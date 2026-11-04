@@ -22,6 +22,9 @@ namespace GraSimply.Gra.Trojwymiar
         private readonly Light _slonce;
         private readonly Material _materialGruntu;
         private readonly List<Ogien> _ognie = new List<Ogien>();
+        private readonly Klimat _klimat;
+        private Vector3 _cel;
+        private float _jasnosc = 1f;
 
         /// <summary>Piksel ekranu → piksel pulpitu 1280×720. Podaje silnik gry albo generator podglądu.</summary>
         public Func<Vector2, Vector2?> EkranNaPulpit = e => e;
@@ -47,6 +50,9 @@ namespace GraSimply.Gra.Trojwymiar
             _slonce.shadowStrength = 0.65f;
             _slonce.transform.rotation = Quaternion.Euler(52f, 20f, 0f);
 
+            Kamera.gameObject.AddComponent<FiltrObrazu>().Material = new Material(Resources.Load<Material>("Materialy/Filtr"));
+            _klimat = new Klimat(Korzen, _slonce, Resources.Load<Material>("Materialy/Drobina"));
+
             QualitySettings.shadowDistance = 90f;
             QualitySettings.shadowResolution = ShadowResolution.Medium;
             QualitySettings.pixelLightCount = 6;
@@ -69,6 +75,7 @@ namespace GraSimply.Gra.Trojwymiar
         public void Patrz(double x, double y, float rozmiar)
         {
             Kamera.orthographicSize = rozmiar;
+            _cel = NaSwiat(x, y);
             Kamera.transform.position = NaSwiat(x, y) - Kamera.transform.forward * 150f;
         }
 
@@ -76,13 +83,15 @@ namespace GraSimply.Gra.Trojwymiar
         public void Oswietl(double jasnosc)
         {
             float j = Mathf.Clamp01((float)jasnosc);
+            _jasnosc = j;
+            Kamera.GetComponent<FiltrObrazu>().Noc = 1f - Mathf.Clamp01(j * 2f);
             float zmierzch = 1f - Mathf.Abs(j - 0.55f) / 0.45f;
             _slonce.intensity = Mathf.Lerp(0.05f, 0.82f, j);
             _slonce.color = Color.Lerp(new Color(1f, 0.96f, 0.86f), new Color(1f, 0.62f, 0.38f), Mathf.Clamp01(zmierzch));
             RenderSettings.ambientLight = Color.Lerp(new Color(0.1f, 0.13f, 0.22f), new Color(0.4f, 0.41f, 0.44f), j);
             foreach (Ogien o in _ognie)
             {
-                o.Swiatlo.intensity = Mathf.Lerp(1.5f, 0.3f, j);
+                o.Swiatlo.intensity = Mathf.Lerp(1.25f, 0.1f, j);
             }
         }
 
@@ -111,31 +120,10 @@ namespace GraSimply.Gra.Trojwymiar
 
         // ---- grunt ------------------------------------------------------- //
 
-        /// <summary>Płaski prostokąt od (x0, y0) do (x1, y1) w polach gry, cały pokryty jedną teksturą.</summary>
-        public MeshRenderer NowyGrunt(string nazwa, Texture2D tekstura)
+        /// <summary>Nowy grunt: <paramref name="bok"/>×<paramref name="bok"/> pól danych o składzie, odcieniu i wodzie.</summary>
+        public Grunt3D NowyGrunt(string nazwa, int bok, Transform rodzic)
         {
-            var o = new GameObject(nazwa);
-            o.transform.SetParent(Korzen, false);
-            MeshRenderer r = o.AddComponent<MeshRenderer>();
-            o.AddComponent<MeshFilter>().sharedMesh = new Mesh { name = nazwa };
-            r.sharedMaterial = new Material(_materialGruntu) { mainTexture = tekstura };
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = true;
-            return r;
-        }
-
-        public static void UstawProstokat(MeshRenderer grunt, double x0, double y0, double x1, double y1)
-        {
-            Mesh m = grunt.GetComponent<MeshFilter>().sharedMesh;
-            m.Clear();
-            m.vertices = new[]
-            {
-                NaSwiat(x0, y0), NaSwiat(x1, y0), NaSwiat(x0, y1), NaSwiat(x1, y1),
-            };
-            m.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
-            m.normals = new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
-            m.triangles = new[] { 0, 1, 3, 0, 3, 2 };
-            m.RecalculateBounds();
+            return new Grunt3D(nazwa, bok, rodzic, _materialGruntu);
         }
 
         public static Color32 Kolor(Barwa b)
@@ -182,6 +170,7 @@ namespace GraSimply.Gra.Trojwymiar
         /// <summary>Animacja płomieni; wołana raz na klatkę.</summary>
         public void Migocz(double t)
         {
+            _klimat.Aktualizuj(_cel, _jasnosc, t);
             _ognie.RemoveAll(o => o.Swiatlo == null);
             foreach (Ogien o in _ognie)
             {

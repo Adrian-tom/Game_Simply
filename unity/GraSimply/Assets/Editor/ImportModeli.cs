@@ -13,6 +13,7 @@ namespace GraSimply.Edytor
     public sealed class ImportModeli : AssetPostprocessor
     {
         private const string Korzen = "Assets/Resources/Modele/";
+        private const string Tekstury = "Assets/Resources/Tekstury/";
 
         private void OnPreprocessModel()
         {
@@ -37,6 +38,16 @@ namespace GraSimply.Edytor
 
         private void OnPreprocessTexture()
         {
+            if (assetPath.StartsWith(Tekstury))
+            {
+                var tekstura = (TextureImporter)assetImporter;
+                tekstura.textureType = assetPath.Contains("_Normalne") ? TextureImporterType.NormalMap : TextureImporterType.Default;
+                tekstura.maxTextureSize = 1024;
+                tekstura.wrapMode = TextureWrapMode.Repeat;
+                tekstura.anisoLevel = 4;
+                tekstura.textureCompression = TextureImporterCompression.Compressed;
+                return;
+            }
             if (!assetPath.StartsWith(Korzen))
             {
                 return;
