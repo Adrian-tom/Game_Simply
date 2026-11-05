@@ -85,7 +85,7 @@ namespace GraSimply.Logika
             {
                 return;
             }
-            _ekran.Wolny = new Wolny.SwiatWolny(_rng.Zakres(1, int.MaxValue));
+            _ekran.Wolny = new Wolny.SwiatWolny(_rng.Zakres(1, int.MaxValue)) { WalkaWlaczona = true };
             try
             {
                 while (true)

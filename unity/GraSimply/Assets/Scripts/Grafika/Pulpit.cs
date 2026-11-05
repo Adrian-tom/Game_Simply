@@ -144,10 +144,13 @@ namespace GraSimply.Grafika
         public List<Napis> ZlozWolnyNaklad(StanHud hud, IReadOnlyList<string> plecak, IReadOnlyList<string> dziennik,
                                            string podpowiedz, IReadOnlyList<string> panel,
                                            IReadOnlyList<PodpisOsadnika> podpisy, Logika.Wolny.KafelkiWolne kafelki,
-                                           (int X, int Y)? mysz, (int X, int Y, double Postep)? pasek)
+                                           (int X, int Y)? mysz, (int X, int Y, double Postep)? pasek,
+                                           double? wytrzymalosc = null, IReadOnlyList<(int X, int Y, double Zycie)> paski = null)
         {
             PulpitFantasy f = Nakladka();
             f.PasekSwiata = pasek;
+            f.Wytrzymalosc = wytrzymalosc;
+            f.PaskiWrogow = paski;
             return f.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, podpisy, kafelki, mysz);
         }
 

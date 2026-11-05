@@ -35,6 +35,13 @@ namespace GraSimply.Gra.Trojwymiar
         private (int X, int Y) _kafel = (int.MaxValue, int.MaxValue);
         private double _odswiez;
         private double _px, _py;
+        private int _licznikAkcji;
+        private readonly Dictionary<Wrog, Wrog3D> _wrogowie = new Dictionary<Wrog, Wrog3D>();
+        private readonly List<GameObject> _pociski = new List<GameObject>();
+        private readonly Dictionary<PorzuconyPlecak, GameObject> _plecaki = new Dictionary<PorzuconyPlecak, GameObject>();
+        private readonly List<(int X, int Y, double Zycie)> _paski = new List<(int X, int Y, double Zycie)>();
+
+        public IReadOnlyList<(int X, int Y, double Zycie)> PaskiWrogow => _paski;
 
         public IReadOnlyList<PodpisOsadnika> Podpisy => _podpisy;
 
@@ -77,6 +84,10 @@ namespace GraSimply.Gra.Trojwymiar
             }
 
             Bohater(s, klasa, dt);
+            Wrogowie(s);
+            Pociski(s);
+            Plecaki(s);
+            Zdarzenia(s);
             Osadnicy(s);
             Duch(s);
             _scena.Migocz(t);
@@ -215,14 +226,205 @@ namespace GraSimply.Gra.Trojwymiar
                 _latarnia.transform.localPosition = new Vector3(0.25f, 1.1f, 0.3f);
                 _latarnia.type = LightType.Point;
                 _latarnia.color = new Color(1f, 0.82f, 0.56f);
-                _latarnia.range = 8f;
+                _latarnia.range = 11f;
             }
             bool idzie = Math.Abs(s.X - _px) + Math.Abs(s.Y - _py) > 1e-5;
             _px = s.X;
             _py = s.Y;
             _bohater.Ustaw(s.X, s.Y, s.Kierunek.X, s.Kierunek.Y);
-            _bohater.Graj(s.Spi || s.Martwy ? Postac3D.Sen : idzie ? Postac3D.Bieg : s.Zbieranie.HasValue ? Postac3D.Praca : Postac3D.Spoczynek);
+            if (s.LicznikAkcji != _licznikAkcji)
+            {
+                _licznikAkcji = s.LicznikAkcji;
+                _bohater.Cios(KlipAkcji(s.Akcja), s.DlugoscAkcji);
+            }
+            if (s.Akcja == AkcjaBohatera.Brak)
+            {
+                _bohater.Graj(s.Spi || s.Martwy ? Postac3D.Sen : s.Blokuje ? Postac3D.Blok : idzie ? Postac3D.Bieg
+                            : s.Zbieranie.HasValue ? Postac3D.Praca : Postac3D.Spoczynek);
+            }
             _latarnia.intensity = Mathf.Lerp(1.8f, 0f, Mathf.Clamp01((float)s.Jasnosc * 1.6f));
+        }
+
+        private static string KlipAkcji(AkcjaBohatera a)
+        {
+            switch (a)
+            {
+                case AkcjaBohatera.Cios: return Postac3D.CiosLekki;
+                case AkcjaBohatera.Ciezki: return Postac3D.CiosCiezki;
+                case AkcjaBohatera.Unik: return Postac3D.Unik;
+                case AkcjaBohatera.Wir: return Postac3D.CiosWir;
+                case AkcjaBohatera.Szarza: return Postac3D.CiosSztych;
+                case AkcjaBohatera.Okrzyk: return Postac3D.CiosKrzyk;
+                default: return Postac3D.Rana;
+            }
+        }
+
+        private sealed class Wrog3D
+        {
+            public Postac3D Postac;
+            public Transform Znak;
+            public int Zamachy;
+            public StanWroga Stan;
+        }
+
+        private static string KlipCiosu(TypWroga t)
+        {
+            switch (t)
+            {
+                case TypWroga.Wojownik: return Postac3D.CiosCiezki;
+                case TypWroga.Lotr: return Postac3D.CiosSztych;
+                case TypWroga.Mag: return Postac3D.Zaklecie;
+                default: return Postac3D.CiosPiesc;
+            }
+        }
+
+        private void Wrogowie(SwiatWolny s)
+        {
+            _paski.Clear();
+            foreach (Wrog g in new List<Wrog>(_wrogowie.Keys))
+            {
+                if (!s.Wrogowie.Contains(g))
+                {
+                    _wrogowie[g].Znak.gameObject.SetActive(false);
+                    _scena.Modele.Oddaj(_wrogowie[g].Postac.Obiekt);
+                    _wrogowie.Remove(g);
+                }
+            }
+            foreach (Wrog g in s.Wrogowie)
+            {
+                WpisModelu wpis = KatalogModeli.DlaWroga(g.Typ);
+                if (!_wrogowie.TryGetValue(g, out Wrog3D w))
+                {
+                    var p = new Postac3D(_scena.Modele, wpis.Sciezka, _korzen, wpis.Wysokosc);
+                    w = new Wrog3D { Postac = p, Znak = _scena.Modele.Znak(p.Obiekt.transform), Stan = (StanWroga)(-1) };
+                    _wrogowie[g] = w;
+                }
+                w.Postac.Ustaw(g.X, g.Y, g.KierX, g.KierY);
+                var c = SwiatWolny.Cechy(g.Typ);
+                if (g.Zamachy != w.Zamachy)
+                {
+                    w.Zamachy = g.Zamachy;
+                    w.Postac.Cios(KlipCiosu(g.Typ), c.Zamach + 0.2);
+                }
+                if (g.Stan != w.Stan)
+                {
+                    w.Stan = g.Stan;
+                    if (g.Stan == StanWroga.Martwy)
+                    {
+                        w.Postac.Cios(Postac3D.Smierc, 0.8);
+                    }
+                    else if (g.Stan == StanWroga.Ogluszony)
+                    {
+                        w.Postac.Cios(Postac3D.Rana, Math.Max(0.3, g.Timer));
+                    }
+                    else if (g.Stan == StanWroga.Idzie)
+                    {
+                        w.Postac.Graj(g.Typ == TypWroga.Lotr ? Postac3D.Bieg : Postac3D.Chod);
+                    }
+                    else if (g.Stan != StanWroga.Zamach)
+                    {
+                        w.Postac.Graj(Postac3D.Spoczynek);
+                    }
+                }
+                bool zamach = g.Stan == StanWroga.Zamach;
+                w.Znak.gameObject.SetActive(zamach);
+                if (zamach)
+                {
+                    // Plama rośnie aż do ciosu: pełna znaczy „teraz odskocz albo paruj”.
+                    float postep = 1f - Mathf.Clamp01((float)(g.Timer / c.Zamach));
+                    float r = (g.Typ == TypWroga.Mag ? 1.2f : (float)c.Zasieg * 2.4f) * (0.35f + 0.65f * postep);
+                    w.Znak.localScale = new Vector3(r, 1f, r);
+                }
+                if (g.Stan != StanWroga.Martwy && (g.Hp < g.MaxHp || zamach))
+                {
+                    (int X, int Y)? e = _scena.NaPulpit(Scena3D.NaSwiat(g.X, g.Y, wpis.Wysokosc + 0.25));
+                    if (e.HasValue)
+                    {
+                        _paski.Add((e.Value.X, e.Value.Y, g.Hp / g.MaxHp));
+                    }
+                }
+            }
+        }
+
+        private void Pociski(SwiatWolny s)
+        {
+            while (_pociski.Count < s.Pociski.Count)
+            {
+                GameObject k = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                UnityEngine.Object.Destroy(k.GetComponent<Collider>());
+                k.transform.SetParent(_korzen, false);
+                k.transform.localScale = Vector3.one * 0.3f;
+                MeshRenderer r = k.GetComponent<MeshRenderer>();
+                r.sharedMaterial = new Material(_scena.Plomien) { color = new Color(0.72f, 0.4f, 1f) };
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _pociski.Add(k);
+            }
+            for (int i = 0; i < _pociski.Count; i++)
+            {
+                bool jest = i < s.Pociski.Count;
+                _pociski[i].SetActive(jest);
+                if (jest)
+                {
+                    _pociski[i].transform.position = Scena3D.NaSwiat(s.Pociski[i].X, s.Pociski[i].Y, 0.75);
+                }
+            }
+        }
+
+        private void Plecaki(SwiatWolny s)
+        {
+            foreach (PorzuconyPlecak p in new List<PorzuconyPlecak>(_plecaki.Keys))
+            {
+                if (!s.Porzucone.Contains(p))
+                {
+                    _scena.Modele.Oddaj(_plecaki[p]);
+                    _plecaki.Remove(p);
+                }
+            }
+            foreach (PorzuconyPlecak p in s.Porzucone)
+            {
+                if (!_plecaki.ContainsKey(p))
+                {
+                    GameObject o = _scena.Modele.Wez(KatalogModeli.PorzuconyPlecak, _korzen);
+                    o.transform.position = Scena3D.NaSwiat(p.X, p.Y);
+                    _plecaki[p] = o;
+                }
+            }
+        }
+
+        private void Zdarzenia(SwiatWolny s)
+        {
+            foreach (ZdarzenieWalki z in s.Zdarzenia)
+            {
+                Vector3 m = Scena3D.NaSwiat(z.X, z.Y, 0.75);
+                switch (z.Rodzaj)
+                {
+                    case "riposta":
+                        _scena.Iskry(m, new Color(1f, 0.85f, 0.3f), 26);
+                        _scena.Wstrzas(0.14f);
+                        break;
+                    case "parowanie":
+                        _scena.Iskry(m, new Color(1f, 0.95f, 0.55f), 18);
+                        _scena.Wstrzas(0.08f);
+                        break;
+                    case "blok":
+                        _scena.Iskry(m, new Color(0.8f, 0.85f, 0.95f), 6);
+                        break;
+                    case "rana":
+                        _scena.Iskry(m, new Color(1f, 0.15f, 0.1f), 12);
+                        _scena.Wstrzas(0.2f);
+                        break;
+                    case "okrzyk":
+                        _scena.Iskry(m, new Color(0.45f, 0.75f, 1f), 40);
+                        _scena.Wstrzas(0.1f);
+                        break;
+                    case "budowla":
+                        _scena.Iskry(m, new Color(0.75f, 0.5f, 0.25f), 6);
+                        break;
+                    default:
+                        _scena.Iskry(m, new Color(1f, 0.72f, 0.35f), 8);
+                        break;
+                }
+            }
         }
 
         private void Osadnicy(SwiatWolny s)

@@ -31,12 +31,13 @@ namespace GraSimply.Logika.Wolny
                 ObsluzPanel(w);
                 w = new Wejscie();
             }
+            double mnoznikRuchu = WalkaWlaczona ? KrokWalki(dt, w) : 1.0;
             double dlugosc = Math.Sqrt(w.Dx * w.Dx + w.Dy * w.Dy);
             bool rusza = dlugosc > 1e-9;
 
             if (Spi)
             {
-                if (rusza || w.Dzialaj || w.Buduj > 0)
+                if (rusza || w.Dzialaj || w.Buduj > 0 || w.Cios || w.Ciezki || w.Unik)
                 {
                     Spi = false;
                     Pisz("Wstajesz.");
@@ -46,9 +47,15 @@ namespace GraSimply.Logika.Wolny
             {
                 if (rusza)
                 {
-                    Kierunek = (w.Dx / dlugosc, w.Dy / dlugosc);
+                    if (mnoznikRuchu > 0)
+                    {
+                        if (!w.Blok && Akcja == AkcjaBohatera.Brak)
+                        {
+                            Kierunek = (w.Dx / dlugosc, w.Dy / dlugosc);
+                        }
+                        Ruch(w.Dx / dlugosc * Predkosc * mnoznikRuchu * dt, w.Dy / dlugosc * Predkosc * mnoznikRuchu * dt);
+                    }
                     _zbior = null;
-                    Ruch(w.Dx / dlugosc * Predkosc * dt, w.Dy / dlugosc * Predkosc * dt);
                 }
                 else
                 {
@@ -290,6 +297,11 @@ namespace GraSimply.Logika.Wolny
                 Pisz("Żeby spać, stań przy rozłożonym śpiworze albo namiocie.");
                 return;
             }
+            if (WalkaWlaczona && WrogBlisko(12.0))
+            {
+                Pisz("Nie zaśniesz z wrogiem tak blisko.");
+                return;
+            }
             if (Energia >= 90.0)
             {
                 Pisz("Nie jesteś jeszcze zmęczony.");
@@ -337,7 +349,11 @@ namespace GraSimply.Logika.Wolny
             {
                 Hp = Math.Min(100.0, Hp + godzin * 1.5);
             }
-            if (Hp <= 0.0 && !Martwy)
+            if (Hp <= 0.0 && !Martwy && WalkaWlaczona)
+            {
+                Smierc();
+            }
+            else if (Hp <= 0.0 && !Martwy)
             {
                 Martwy = true;
                 Spi = false;

@@ -229,6 +229,28 @@ namespace GraSimply.Gra.Trojwymiar
             }
         }
 
+        /// <summary>Czerwona plama ostrzegająca przed ciosem; jedna na postać, ukryta poza zamachem.</summary>
+        public Transform Znak(Transform rodzic)
+        {
+            Transform t = rodzic.Find("Znak");
+            if (t != null)
+            {
+                return t;
+            }
+            _znak = _znak ?? new Material(_kontakt) { color = new Color(1f, 0.12f, 0.06f, 0.72f) };
+            var o = new GameObject("Znak");
+            o.transform.SetParent(rodzic, false);
+            o.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+            o.AddComponent<MeshFilter>().sharedMesh = _kwadrat;
+            MeshRenderer r = o.AddComponent<MeshRenderer>();
+            r.sharedMaterial = _znak;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            return o.transform;
+        }
+
+        private Material _znak;
+
         /// <summary>Ciemna plama tam, gdzie model styka się z ziemią: stoi na gruncie, a nie nad nim.</summary>
         private void Kontakt(Transform rodzic, float szerokosc)
         {

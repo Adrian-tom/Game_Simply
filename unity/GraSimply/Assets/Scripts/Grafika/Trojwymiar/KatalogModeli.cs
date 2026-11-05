@@ -227,6 +227,19 @@ namespace GraSimply.Grafika.Trojwymiar
             return wynik;
         }
 
+        public static WpisModelu DlaWroga(TypWroga t)
+        {
+            switch (t)
+            {
+                case TypWroga.Wojownik: return new WpisModelu("Postacie/Skeleton_Warrior", 1.5f);
+                case TypWroga.Mag: return new WpisModelu("Postacie/Skeleton_Mage", 1.25f);
+                case TypWroga.Lotr: return new WpisModelu("Postacie/Skeleton_Rogue", 1.1f);
+                default: return new WpisModelu("Postacie/Skeleton_Minion", 1.05f);
+            }
+        }
+
+        public static readonly WpisModelu PorzuconyPlecak = new WpisModelu("Budynki/sack", 0.42f);
+
         public static string PostacKlasy(string klasa)
         {
             switch (klasa)
@@ -390,6 +403,11 @@ namespace GraSimply.Grafika.Trojwymiar
                     lista.Add(c.Sciezka);
                 }
             }
+            foreach (TypWroga t in new[] { TypWroga.Slugus, TypWroga.Lotr, TypWroga.Wojownik, TypWroga.Mag })
+            {
+                lista.Add(DlaWroga(t).Sciezka);
+            }
+            lista.Add(PorzuconyPlecak.Sciezka);
             lista.Add("Oboz/structure");
             lista.Add("Oboz/fence");
             return lista;

@@ -17,6 +17,24 @@ namespace GraSimply.Gra.Trojwymiar
         public const string Bieg = "Running_A";
         public const string Praca = "Interact";
         public const string Sen = "Death_A_Pose";
+        public const string CiosLekki = "Melee_1H_Attack_Slice_Diagonal";
+        public const string CiosCiezki = "Melee_2H_Attack_Chop";
+        public const string CiosSztych = "Melee_1H_Attack_Stab";
+        public const string CiosWir = "Melee_2H_Attack_Spinning";
+        public const string CiosKrzyk = "Melee_Block_Attack";
+        public const string CiosPiesc = "Melee_Unarmed_Attack_Punch_A";
+        public const string Zaklecie = "Ranged_Magic_Shoot";
+        public const string Blok = "Melee_Blocking";
+        public const string Unik = "Dodge_Forward";
+        public const string Rana = "Hit_A";
+        public const string Smierc = "Death_A";
+
+        private static readonly HashSet<string> Zapetlone = new HashSet<string> { Spoczynek, Chod, Bieg, Praca, Blok };
+        private static readonly HashSet<string> Potrzebne = new HashSet<string>
+        {
+            Spoczynek, Chod, Bieg, Praca, Sen, CiosLekki, CiosCiezki, CiosSztych, CiosWir, CiosKrzyk, CiosPiesc,
+            Zaklecie, Blok, Unik, Rana, Smierc,
+        };
 
         private static Dictionary<string, AnimationClip> _klipy;
 
@@ -54,13 +72,13 @@ namespace GraSimply.Gra.Trojwymiar
                 return _klipy;
             }
             _klipy = new Dictionary<string, AnimationClip>();
-            foreach (string plik in new[] { "Rig_Medium_General", "Rig_Medium_MovementBasic" })
+            foreach (string plik in new[] { "Rig_Medium_General", "Rig_Medium_MovementBasic", "Rig_Medium_CombatMelee", "Rig_Medium_CombatRanged", "Rig_Medium_MovementAdvanced" })
             {
                 foreach (AnimationClip c in Resources.LoadAll<AnimationClip>("Modele/Postacie/Animacje/" + plik))
                 {
-                    if (c.name == Spoczynek || c.name == Chod || c.name == Bieg || c.name == Praca || c.name == Sen)
+                    if (Potrzebne.Contains(c.name))
                     {
-                        c.wrapMode = c.name == Sen ? WrapMode.ClampForever : WrapMode.Loop;
+                        c.wrapMode = Zapetlone.Contains(c.name) ? WrapMode.Loop : WrapMode.ClampForever;
                         _klipy[c.name] = c;
                     }
                 }
@@ -76,6 +94,20 @@ namespace GraSimply.Gra.Trojwymiar
             }
             _gra = klip;
             _animacja.CrossFade(klip, 0.15f);
+        }
+
+        /// <summary>Animacja jednorazowa od początku, rozciągnięta do czasu akcji z logiki: ostrze trafia, gdy trafia cios.</summary>
+        public void Cios(string klip, double czas)
+        {
+            AnimationState stan = _animacja[klip];
+            if (stan == null)
+            {
+                return;
+            }
+            stan.speed = stan.length / Mathf.Max(0.05f, (float)czas);
+            stan.time = 0f;
+            _gra = klip;
+            _animacja.CrossFade(klip, 0.06f);
         }
 
         /// <summary>Ustawia postać na polu gry i obraca w stronę kierunku (osie gry).</summary>

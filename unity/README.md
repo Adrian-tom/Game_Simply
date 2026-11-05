@@ -59,7 +59,7 @@ Modele leżą w `Assets/Resources/Modele`, a licencje autorów w `Assets/Licencj
 
 | Autor | Paczka (wersja darmowa) | Do czego |
 | --- | --- | --- |
-| Kay Lousberg | [Adventurers](https://kaylousberg.itch.io/kaykit-adventurers), [Skeletons](https://kaylousberg.itch.io/kaykit-skeletons) | postacie i animacje |
+| Kay Lousberg | [Adventurers](https://kaylousberg.itch.io/kaykit-adventurers), [Skeletons](https://kaylousberg.itch.io/kaykit-skeletons), [Character Animations](https://kaylousberg.itch.io/kaykit-character-animations) | postacie, wrogowie i animacje walki |
 | Kay Lousberg | [Medieval Hexagon](https://kaylousberg.itch.io/kaykit-medieval-hexagon) | budynki osady, punkty mapy |
 | Poly Haven | [modele natury](https://polyhaven.com/models/nature) | drzewa, skały, krzaki i trawa, wypieczone do obrazków |
 | Kenney | [Survival Kit](https://kenney.nl/assets/survival-kit) | śpiwór, ognisko, namiot, płot, rusztowanie |

@@ -98,6 +98,17 @@ namespace GraSimply.Edytor
             s.Godzina = 22.0;
             KlatkaWolna(g, pulpit, cel, s, "swiat-noc");
 
+            var f = new SwiatWolny(42) { WalkaWlaczona = true, Godzina = 21.0, Dzien = 6 };
+            f.Kierunek = (1.0, 0.0);
+            f.Aktualizuj(0.05, new Wejscie { Buduj = 2 });
+            f.Kierunek = (0.7, 0.7);
+            for (int i = 0; i < 300; i++)
+            {
+                f.Hp = 100;
+                f.Aktualizuj(0.05, default);
+            }
+            KlatkaWolna(g, pulpit, cel, f, "walka-noc");
+
             var w = new SwiatWolny(42);
             (w.X, w.Y) = BrzegWody(w);
             KlatkaWolna(g, pulpit, cel, w, "swiat-woda");
@@ -127,7 +138,8 @@ namespace GraSimply.Edytor
             g.RysujWolny(s, 3.0, 0.3, "Wojownik");
             g.Scena.Migocz(3.0);
             pulpit.ZlozWolnyNaklad(WidokWolny.Hud(s), WidokWolny.Plecak(s), WidokWolny.Dziennik(s), WidokWolny.Podpowiedz(s),
-                                   WidokWolny.Panel(s), g.PodpisyWolnego, KafelkiWolne.Z(s), null, g.PasekZbioru);
+                                   WidokWolny.Panel(s), g.PodpisyWolnego, KafelkiWolne.Z(s), null, g.PasekZbioru,
+                                   s.WalkaWlaczona ? s.Wytrzymalosc / SwiatWolny.MaxWytrzymalosc : (double?)null, g.PaskiWrogow);
             Zapisz(g, pulpit, cel, nazwa);
         }
 

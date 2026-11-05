@@ -9,6 +9,8 @@ namespace GraSimply.Logika.Wolny
         public const string Klawisze =
             "WASD ruch · E zbieraj";
 
+        public const string KlawiszeWalki = "LPM cios · R ciężki · PPM blok · Shift unik";
+
         /// <summary>Pasek stanu: życie, energia (jako „mana”), głód, pora doby i to, co niesie bohater.</summary>
         public static StanHud Hud(SwiatWolny s)
         {
@@ -124,6 +126,14 @@ namespace GraSimply.Logika.Wolny
                 (int x, int y) = s.KafelBudowy();
                 return s.PowodBudowy(s.WybranaBudowla, x, y) ?? "Lewy klik stawia · prawy klik wycofuje";
             }
+            if (s.WalkaWlaczona && s.Riposta > 0)
+            {
+                return "Riposta! Uderz teraz";
+            }
+            if (s.WalkaWlaczona && s.Porzucone.Any(p => System.Math.Abs(p.X - s.X) + System.Math.Abs(p.Y - s.Y) <= SwiatWolny.Zasieg))
+            {
+                return "E: podnieś swój plecak";
+            }
             (int X, int Y)? cel = s.ZnajdzCel();
             if (cel.HasValue && SwiatWolny.Zbiory.TryGetValue(s.ObiektNa(cel.Value.X, cel.Value.Y), out OpisZbioru o))
             {
@@ -133,7 +143,7 @@ namespace GraSimply.Logika.Wolny
             {
                 return "T: odłóż plecak do magazynu";
             }
-            return Klawisze;
+            return s.WalkaWlaczona ? KlawiszeWalki : Klawisze;
         }
     }
 }

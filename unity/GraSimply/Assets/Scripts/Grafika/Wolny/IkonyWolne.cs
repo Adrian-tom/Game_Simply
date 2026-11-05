@@ -38,6 +38,23 @@ namespace GraSimply.Grafika.Wolny
                     c.Elipsa(Materialy.Kosc[7], cx - 8, cy - 8, 16, 16);
                     c.Elipsa(Materialy.Pyl[0], cx - 3, cy - 10, 14, 14);
                     break;
+                case "wir":
+                    c.Elipsa(Materialy.Kosc[7], cx - 10, cy - 10, 20, 20, 2);
+                    c.Elipsa(Materialy.Kamien[4], cx - 5, cy - 5, 10, 10, 2);
+                    c.Wypelnij(Materialy.Kosc[7], cx + 6, cy - 12, 6, 3);
+                    break;
+                case "szarza":
+                    foreach (int ox in new[] { -10, -3, 4 })
+                    {
+                        c.Odcinek(Materialy.Kosc[7], cx + ox, cy - 7, cx + ox + 6, cy);
+                        c.Odcinek(Materialy.Kosc[7], cx + ox + 6, cy, cx + ox, cy + 7);
+                    }
+                    break;
+                case "okrzyk":
+                    c.Elipsa(Materialy.SukmanaCzerwona[5], cx - 4, cy - 4, 8, 8);
+                    c.Elipsa(Materialy.Kosc[7], cx - 9, cy - 9, 18, 18, 1);
+                    c.Elipsa(Materialy.Kosc[6], cx - 13, cy - 13, 26, 26, 1);
+                    break;
                 case "spiwor":
                     c.Wypelnij(Materialy.SukmanaCzerwona[3], cx - 11, cy - 4, 22, 9);
                     c.Wypelnij(Materialy.SukmanaCzerwona[5], cx - 10, cy - 4, 20, 3);

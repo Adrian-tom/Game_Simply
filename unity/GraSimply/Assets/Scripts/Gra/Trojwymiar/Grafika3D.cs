@@ -31,6 +31,7 @@ namespace GraSimply.Gra.Trojwymiar
         public IReadOnlyList<PodpisOsadnika> PodpisyOsady => _osada.Podpisy;
         public (int X, int Y, double Postep)? PasekZbioru => _wolny.PasekZbioru;
         public IKadrPostaci Kadr => _mapa;
+        public IReadOnlyList<(int X, int Y, double Zycie)> PaskiWrogow => _wolny.PaskiWrogow;
 
         public void RysujWolny(SwiatWolny swiat, double t, double dt, string klasa)
         {

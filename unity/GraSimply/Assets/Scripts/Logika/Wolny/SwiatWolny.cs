@@ -34,6 +34,17 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Postaw wybraną budowlę (lewy klik w świat, Enter).</summary>
         public bool Poloz;
 
+        /// <summary>Lekki cios, ciężki cios i unik: jednorazowo w tej klatce.</summary>
+        public bool Cios;
+        public bool Ciezki;
+        public bool Unik;
+
+        /// <summary>Blok: trzymany; świeże naciśnięcie tuż przed trafieniem to parowanie.</summary>
+        public bool Blok;
+
+        /// <summary>Punkt świata pod kursorem: tam idą ciosy i blok. Null = tam, gdzie patrzy bohater.</summary>
+        public (double X, double Y)? CelWalki;
+
         /// <summary>W panelu: −1/+1 wybór osadnika.</summary>
         public int Nawig;
 

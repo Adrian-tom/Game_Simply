@@ -95,6 +95,12 @@ namespace GraSimply.Grafika
         /// <summary>Pasek postępu nad obiektem (piksele natywne, 0–1); rysowany raz, potem się czyści.</summary>
         public (int X, int Y, double Postep)? PasekSwiata;
 
+        /// <summary>Wytrzymałość 0–1 pod imieniem bohatera; null, gdy tryb nie ma walki.</summary>
+        public double? Wytrzymalosc;
+
+        /// <summary>Paski życia nad wrogami (piksele natywne).</summary>
+        public IReadOnlyList<(int X, int Y, double Zycie)> PaskiWrogow;
+
         /// <summary>Płótno sceny w natywnej rozdzielczości — scena rysuje się wprost do niego.</summary>
         public Plotno Natywne => _natywne;
 
@@ -266,6 +272,21 @@ namespace GraSimply.Grafika
                 _natywne.Wypelnij(ZlotoJ, bx - 17, by, (int)(34 * Math.Max(0.0, Math.Min(1.0, postep))), 5);
                 PasekSwiata = null;
             }
+            if (PaskiWrogow != null)
+            {
+                foreach ((int wx, int wy, double zycie) in PaskiWrogow)
+                {
+                    _natywne.Wypelnij(Cien, wx - 13, wy - 1, 26, 5);
+                    _natywne.Wypelnij(new Barwa(214, 48, 38), wx - 12, wy, (int)Math.Ceiling(24 * Math.Max(0.0, Math.Min(1.0, zycie))), 3);
+                }
+            }
+            if (Wytrzymalosc.HasValue)
+            {
+                const int px = 6, py = H - 86, szer = 180;
+                double w = Math.Max(0.0, Math.Min(1.0, Wytrzymalosc.Value));
+                _natywne.Wypelnij(Cien, px - 1, py - 1, szer + 2, 8);
+                _natywne.Wypelnij(w < 0.25 ? new Barwa(214, 96, 48) : new Barwa(116, 196, 84), px, py, (int)(szer * w), 6);
+            }
             int gora = H;
             if (kafelki != null)
             {
@@ -291,6 +312,11 @@ namespace GraSimply.Grafika
         {
             int y = H - 4 - 38;
             RzadKafelkow(k.Akcje, y, 38);
+            if (k.Specjalne.Count > 0)
+            {
+                y -= OdstepKafelkow + 38;
+                RzadKafelkow(k.Specjalne, y, 38);
+            }
             if (k.Budowle.Count > 0)
             {
                 y -= OdstepKafelkow + 50;

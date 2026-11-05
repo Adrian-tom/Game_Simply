@@ -25,6 +25,9 @@ namespace GraSimply.Gra.Trojwymiar
         private readonly Klimat _klimat;
         private Vector3 _cel;
         private float _jasnosc = 1f;
+        private ParticleSystem _iskry;
+        private float _wstrzas;
+        private double _ostatniT;
 
         /// <summary>Piksel ekranu → piksel pulpitu 1280×720. Podaje silnik gry albo generator podglądu.</summary>
         public Func<Vector2, Vector2?> EkranNaPulpit = e => e;
@@ -79,7 +82,9 @@ namespace GraSimply.Gra.Trojwymiar
         {
             Kamera.orthographicSize = rozmiar;
             _cel = NaSwiat(x, y);
-            Kamera.transform.position = NaSwiat(x, y) - Kamera.transform.forward * 150f;
+            Vector3 drganie = _wstrzas <= 0f ? Vector3.zero
+                : (Kamera.transform.right * UnityEngine.Random.Range(-1f, 1f) + Kamera.transform.up * UnityEngine.Random.Range(-1f, 1f)) * _wstrzas;
+            Kamera.transform.position = NaSwiat(x, y) - Kamera.transform.forward * 150f + drganie;
         }
 
         /// <summary>Doba: słońce gaśnie i robi się chłodniej, a pomarańczowo o zmierzchu.</summary>
@@ -91,7 +96,7 @@ namespace GraSimply.Gra.Trojwymiar
             float zmierzch = 1f - Mathf.Abs(j - 0.55f) / 0.45f;
             _slonce.intensity = Mathf.Lerp(0.05f, 0.82f, j);
             _slonce.color = Color.Lerp(new Color(1f, 0.96f, 0.86f), new Color(1f, 0.62f, 0.38f), Mathf.Clamp01(zmierzch));
-            RenderSettings.ambientLight = Color.Lerp(new Color(0.1f, 0.13f, 0.22f), new Color(0.4f, 0.41f, 0.44f), j);
+            RenderSettings.ambientLight = Color.Lerp(new Color(0.15f, 0.19f, 0.3f), new Color(0.4f, 0.41f, 0.44f), j);
             foreach (Ogien o in _ognie)
             {
                 o.Swiatlo.intensity = Mathf.Lerp(1.25f, 0.1f, j);
@@ -134,6 +139,43 @@ namespace GraSimply.Gra.Trojwymiar
             return new Color32(b.R, b.G, b.B, 255);
         }
 
+        /// <summary>Krótkie drgnięcie kamery przy ciosie, który coś znaczył.</summary>
+        public void Wstrzas(float sila)
+        {
+            _wstrzas = Mathf.Max(_wstrzas, sila);
+        }
+
+        /// <summary>Snop iskier w punkcie świata: trafienie, blok, parowanie.</summary>
+        public void Iskry(Vector3 miejsce, Color kolor, int ile)
+        {
+            if (_iskry == null)
+            {
+                var o = new GameObject("Iskry");
+                o.transform.SetParent(Korzen, false);
+                _iskry = o.AddComponent<ParticleSystem>();
+                _iskry.Stop();
+                ParticleSystem.MainModule m = _iskry.main;
+                m.simulationSpace = ParticleSystemSimulationSpace.World;
+                m.startLifetime = new ParticleSystem.MinMaxCurve(0.2f, 0.5f);
+                m.startSpeed = new ParticleSystem.MinMaxCurve(1.5f, 4.5f);
+                m.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.16f);
+                m.gravityModifier = 0.9f;
+                m.maxParticles = 300;
+                ParticleSystem.EmissionModule e = _iskry.emission;
+                e.enabled = false;
+                ParticleSystem.ShapeModule k = _iskry.shape;
+                k.shapeType = ParticleSystemShapeType.Sphere;
+                k.radius = 0.12f;
+                ParticleSystemRenderer r = o.GetComponent<ParticleSystemRenderer>();
+                r.sharedMaterial = new Material(Resources.Load<Material>("Materialy/Drobina")) { mainTexture = Klimat.Kropka() };
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _iskry.Play();
+            }
+            _iskry.transform.position = miejsce;
+            var p = new ParticleSystem.EmitParams { startColor = kolor, applyShapeToPosition = true };
+            _iskry.Emit(p, ile);
+        }
+
         // ---- ogień ------------------------------------------------------- //
 
         private sealed class Ogien
@@ -174,6 +216,8 @@ namespace GraSimply.Gra.Trojwymiar
         public void Migocz(double t)
         {
             _klimat.Aktualizuj(_cel, _jasnosc, t);
+            _wstrzas = Mathf.Max(0f, _wstrzas - (float)Math.Max(0.0, t - _ostatniT) * 0.9f);
+            _ostatniT = t;
             _ognie.RemoveAll(o => o.Swiatlo == null);
             foreach (Ogien o in _ognie)
             {

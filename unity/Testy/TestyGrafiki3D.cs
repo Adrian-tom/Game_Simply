@@ -48,7 +48,7 @@ namespace GraSimply.Testy
             Harness.Sprawdz("każdy model z katalogu jest w projekcie" + (brak.Count > 0 ? ": brak " + string.Join(", ", brak) : ""),
                             brak.Count == 0);
             string licencje = Path.Combine(korzen, "..", "..", "Licencje-modeli");
-            Harness.Rowne("licencje wszystkich paczek modeli i tekstur leżą w projekcie", 7, Directory.GetFiles(licencje, "*.txt").Length);
+            Harness.Rowne("licencje wszystkich paczek modeli i tekstur leżą w projekcie", 8, Directory.GetFiles(licencje, "*.txt").Length);
             foreach (string p in new[] { "Grunt", "Plomien", "Duch", "Natura", "Detal", "Filtr", "Drobina" })
             {
                 Harness.Sprawdz($"materiał {p} jest w Resources", File.Exists(Path.Combine(korzen, "..", "Materialy", p + ".mat")));

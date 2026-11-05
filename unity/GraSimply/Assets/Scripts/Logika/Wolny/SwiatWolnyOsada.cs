@@ -17,6 +17,9 @@ namespace GraSimply.Logika.Wolny
         public bool Spi;
         public double Dystans;
 
+        /// <summary>Tyle ciosów szkieletów wytrzyma osadnik, zanim zginie.</summary>
+        public double Zycie = 45.0;
+
         /// <summary>Środki kafli do przejścia po kolei; pusta = jest na miejscu.</summary>
         public readonly Queue<(double X, double Y)> Trasa = new Queue<(double X, double Y)>();
     }

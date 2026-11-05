@@ -416,6 +416,7 @@ namespace GraSimply.Gra
         private Grafika.Wolny.ScenaWolna _scenaWolna;
         private Trojwymiar.Grafika3D _grafika3D;
         private string _klasaWolnego = "Wojownik";
+        private bool _prawyCofa;
 
         /// <summary>
         /// Sterowanie: WASD albo strzałki (względem ekranu — w rzucie skośnym to przekątne siatki),
@@ -435,7 +436,11 @@ namespace GraSimply.Gra
             }
             if (Input.GetMouseButtonDown(1))
             {
-                swiat.Wycofaj();
+                _prawyCofa = swiat.Wycofaj();
+            }
+            if (!Input.GetMouseButton(1))
+            {
+                _prawyCofa = false;
             }
             double dx = 0, dy = 0;
             if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) { dx -= 1; dy -= 1; }
@@ -457,6 +462,12 @@ namespace GraSimply.Gra
             if (Input.GetKeyDown(KeyCode.Tab)) { klik = "a:osada"; }
             if (Input.GetKeyDown(KeyCode.F)) { klik = "a:jedz"; }
             if (Input.GetKeyDown(KeyCode.Z)) { klik = "a:spij"; }
+            if (Input.GetKeyDown(KeyCode.Q)) { klik = "s:wir"; }
+            if (Input.GetKeyDown(KeyCode.C)) { klik = "s:szarza"; }
+            if (Input.GetKeyDown(KeyCode.V)) { klik = "s:okrzyk"; }
+
+            bool cios = Input.GetKeyDown(KeyCode.J);
+            (double X, double Y)? celWalki = null;
 
             bool poloz = Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
             (int X, int Y)? kursor = null;
@@ -484,6 +495,14 @@ namespace GraSimply.Gra
                                                 : Pulpit.KafelPodMysza(mysz.x, mysz.y, swiat.X, swiat.Y);
                     poloz |= Input.GetMouseButtonDown(0);
                 }
+                else
+                {
+                    cios |= Input.GetMouseButtonDown(0);
+                    if (_grafika3D != null)
+                    {
+                        celWalki = _grafika3D.Scena.PodKursorem(Input.mousePosition);
+                    }
+                }
             }
             swiat.Aktualizuj(Time.unscaledDeltaTime, new Logika.Wolny.Wejscie
             {
@@ -493,6 +512,11 @@ namespace GraSimply.Gra
                 Klik = klik,
                 Kursor = kursor,
                 Poloz = poloz,
+                Cios = cios,
+                Ciezki = Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.K),
+                Unik = Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift),
+                Blok = Input.GetKey(KeyCode.L) || (Input.GetMouseButton(1) && !_prawyCofa),
+                CelWalki = celWalki,
                 Nawig = nawig,
                 Zmien = zmien,
             });
@@ -515,7 +539,9 @@ namespace GraSimply.Gra
                                                                Logika.Wolny.WidokWolny.Panel(swiat),
                                                                swiat.PanelOtwarty ? null : _grafika3D.PodpisyWolnego,
                                                                Logika.Wolny.KafelkiWolne.Z(swiat), mysz,
-                                                               _grafika3D.PasekZbioru);
+                                                               _grafika3D.PasekZbioru,
+                                                               swiat.WalkaWlaczona ? swiat.Wytrzymalosc / Logika.Wolny.SwiatWolny.MaxWytrzymalosc : (double?)null,
+                                                               _grafika3D.PaskiWrogow);
                 _tekstura.LoadRawTextureData(_pulpit.Klatka.Dane);
                 _tekstura.Apply(false);
                 PokazNapisyHud(nakladka);

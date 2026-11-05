@@ -104,7 +104,7 @@ namespace GraSimply.Gra.Trojwymiar
             return Mathf.Lerp(Mathf.Lerp(a, b, u), Mathf.Lerp(c, d, u), v);
         }
 
-        private static Texture2D Kropka()
+        public static Texture2D Kropka()
         {
             const int bok = 32;
             var t = new Texture2D(bok, bok, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };

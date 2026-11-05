@@ -17,6 +17,11 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 | prawy klik / Esc | wycofaj wybór, potem wyjdź z trybu albo zamknij panel |
 | T albo kafelek Magazyn | odłóż plecak do magazynu (przy obozie) |
 | Tab albo kafelek Osada | panel osady: klik w osadnika, potem kafelek zajęcia (W/S i A/D też działają) |
+| lewy klik albo J | lekki cios w stronę kursora |
+| R albo K | ciężki cios: wolny, ale mocny i przerywa nawet wojownika |
+| prawy klik (trzymaj) albo L | blok; wciśnięty tuż przed trafieniem to parowanie |
+| Shift | unik z chwilą nietykalności |
+| Q / C / V albo kafelki (tylko nocą) | ciosy specjalne: wir, szarża, okrzyk |
 | F | zjedz jagody |
 | Z | śpij (przy śpiworze albo namiocie; czas płynie 40× szybciej, w namiocie regeneracja jest szybsza) |
 | Esc (gdy nic nie jest otwarte) | powrót do menu głównego |
@@ -46,9 +51,23 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 
 Świadome uproszczenia: praca osadników nie zużywa drzew i skał na mapie (produkcja idzie wprost do magazynu), chata stawia się od razu (bez rusztowań i budowniczych), skryptorium i budynki z gry fabularnej nie są jeszcze w tym trybie, a więzi i myśli są nieaktywne jak w całym porcie.
 
+## Faza 3: walka (zrobione)
+
+![noc](unity/podglad/3d/walka-noc.png)
+
+- **W dzień jak w Souls:** każdy cios i unik zużywa wytrzymałość (zielony pasek nad imieniem), a poniżej 6 punktów trzeba złapać oddech. Wrogów jest mało, najwyżej dwóch włóczęgów, ale każdy groźny: wojownik ma 120 życia i bije za 28.
+- **Blok, parowanie, riposta:** blok działa tylko od przodu i płaci wytrzymałością, a gdy jej zabraknie, garda pęka. Wciśnięcie bloku w ostatnich 0,2 s przed trafieniem to parowanie: ogłusza napastnika i przez 1,3 s następny cios rani 2,6 razy mocniej.
+- **Zapowiedzi:** przed ciosem pod wrogiem rośnie czerwona plama, więc jest czas na reakcję. Naraz uderza najwyżej dwóch.
+- **W nocy tłumy:** od 21:00 do 5:00 co 1,5 godziny gry fala rusza z mroku na obóz, a jeśli bohater jest blisko albo obozu nie ma, na niego. Każda doba daje większą falę, a od drugiej dochodzą łotrzyki i magowie z pociskami, od czwartej wojownicy. Na scenie jest najwyżej 14 wrogów. Fala budzi śpiącego, a z wrogiem w pobliżu nie da się zasnąć.
+- **Ciosy specjalne:** budzą się tylko nocą i działają na czas odnowienia: wir (dookoła, 8 s), szarża (przez wrogów, 10 s), okrzyk (ogłusza wszystkich blisko, 16 s).
+- **Osada w ogniu:** szkielety niszczą budowle i zabijają osadników. O świcie reszta się rozsypuje, a budowle wracają do pełnej wytrzymałości.
+- **Śmierć:** pobudka w obozie, przy śpiworze albo na polanie startowej. Plecak zostaje na ziemi, trzeba po niego wrócić i podnieść go klawiszem E.
+
+Świadome uproszczenia: za zabijanie nie ma nagród ani rozwoju, osadnicy się nie bronią, a broń bohatera nie zmienia ciosów. Liczby balansu sprawdziły testy, ale nikt jeszcze nie ocenił ich w dłuższej grze.
+
 ## Co dalej (jeszcze niezrobione)
 1. Budowa kafel po kaflu z rusztowaniami, budynki produkcyjne (pola, tartak, skryptorium z badaniami).
-2. Zagrożenia nocą (wilki, bandyci), obrona, palisada.
+2. Palisada i obrona osady (osadnicy z bronią), nagrody i rozwój za walkę.
 3. Zapis świata i postaci, narzędzia (siekiera, kilof), kupcy, drogi.
 4. Punkty zainteresowania (ruiny, jaskinie, miasta) z istniejącego generatora regionów.
 

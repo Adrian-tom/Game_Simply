@@ -127,6 +127,10 @@ namespace GraSimply.Logika.Wolny
             {
                 WybranaBudowla = WybranaBudowla == wartosc ? null : wartosc;
             }
+            else if (id.StartsWith("s:"))
+            {
+                UzyjSpecjala(wartosc);
+            }
             else if (id.StartsWith("z:"))
             {
                 UstawZajecieWybranego(wartosc);

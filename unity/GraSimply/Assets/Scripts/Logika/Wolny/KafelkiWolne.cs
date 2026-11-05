@@ -23,6 +23,9 @@ namespace GraSimply.Logika.Wolny
         public List<Kafelek> Budowle = new List<Kafelek>();
         public List<Kafelek> Zajecia = new List<Kafelek>();
 
+        /// <summary>Ciosy specjalne: tylko nocą i gdy nic innego nie zajmuje miejsca nad paskiem.</summary>
+        public List<Kafelek> Specjalne = new List<Kafelek>();
+
         /// <summary>Tyle pierwszych wierszy panelu (po nagłówku) to klikalni osadnicy.</summary>
         public int Osadnikow;
 
@@ -34,6 +37,16 @@ namespace GraSimply.Logika.Wolny
             k.Akcje.Add(Akcja("a:osada", "Osada", "Tab", "osada", true, s.PanelOtwarty));
             k.Akcje.Add(Akcja("a:jedz", "Jedz", "F", "jedz", s.Razem("jagody") > 0, false));
             k.Akcje.Add(Akcja("a:spij", "Śpij", "Z", "spij", s.MiejsceSnu() != null, s.Spi));
+            if (s.WalkaWlaczona && s.CzyNoc && !s.TrybBudowy && !s.PanelOtwarty)
+            {
+                foreach ((string id, string nazwa, string klawisz, double _) in SwiatWolny.Specjalne)
+                {
+                    double zostalo = s.Odnowienie.TryGetValue(id, out double o) ? o : 0;
+                    var c = new Kafelek { Id = "s:" + id, Nazwa = nazwa, Ikona = id, Dostepny = zostalo <= 0 };
+                    c.Opis.Add((zostalo > 0 ? $"{System.Math.Ceiling(zostalo):0} s" : "[" + klawisz + "]", zostalo <= 0));
+                    k.Specjalne.Add(c);
+                }
+            }
             if (s.TrybBudowy)
             {
                 foreach (string klucz in SwiatWolny.Budowlane)
