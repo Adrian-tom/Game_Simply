@@ -21,3 +21,6 @@ venv/
 # Modele zrodlowe Poly Haven do wypieku natury (setki MB); wynik jest w Resources/Natura
 unity/GraSimply/Assets/_Wypiek/
 unity/GraSimply/Assets/_Wypiek.meta
+
+# Lokalny graf kodu z graphify (odtwarza go: graphify update .)
+graphify-out/
