@@ -374,7 +374,7 @@ namespace GraSimply.Testy
 
             SwiatWolny pobudka = Walka();
             Wrog czeka = Dodaj(pobudka, TypWroga.Slugus);
-            for (int i = 0; i < 400 && pobudka.Hp > 60; i++)
+            for (int i = 0; i < 400; i++)
             {
                 pobudka.Hp = 1;
                 pobudka.Aktualizuj(0.02, default);
