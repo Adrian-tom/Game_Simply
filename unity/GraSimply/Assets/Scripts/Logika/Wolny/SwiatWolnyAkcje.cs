@@ -273,6 +273,9 @@ namespace GraSimply.Logika.Wolny
             return true;
         }
 
+        /// <summary>Czy można zjeść tu i teraz: z plecaka albo z zapasów, gdy bohater jest przy obozie.</summary>
+        public bool MoznaJesc => Ile("jagody") > 0 || (PrzyObozie() && Obozowisko.Surowce.Wez("zywnosc") > 0);
+
         private void Jedz()
         {
             if (Ile("jagody") > 0)

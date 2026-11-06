@@ -160,6 +160,14 @@ namespace GraSimply.Testy
             Harness.Rowne("sprawa pilna nie ma numeru", 0, CeleWolne.Aktualny(s).Numer);
             s.Plecak["jagody"] = 2;
             Harness.Rowne("głód z jedzeniem: zjedz", "jedz", Id(s));
+            s.Plecak["jagody"] = 0;
+            s.Obozowisko.Surowce["zywnosc"] = 5;
+            s.X = 40.5;
+            Harness.Rowne("zapasy daleko: gra nie każe jeść, tylko wrócić", "do-zapasow", Id(s));
+            Harness.Sprawdz("kafelek Jedz jest wyszarzony z dala od zapasów", !KafelkiWolne.Z(s).Akcje.Single(a => a.Id == "a:jedz").Dostepny);
+            s.X = 0.5;
+            Harness.Rowne("przy obozie można jeść z zapasów", "jedz", Id(s));
+            s.Obozowisko.Surowce["zywnosc"] = 0;
             s.Glod = 100.0;
             s.Energia = 10.0;
             Harness.Rowne("zmęczenie: spać", "spij", Id(s));

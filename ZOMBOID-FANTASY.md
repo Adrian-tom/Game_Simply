@@ -157,12 +157,21 @@ Ograniczenie: bot nie stawia zamkniętego pierścienia palisady ani wież, więc
 - **Szczeble:** obóz, wioska (4 ludzi, farma, chata), miasteczko (12 ludzi, spichlerz, tawerna), miasto (30 ludzi, lecznica, targ, 200 zł). Awans jest automatyczny i nie cofa się. Liczba 30 to założenie, stała `LudziNaMiasto`.
 - **Nowe budynki** (zakładka Zakłady): farma od początku, spichlerz i tawerna od wioski, lecznica i targ od miasteczka. Każdy budynek na mapie to jeden poziom w `Osada.DzienOsady`, więc działają jak w Nowej grze: jedzenie, wolniejsze psucie zapasów, morale, leczenie, handel.
 - **Nowe zawody:** rolnik, uzdrowiciel i handlarz pojawiają się w panelu, gdy stoi ich budynek.
-- **Cele:** kolejka ma teraz 20 pozycji, aż do miasta. Porzucony plecak jest pilny tylko za dnia i gdy stoi obóz.
+- **Cele:** kolejka ma teraz 20 pozycji, aż do miasta. Porzucony plecak jest pilny tylko za dnia i gdy stoi obóz. Podpowiedź o jedzeniu odróżnia jedzenie pod ręką od zapasów w odległym obozie.
 - **Uproszczenie:** utrzymanie budynków jest na razie darmowe, a złoto służy tylko do awansu na miasto.
 - **Naprawiony błąd:** od fazy 6 tartaku, warsztatu i kuźni nie dało się postawić, bo `PostawNa` odrzucało budowle spoza starej tabeli kosztów. Test przechodzi teraz przez kafelek i klik dla każdej budowli.
 - **Przebieg rozgrywki:** `cd unity/Testy && dotnet run -- --przebieg 1000 30 0` (świat, dni, profil 0-2).
 
-**Stan balansu (20 światów, 30 dni):** żaden bot nie osiąga wioski. W 3 prześledzonych rozgrywkach bohater padał 102-133 razy, a przyjmował najwyżej 2 osadników. Samo osłabianie fal nie wystarcza: nawet przy limicie budżetu i falach co 3 godziny wioski nie było w żadnej rozgrywce. Bot nie stawia zamkniętej palisady ani wież, więc wynik jest zaniżony, ale to on pokazał, gdzie szukać.
+**Stan balansu (20 światów, 30 dni, próby bez zmian w grze).** Obecne zasady nie utrzymują osady: wioski nie osiąga żaden bot. Kolumny ze zgonami i obozem dotyczą bota przeciętnego:
+
+| Wariant | Zgony w nocy 10 | Obóz stoi po nocy 10 | Obóz stoi po nocy 29 | Wioska (sprawny, przeciętny, początkujący) |
+|---|---|---|---|---|
+| Stan obecny | 6,1 | 3/20 | 1/20 | 0, 0, 0 |
+| 1. Zagrożenie według wielkości osady, fale co 3 h | 0,8 | 13/20 | 6/20 | 3, 1, 0 |
+| 2. Jak 1, a szkielety nie niszczą placów | 0,8 | 11/20 | 4/20 | 6, 0, 0 |
+| 3. Jak 2, a przed wioską za dnia bez wojowników | 1,0 | 12/20 | 7/20 | 3, 1, 0 |
+
+Różnice między wariantami 1, 2 i 3 mieszczą się w szumie przy 20 światach. Bot nie stawia zamkniętej palisady ani wież, więc wynik jest zaniżony. Wybór czeka na decyzję. Miasteczka nie osiągnął żaden bot w żadnym wariancie.
 
 ## Co dalej (jeszcze niezrobione)
 1. Kolejne budynki produkcyjne (pola, skryptorium z badaniami).

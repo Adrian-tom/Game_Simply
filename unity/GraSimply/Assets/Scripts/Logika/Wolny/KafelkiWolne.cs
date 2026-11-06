@@ -52,7 +52,7 @@ namespace GraSimply.Logika.Wolny
             k.Akcje.Add(Akcja("a:buduj", "Buduj", "B", "buduj", true, s.TrybBudowy));
             k.Akcje.Add(Akcja("a:magazyn", "Magazyn", "T", "magazyn", s.PrzyObozie(), false));
             k.Akcje.Add(Akcja("a:osada", "Osada", "Tab", "osada", true, s.PanelOtwarty));
-            k.Akcje.Add(Akcja("a:jedz", "Jedz", "F", "jedz", s.Razem("jagody") > 0, false));
+            k.Akcje.Add(Akcja("a:jedz", "Jedz", "F", "jedz", s.MoznaJesc, false));
             k.Akcje.Add(Akcja("a:spij", "Śpij", "Z", "spij", s.MiejsceSnu() != null, s.Spi));
             if (s.Gosc != null)
             {

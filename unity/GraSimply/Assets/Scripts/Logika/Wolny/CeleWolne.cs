@@ -41,8 +41,12 @@ namespace GraSimply.Logika.Wolny
             }
             if (s.Glod <= 25.0)
             {
-                return s.Razem("jagody") > 0 || (s.PrzyObozie() && s.Obozowisko.Surowce.Wez("zywnosc") > 0)
-                    ? Cel("jedz", 0, "Jesteś głodny: F zjedz")
+                if (s.MoznaJesc)
+                {
+                    return Cel("jedz", 0, "Jesteś głodny: F zjedz");
+                }
+                return s.Obozowisko.Surowce.Wez("zywnosc") > 0 && s.SrodekObozu().HasValue
+                    ? Cel("do-zapasow", 0, "Jesteś głodny: wróć do obozu po zapasy")
                     : Cel("jagody", 0, "Jesteś głodny: zerwij jagody z krzaka (E)");
             }
             if (s.Energia <= 20.0)

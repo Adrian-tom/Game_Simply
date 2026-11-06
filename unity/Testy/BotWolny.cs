@@ -109,7 +109,7 @@ namespace GraSimply.Testy
             {
                 return new Wejscie { Klik = "a:magazyn" };
             }
-            if (_s.Glod < 50.0 && _s.Razem("jagody") > 0)
+            if (_s.Glod < 50.0 && _s.MoznaJesc)
             {
                 return new Wejscie { Klik = "a:jedz" };
             }
@@ -135,6 +135,8 @@ namespace GraSimply.Testy
                     return new Wejscie { Klik = "a:jedz" };
                 case "jagody":
                     return Zbieraj("jagody");
+                case "do-zapasow":
+                    return DoObozu();
                 case "spij":
                     return Spij();
                 case "zbierz-ognisko":
@@ -873,7 +875,7 @@ namespace GraSimply.Testy
                     Console.WriteLine($"{SwiatWolny.Szczeble[sz].Nazwa}: {doszli.Count}/{swiatow}" + (doszli.Count > 0 ? $", mediana dzień {Mediana(doszli.Select(w => (double)w.DzienSzczebla[sz])):0}" : ""));
                 }
                 Console.WriteLine("Pierwsze pojawienie się celu (mediana):");
-                foreach (string id in new[] { "zbierz-ognisko", "ognisko", "zbierz-namiot", "plac-namiot", "szkielet", "wlokno", "plotno", "noc", "przybysz", "zajecie", "palisada", "tartak", "farma", "rolnik", "chata", "szczebel", "spichlerz", "tawerna", "lecznica", "targ", "plecak", "jagody", "jedz", "spij" })
+                foreach (string id in new[] { "zbierz-ognisko", "ognisko", "zbierz-namiot", "plac-namiot", "szkielet", "wlokno", "plotno", "noc", "przybysz", "zajecie", "palisada", "tartak", "farma", "rolnik", "chata", "szczebel", "spichlerz", "tawerna", "lecznica", "targ", "plecak", "jagody", "jedz", "do-zapasow", "spij" })
                 {
                     List<WynikRozgrywki> doszli = wyniki.Where(w => w.Cele.ContainsKey(id)).ToList();
                     if (doszli.Count > 0)
