@@ -38,6 +38,33 @@ namespace GraSimply.Grafika.Wolny
                     c.Elipsa(Materialy.Kosc[7], cx - 8, cy - 8, 16, 16);
                     c.Elipsa(Materialy.Pyl[0], cx - 3, cy - 10, 14, 14);
                     break;
+                case "droga":
+                    c.Wypelnij(Materialy.Kamien[2], cx - 7, cy - 11, 14, 22);
+                    c.Wypelnij(Materialy.Kamien[5], cx - 1, cy - 9, 2, 5);
+                    c.Wypelnij(Materialy.Kamien[5], cx - 1, cy - 1, 2, 5);
+                    c.Wypelnij(Materialy.Kamien[5], cx - 1, cy + 7, 2, 3);
+                    break;
+                case "dom":
+                    c.Wypelnij(Materialy.Deski[3], cx - 8, cy - 2, 16, 11);
+                    c.Odcinek(Materialy.Deski[6], cx - 10, cy - 2, cx, cy - 10);
+                    c.Odcinek(Materialy.Deski[6], cx + 10, cy - 2, cx, cy - 10);
+                    c.Wypelnij(Materialy.Kamien[2], cx - 2, cy + 3, 4, 6);
+                    break;
+                case "sklad":
+                    c.Wypelnij(Materialy.Deski[3], cx - 11, cy - 6, 22, 15);
+                    c.Wypelnij(Materialy.Deski[6], cx - 11, cy - 8, 22, 3);
+                    c.Wypelnij(Materialy.Kamien[2], cx - 4, cy, 8, 9);
+                    break;
+                case "wyburz":
+                    c.Odcinek(new Barwa(232, 96, 80), cx - 8, cy - 8, cx + 8, cy + 8);
+                    c.Odcinek(new Barwa(232, 96, 80), cx - 8, cy + 8, cx + 8, cy - 8);
+                    c.Odcinek(new Barwa(232, 96, 80), cx - 7, cy - 8, cx + 9, cy + 8);
+                    c.Odcinek(new Barwa(232, 96, 80), cx - 7, cy + 8, cx + 9, cy - 8);
+                    break;
+                case "bohater":
+                    c.Elipsa(Materialy.Kosc[7], cx - 4, cy - 10, 8, 8);
+                    c.Wypelnij(Materialy.Kamien[4], cx - 5, cy - 2, 10, 11);
+                    break;
                 case "farma":
                 case "rolnik":
                     c.Wypelnij(Materialy.Kora[1], cx - 11, cy + 3, 22, 6);

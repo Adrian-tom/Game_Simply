@@ -174,7 +174,7 @@ Ograniczenie: bot nie stawia zamkniętego pierścienia palisady ani wież, więc
 **Wprowadzony wariant 1:** budżet fali to 3 + osadnicy + budowle/3 + 2 × szczebel, a fale idą co 3 godziny gry. Dni decydują już tylko o typach szkieletów. Różnice między wariantami 1, 2 i 3 mieszczą się w szumie przy 20 światach, a bot nie stawia zamkniętej palisady ani wież, więc wynik jest zaniżony. Miasteczka nie osiągnął żaden bot w żadnym wariancie.
 
 ## Co dalej (jeszcze niezrobione)
-0. Tryb miasta po szczeblu Miasto: koncept i decyzje w `KONCEPT-TRYB-MIASTA.md`.
+0. Tryb miasta po szczeblu Miasto: M0 i M1 gotowe, dalej M2 (wózki, pierwszy łańcuch). Plan w `KONCEPT-TRYB-MIASTA.md`.
 1. Kolejne budynki produkcyjne (pola, skryptorium z badaniami).
 2. Nagrody i rozwój za walkę.
 3. Narzędzia (siekiera, kilof), kupcy, drogi.

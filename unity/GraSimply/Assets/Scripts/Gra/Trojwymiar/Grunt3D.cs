@@ -12,6 +12,12 @@ namespace GraSimply.Gra.Trojwymiar
     {
         public readonly int Bok;
 
+        /// <summary>Pokazuje albo chowa ten grunt: tryb miasta ma większy niż tryb bohatera.</summary>
+        public void Pokaz(bool tak)
+        {
+            _siatka.gameObject.SetActive(tak);
+        }
+
         private readonly MeshFilter _siatka;
         private readonly Material _material;
         private readonly Texture2D _sklad;

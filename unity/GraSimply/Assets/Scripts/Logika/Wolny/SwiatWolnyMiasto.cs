@@ -54,6 +54,10 @@ namespace GraSimply.Logika.Wolny
                 case "tawerna": return 1;
                 case "lecznica":
                 case "targ": return 2;
+                case "droga":
+                case "dom":
+                case "sklad":
+                case "wyburz": return 3;
                 default: return 0;
             }
         }
@@ -92,6 +96,10 @@ namespace GraSimply.Logika.Wolny
                 Szczebel++;
                 PotrzebnyZapis = true;
                 Pisz($"Osada rośnie: to już {NazwaSzczebla.ToLowerInvariant()}!");
+                if (TrybMiasta)
+                {
+                    ZalozMiasto();
+                }
             }
         }
 

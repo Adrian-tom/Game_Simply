@@ -149,7 +149,7 @@ namespace GraSimply.Testy
             Harness.Sprawdz("cel mówi o złocie", CeleWolne.Aktualny(s).Tekst.Contains("złoto"));
             Harness.Sprawdz("najdłuższy cel się mieści: " + CeleWolne.Aktualny(s).Etykieta, CeleWolne.Aktualny(s).Etykieta.Length <= 56);
             s.Szczebel = 3;
-            Harness.Sprawdz("wszystko zrobione: koniec celów", CeleWolne.Aktualny(s) == null);
+            Harness.Rowne("miasto założone: zaczynają się cele miejskie", "m-sklad", Id(s));
         }
 
         private static void Pilne()

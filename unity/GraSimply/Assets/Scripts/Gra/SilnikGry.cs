@@ -389,6 +389,7 @@ namespace GraSimply.Gra
         private void Update()
         {
             _czas += Time.unscaledDeltaTime;
+            PomiarKlatek();
             Logika.Wolny.SwiatWolny wolny = _ekran.Wolny;
             if (wolny != null)
             {
@@ -469,6 +470,11 @@ namespace GraSimply.Gra
             if (Input.GetKeyDown(KeyCode.F)) { klik = "a:jedz"; }
             if (Input.GetKeyDown(KeyCode.Z)) { klik = "a:spij"; }
             if (Input.GetKeyDown(KeyCode.G)) { klik = "g:otworz"; }
+            if (Input.GetKeyDown(KeyCode.H)) { klik = "a:bohater"; }
+            if (_grafika3D != null && Math.Abs(Input.mouseScrollDelta.y) > 0.01f)
+            {
+                _grafika3D.PrzyblizMiasto(Input.mouseScrollDelta.y);
+            }
             if (Input.GetKeyDown(KeyCode.Q)) { klik = "s:wir"; }
             if (Input.GetKeyDown(KeyCode.C)) { klik = "s:szarza"; }
             if (Input.GetKeyDown(KeyCode.V)) { klik = "s:okrzyk"; }
@@ -502,8 +508,13 @@ namespace GraSimply.Gra
                                                 : Pulpit.KafelPodMysza(mysz.x, mysz.y, swiat.X, swiat.Y);
                     poloz |= Input.GetMouseButtonDown(0);
                     // Palisadę stawia się przeciągnięciem: po jednym kaflu na każdy nowy pod kursorem.
-                    if (swiat.WybranaBudowla == "palisada" && Input.GetMouseButton(0) && kursor != _ostatniKafel
-                        && swiat.PowodBudowy("palisada", kursor.Value.X, kursor.Value.Y) == null)
+                    bool ciagnie = swiat.WybranaBudowla == "palisada" || swiat.WybranaBudowla == "wyburz";
+                    if (swiat.WybranaBudowla == "droga" && Input.GetMouseButton(0) && _ostatniKafel.HasValue && kursor != _ostatniKafel)
+                    {
+                        swiat.PolozOdcinekDrogi(_ostatniKafel.Value, kursor.Value);
+                    }
+                    if (ciagnie && Input.GetMouseButton(0) && kursor != _ostatniKafel
+                        && swiat.PowodBudowy(swiat.WybranaBudowla, kursor.Value.X, kursor.Value.Y) == null)
                     {
                         poloz = true;
                     }
@@ -961,6 +972,28 @@ namespace GraSimply.Gra
             catch (Exception)
             {
                 // Zamknięcie w trakcie pytania kończy wątek wyjątkiem — tak ma być.
+            }
+        }
+
+        private int _klatkiPomiaru;
+        private float _czasPomiaru;
+
+        /// <summary>Argument --pomiar plik: co 5 sekund dopisuje średnią liczbę klatek. Do sprawdzania wydajności miasta.</summary>
+        private void PomiarKlatek()
+        {
+            string[] argumenty = Environment.GetCommandLineArgs();
+            int i = Array.IndexOf(argumenty, "--pomiar");
+            if (i < 0 || i + 1 >= argumenty.Length)
+            {
+                return;
+            }
+            _klatkiPomiaru++;
+            _czasPomiaru += Time.unscaledDeltaTime;
+            if (_czasPomiaru >= 5f)
+            {
+                System.IO.File.AppendAllText(argumenty[i + 1], $"{_klatkiPomiaru / _czasPomiaru:0.0} kl./s\n");
+                _klatkiPomiaru = 0;
+                _czasPomiaru = 0f;
             }
         }
 

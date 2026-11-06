@@ -33,6 +33,12 @@ namespace GraSimply.Gra.Trojwymiar
         public IKadrPostaci Kadr => _mapa;
         public IReadOnlyList<(int X, int Y, double Zycie)> PaskiWrogow => _wolny.PaskiWrogow;
 
+        /// <summary>Kółko myszy w trybie miasta: dodatnie przybliża.</summary>
+        public void PrzyblizMiasto(float ile)
+        {
+            _wolny.Przybliz(ile);
+        }
+
         public void RysujWolny(SwiatWolny swiat, double t, double dt, string klasa)
         {
             _osada.Pokaz(false);

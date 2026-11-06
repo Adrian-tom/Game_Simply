@@ -25,7 +25,7 @@ namespace GraSimply.Logika.Wolny
                 Mana = (int)System.Math.Round(s.Energia),
                 MaxMana = 100,
                 Data = s.Czas,
-                Region = s.ObozZalozony ? $"{(s.BudowaZEtapami ? s.NazwaSzczebla : "osada")}: {s.Obozowisko.Osadnicy.Count} os." : "bez obozu",
+                Region = s.ObozZalozony ? $"{(s.BudowaZEtapami ? s.NazwaSzczebla : "osada")}: {s.Obozowisko.Osadnicy.Count + s.Mieszkancy} os." : "bez obozu",
                 Biom = s.Swiat.Biom((int)System.Math.Floor(s.X), (int)System.Math.Floor(s.Y)),
                 Zywnosc = $"🍖 głód {(int)s.Glod}%",
                 Zagrozenie = s.Spi ? "śpisz" : s.Jasnosc < 0.3 ? "noc" : "dzień",
@@ -91,7 +91,7 @@ namespace GraSimply.Logika.Wolny
                 };
             }
             List<Osadnik> ludzie = s.Obozowisko.Osadnicy;
-            var linie = new List<string> { $"OSADA — ludzie {ludzie.Count}/{s.Obozowisko.Chaty}" };
+            var linie = new List<string> { s.TrybMiasta ? $"RADA MIASTA — osób {ludzie.Count}" : $"OSADA — ludzie {ludzie.Count}/{s.Obozowisko.Chaty}" };
             if (ludzie.Count == 0)
             {
                 linie.Add(s.WalkaWlaczona && s.ObozZalozony ? "Jeszcze nikt nie przyszedł. O świcie ktoś może zjawić się przy ognisku."
@@ -115,7 +115,8 @@ namespace GraSimply.Logika.Wolny
             if (s.BudowaZEtapami && s.ObozZalozony)
             {
                 bool ostatni = s.Szczebel + 1 >= SwiatWolny.Szczeble.Length;
-                linie.Add(ostatni ? $"Szczebel: {s.NazwaSzczebla}."
+                int bezDrogi = s.Domy.Keys.Count(d => !s.DomPodlaczony(d));
+                linie.Add(ostatni ? $"Mieszkańcy: {s.Mieszkancy}. Domy: {s.Domy.Count}, bez drogi do składu: {bezDrogi}."
                                   : $"Szczebel: {s.NazwaSzczebla}. Na {SwiatWolny.Szczeble[s.Szczebel + 1].Nazwa.ToLowerInvariant()}: {string.Join(", ", s.BrakiSzczebla())}.");
             }
             return linie;
@@ -182,6 +183,10 @@ namespace GraSimply.Logika.Wolny
                 }
                 (int x, int y) = s.KafelBudowy();
                 return s.PowodBudowy(s.WybranaBudowla, x, y) ?? "Lewy klik stawia · prawy klik wycofuje";
+            }
+            if (s.KameraMiejska)
+            {
+                return s.ZaZalozeniem > 0 ? "Założono miasto! B buduj · H wezwij bohatera" : "WASD kamera · kółko przybliżenie · B buduj · H bohater";
             }
             if (s.WalkaWlaczona && s.Riposta > 0)
             {

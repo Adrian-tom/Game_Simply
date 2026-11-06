@@ -103,6 +103,10 @@ namespace GraSimply.Logika.Wolny
                 { "palisada", new[] { new KeyValuePair<string, int>("drewno", 3) } },
                 { "brama", new[] { new KeyValuePair<string, int>("drewno", 5) } },
                 { "wieza", new[] { new KeyValuePair<string, int>("drewno", 10), new KeyValuePair<string, int>("kamien", 6) } },
+                { "droga", new[] { new KeyValuePair<string, int>("kamien", 1) } },
+                { "dom", new[] { new KeyValuePair<string, int>("drewno", 12) } },
+                { "sklad", new[] { new KeyValuePair<string, int>("drewno", 30), new KeyValuePair<string, int>("kamien", 20) } },
+                { "wyburz", new KeyValuePair<string, int>[0] },
                 { "farma", new[] { new KeyValuePair<string, int>("drewno", 35) } },
                 { "spichlerz", new[] { new KeyValuePair<string, int>("drewno", 30), new KeyValuePair<string, int>("kamien", 30) } },
                 { "tawerna", new[] { new KeyValuePair<string, int>("drewno", 30), new KeyValuePair<string, int>("kamien", 25) } },
@@ -232,6 +236,10 @@ namespace GraSimply.Logika.Wolny
         public bool Zajety(int x, int y)
         {
             if (Budowle.TryGetValue((x, y), out string b) && b != "spiwor" && b != "brama")
+            {
+                return true;
+            }
+            if (_stopy.ContainsKey((x, y)))
             {
                 return true;
             }

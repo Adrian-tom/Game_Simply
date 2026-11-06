@@ -39,6 +39,11 @@ namespace GraSimply.Testy
                 return PodgladWolny.Zapisz(argumenty[1]);
             }
 
+            if (argumenty.Length >= 2 && argumenty[0] == "--zapis-miasta")
+            {
+                return TestyTrybuMiasta.ZapisStartowy(argumenty[1], argumenty.Length >= 3 ? int.Parse(argumenty[2]) : 0);
+            }
+
             if (argumenty.Length >= 1 && argumenty[0] == "--przebieg")
             {
                 return SymulacjaWolna.Przebieg(long.Parse(argumenty[1]), int.Parse(argumenty[2]), int.Parse(argumenty[3]));
@@ -71,6 +76,7 @@ namespace GraSimply.Testy
             TestyRzemiosla.Uruchom();
             TestyCelow.Uruchom();
             TestyMiasta.Uruchom();
+            TestyTrybuMiasta.Uruchom();
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
             TestyInterfejsu.Uruchom();

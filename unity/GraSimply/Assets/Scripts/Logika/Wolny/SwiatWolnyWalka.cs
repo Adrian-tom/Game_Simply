@@ -493,7 +493,8 @@ namespace GraSimply.Logika.Wolny
 
         private void Zagrozenia()
         {
-            bool noc = CzyNoc;
+            // W mieście nie ma nocnych fal: najazdy zapowiadane dojdą w etapie obrony miasta.
+            bool noc = CzyNoc && !TrybMiasta;
             if (noc && !_bylaNoc)
             {
                 _nastepnaFala = _czasGry;
@@ -509,7 +510,7 @@ namespace GraSimply.Logika.Wolny
                 _nastepnaFala = _czasGry + OdstepFal;
                 Fala();
             }
-            if (!noc && Godzina >= 9 && _czasGry >= _nastepnyWloczega)
+            if (!noc && !TrybMiasta && Godzina >= 9 && _czasGry >= _nastepnyWloczega)
             {
                 _nastepnyWloczega = _czasGry + 5.0;
                 Wloczega();

@@ -31,6 +31,10 @@ namespace GraSimply.Logika.Wolny
                 ObsluzPanel(w);
                 w = new Wejscie();
             }
+            if (TrybMiasta && KrokMiasta(dt, w))
+            {
+                w = new Wejscie();      // kierunki poszły do kamery: bohater stoi i czeka
+            }
             double mnoznikRuchu = WalkaWlaczona ? KrokWalki(dt, w) : 1.0;
             if (BudowaZEtapami && KrokBudowy(dt, w))
             {
@@ -254,6 +258,11 @@ namespace GraSimply.Logika.Wolny
             {
                 Zabierz(p.Key, p.Value);
             }
+            if (Array.IndexOf(BudowleMiejskie, klucz) >= 0)
+            {
+                PostawMiejskie(klucz, x, y);
+                return true;
+            }
             Budowle[(x, y)] = klucz;
             string nazwa = klucz == "spiwor" ? "Rozkładasz śpiwór." : klucz == "ognisko" ? "Palisz ognisko."
                          : klucz == "chata" ? $"Stawiasz chatę (+{MiejscaChaty} miejsca)."
@@ -349,6 +358,10 @@ namespace GraSimply.Logika.Wolny
                 DzienObozu();
             }
 
+            if (KameraMiejska)
+            {
+                return;     // bohater czeka na wezwanie: nie głodnieje i nie męczy się
+            }
             if (Spi)
             {
                 bool namiot = MiejsceSnu() == "namiot";

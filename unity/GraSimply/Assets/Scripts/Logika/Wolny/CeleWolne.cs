@@ -29,7 +29,11 @@ namespace GraSimply.Logika.Wolny
             {
                 return null;
             }
-            return Pilny(s) ?? Kolejny(s);
+            if (s.KameraMiejska)
+            {
+                return CelMiasta(s);
+            }
+            return Pilny(s) ?? (s.TrybMiasta ? CelMiasta(s) : Kolejny(s));
         }
 
         private static CelWolny Pilny(SwiatWolny s)
@@ -130,6 +134,26 @@ namespace GraSimply.Logika.Wolny
                 ?? DoSzczebla(s, 2, 17)
                 ?? Budynek(s, "lecznica", 18) ?? Budynek(s, "targ", 19)
                 ?? DoSzczebla(s, 3, 20);
+        }
+
+        /// <summary>Pierwsze kroki w trybie miasta; bez numeru, bo to nowy rozdział, a nie ciąg dalszy kolejki.</summary>
+        private static CelWolny CelMiasta(SwiatWolny s)
+        {
+            if (!s.Budowle.ContainsValue("sklad"))
+            {
+                return Cel("m-sklad", 0, "Miasto: postaw skład (B, zakładka Miasto)");
+            }
+            if (s.Domy.Count == 0)
+            {
+                return Cel("m-dom", 0, "Miasto: postaw dom i poprowadź drogę do składu");
+            }
+            if (!s.Domy.Keys.Any(s.DomPodlaczony))
+            {
+                return Cel("m-droga", 0, "Miasto: połącz dom drogą ze składem");
+            }
+            return s.Mieszkancy < SwiatWolny.MieszkancowNaCel
+                ? Cel("m-ludzie", 0, $"Miasto: mieszkańcy {s.Mieszkancy}/{SwiatWolny.MieszkancowNaCel}, stawiaj domy przy drodze")
+                : null;
         }
 
         private static CelWolny Budynek(SwiatWolny s, string klucz, int numer)

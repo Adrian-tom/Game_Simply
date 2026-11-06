@@ -46,19 +46,14 @@ namespace GraSimply.Logika.Wolny
                 return $"Najpierw rozwiń osadę: {Szczeble[WymaganySzczebel(klucz)].Nazwa.ToLowerInvariant()}.";
             }
             double dx = x + 0.5 - X, dy = y + 0.5 - Y;
-            if (dx * dx + dy * dy > ZasiegBudowy * ZasiegBudowy)
+            if (!KameraMiejska && dx * dx + dy * dy > ZasiegBudowy * ZasiegBudowy)
             {
                 return "To za daleko — podejdź bliżej.";
             }
-            if (!GeneratorSwiata.WGranicach(x, y) || Zajety(x, y) || Budowle.ContainsKey((x, y))
-                || ObiektNa(x, y) != Obiekt.Brak)
+            string zajete = PowodStopy(klucz, x, y);
+            if (zajete != null)
             {
-                return "Tu nie da się nic postawić.";
-            }
-            if (klucz != "spiwor" && X + Promien > x + 0.12 && X - Promien < x + 0.88
-                && Y + Promien > y + 0.12 && Y - Promien < y + 0.88)
-            {
-                return "Stoisz w tym miejscu — odsuń się.";
+                return zajete;
             }
             if (!WymagaBudowy(klucz) && !Stac(klucz))
             {
@@ -127,6 +122,15 @@ namespace GraSimply.Logika.Wolny
                     return;
                 }
             }
+            if (KameraMiejska && (id == "a:jedz" || id == "a:spij" || id == "a:magazyn"))
+            {
+                return;     // to polecenia dla bohatera, a on teraz czeka
+            }
+            if (id == "a:bohater")
+            {
+                PrzelaczBohatera();
+                return;
+            }
             string wartosc = id.Length > 2 ? id.Substring(2) : "";
             if (id.StartsWith("g:") || id.StartsWith("h:") || id.StartsWith("x:"))
             {
@@ -166,6 +170,7 @@ namespace GraSimply.Logika.Wolny
                 TrybBudowy = !TrybBudowy;
                 WybranaBudowla = null;
                 PanelOtwarty = false;
+                PoprawKategorie();
             }
             else if (id == "a:osada")
             {

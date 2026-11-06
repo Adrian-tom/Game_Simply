@@ -1,6 +1,19 @@
 # Koncept: tryb miasta
 
-Stan: propozycja z 6.11.2026, kodu trybu miasta jeszcze nie ma. Zanim ruszy budowa, potrzebne są cztery decyzje z sekcji „Do decyzji”.
+Stan: decyzje podjęte 7.11.2026 (1A, 2A, 3A, 4A). Etapy M0 i M1 są zrobione, następny jest M2.
+
+### Co działa po M0 i M1
+
+- Awans na szczebel Miasto sam przełącza grę: kamera unosi się, a nocne fale ustają do etapu M5.
+- **Sterowanie:** WASD kamera, kółko przybliżenie, B budowa, Tab rada miasta, H bohater i z powrotem. Gdy steruje się kamerą, bohater czeka i nie głodnieje.
+- **Budowa:** droga (ciągnięta myszą), dom 2×2, skład 3×3, wyburzanie. Las i skały pod budową znikają bez plonu.
+- **Sieć:** dom zapełnia się tylko przy drodze prowadzącej do składu, do 24 kafli drogi. Droga w zasięgu jest jasna, poza zasięgiem czerwona, a odcięty dom ma znak „!”.
+- **Start do testów:** `cd unity/Testy && dotnet run -- --zapis-miasta plik.txt 0`, potem `GraSimply.exe --zapis plik.txt` i Kontynuuj. Druga liczba to gotowe domy, np. 200 do pomiaru.
+- **Pomiar:** `--pomiar plik.txt` dopisuje co 5 sekund liczbę klatek.
+
+Uproszczenia do czasu kolejnych etapów: budowa miejska jest natychmiastowa, domy nie mają potrzeb, a mieszkańcy nie płacą podatków. Skład ma tymczasowo model zamku, a materiały trzeba mieć z wcześniejszej gry albo zebrać bohaterem.
+
+Pomiar na laptopie z 200 domami (w kadrze widać tylko część): stałe 30 klatek na sekundę, czyli limit ustawiony w grze. Prawdziwy test wydajności czeka na pełne miasto w kadrze i wózki z M2.
 
 ## O co chodzi
 
@@ -66,9 +79,9 @@ Sprawdzone na wiki Anno 1800 ([produkcja](https://anno1800.fandom.com/wiki/Produ
 
 Żeby pracować nad trybem miasta bez tej drogi, dodamy skrót startowy tylko do testów, który zaczyna grę od razu na szczeblu Miasto.
 
-## Do decyzji
+## Decyzje
 
-Przy każdej decyzji pierwszy wariant jest moją rekomendacją.
+Wybrane: 1A, 2A, 3A, 4A. Pozostałe warianty zostają dla porządku.
 
 ### 1. Jak wygląda przejście
 

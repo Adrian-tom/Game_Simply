@@ -174,6 +174,7 @@ namespace GraSimply.Logika.Wolny
             Obozowisko.Chaty = MiejscaNamiotu * Budowle.Values.Count(b => b == "namiot")
                          + MiejscaChaty * Budowle.Values.Count(b => b == "chata");
             PrzeliczBudynkiMiejskie();
+            PrzeliczSiec();
             SprawdzSzczebel();
         }
 

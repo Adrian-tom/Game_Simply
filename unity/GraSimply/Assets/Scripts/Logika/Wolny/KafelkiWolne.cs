@@ -50,10 +50,20 @@ namespace GraSimply.Logika.Wolny
         {
             var k = new KafelkiWolne();
             k.Akcje.Add(Akcja("a:buduj", "Buduj", "B", "buduj", true, s.TrybBudowy));
-            k.Akcje.Add(Akcja("a:magazyn", "Magazyn", "T", "magazyn", s.PrzyObozie(), false));
-            k.Akcje.Add(Akcja("a:osada", "Osada", "Tab", "osada", true, s.PanelOtwarty));
-            k.Akcje.Add(Akcja("a:jedz", "Jedz", "F", "jedz", s.MoznaJesc, false));
-            k.Akcje.Add(Akcja("a:spij", "Śpij", "Z", "spij", s.MiejsceSnu() != null, s.Spi));
+            if (!s.KameraMiejska)
+            {
+                k.Akcje.Add(Akcja("a:magazyn", "Magazyn", "T", "magazyn", s.PrzyObozie(), false));
+            }
+            k.Akcje.Add(Akcja("a:osada", s.TrybMiasta ? "Rada" : "Osada", "Tab", "osada", true, s.PanelOtwarty));
+            if (!s.KameraMiejska)
+            {
+                k.Akcje.Add(Akcja("a:jedz", "Jedz", "F", "jedz", s.MoznaJesc, false));
+                k.Akcje.Add(Akcja("a:spij", "Śpij", "Z", "spij", s.MiejsceSnu() != null, s.Spi));
+            }
+            if (s.TrybMiasta)
+            {
+                k.Akcje.Add(Akcja("a:bohater", s.SterujeBohaterem ? "Wróć do kamery" : "Wezwij bohatera", "H", "bohater", true, s.SterujeBohaterem));
+            }
             if (s.Gosc != null)
             {
                 k.Akcje.Add(Akcja("g:otworz", "Przybysz", "G", "osada", true, s.GoscOtwarty));
@@ -69,7 +79,7 @@ namespace GraSimply.Logika.Wolny
                 k.Decyzje.Add(nie);
                 return k;
             }
-            if (s.WalkaWlaczona && s.CzyNoc && !s.TrybBudowy && !s.PanelOtwarty)
+            if (s.WalkaWlaczona && s.CzyNoc && !s.TrybMiasta && !s.TrybBudowy && !s.PanelOtwarty)
             {
                 foreach ((string id, string nazwa, string klawisz, double _) in SwiatWolny.Specjalne)
                 {
@@ -81,9 +91,9 @@ namespace GraSimply.Logika.Wolny
             }
             if (s.TrybBudowy)
             {
-                foreach ((string id, string nazwa, string[] budowle) in SwiatWolny.Kategorie)
+                foreach ((string id, string nazwa, string[] budowle) in s.KategorieTeraz)
                 {
-                    k.Kategorie.Add(new Kafelek { Id = "k:" + id, Nazwa = nazwa, Ikona = id == "rzemioslo" ? "magazyn" : id == "obrona" ? "palisada" : id == "zaklady" ? "kuznia" : "namiot", Wybrany = s.Kategoria == id });
+                    k.Kategorie.Add(new Kafelek { Id = "k:" + id, Nazwa = nazwa, Ikona = id == "miasto" ? "dom" : id == "rzemioslo" ? "magazyn" : id == "obrona" ? "palisada" : id == "zaklady" ? "kuznia" : "namiot", Wybrany = s.Kategoria == id });
                     if (s.Kategoria != id)
                     {
                         continue;

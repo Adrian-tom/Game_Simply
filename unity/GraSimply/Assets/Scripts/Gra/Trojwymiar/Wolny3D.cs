@@ -15,11 +15,18 @@ namespace GraSimply.Gra.Trojwymiar
     {
         public const float RozmiarKadru = 6.6f;
         private const int Zasieg = 17;          // pól od bohatera: tyle mieści kadr z zapasem
+        private const int ZasiegMiasta = 34;    // pól od kamery miejskiej przy największym oddaleniu
+        private const float KadrMiastaMin = 6.6f, KadrMiastaMax = 11f;
         private const double OdswiezenieS = 0.25;
 
         private readonly Scena3D _scena;
         private readonly Transform _korzen;
         private readonly Grunt3D _grunt;
+        private Grunt3D _gruntMiasta;
+        private float _kadr = RozmiarKadru, _kadrMiasta = 9.5f;
+        private bool _miejski;
+        private int _wersjaDrog = -1;
+        private Mesh _drogiWZasiegu, _drogiPoza;
         private readonly Trawnik _trawnik;
 
         private readonly Dictionary<(int X, int Y), (string Klucz, GameObject Obiekt)> _stoi =
@@ -64,19 +71,39 @@ namespace GraSimply.Gra.Trojwymiar
             _korzen.gameObject.SetActive(tak);
         }
 
+        public void Przybliz(float ile)
+        {
+            _kadrMiasta = Mathf.Clamp(_kadrMiasta - ile * 0.8f, KadrMiastaMin, KadrMiastaMax);
+        }
+
         public void Aktualizuj(SwiatWolny s, double t, double dt, string klasa)
         {
             Pokaz(true);
-            _scena.Patrz(s.X, s.Y, RozmiarKadru);
+            bool miejski = s.KameraMiejska;
+            double cx = miejski ? s.KameraX : s.X, cy = miejski ? s.KameraY : s.Y;
+            // Płynne przejście: kamera unosi się i opada zamiast skakać.
+            _kadr = Mathf.MoveTowards(_kadr, miejski ? _kadrMiasta : RozmiarKadru, (float)dt * 2.5f);
+            _scena.Patrz(cx, cy, _kadr);
             _scena.Oswietl(s.Spi ? Math.Min(s.Jasnosc, 0.35) : s.Jasnosc);
 
-            (int X, int Y) kafel = ((int)Math.Floor(s.X), (int)Math.Floor(s.Y));
+            if (miejski != _miejski)
+            {
+                _miejski = miejski;
+                _kafel = (int.MaxValue, int.MaxValue);
+                _gruntMiasta = _gruntMiasta ?? _scena.NowyGrunt("GruntMiasta", 2 * ZasiegMiasta + 1, _korzen);
+                _gruntMiasta.Pokaz(miejski);
+                _grunt.Pokaz(!miejski);
+            }
+            // W mieście okno przeskakuje co 4 pola, żeby ruch kamery nie przeliczał świata w każdej chwili.
+            (int X, int Y) kafel = miejski
+                ? ((int)Math.Floor(cx / 4.0) * 4, (int)Math.Floor(cy / 4.0) * 4)
+                : ((int)Math.Floor(cx), (int)Math.Floor(cy));
             _odswiez -= dt;
             if (kafel != _kafel || _odswiez <= 0)
             {
                 bool ruch = kafel != _kafel;
                 _kafel = kafel;
-                _odswiez = OdswiezenieS;
+                _odswiez = miejski ? OdswiezenieS * 2 : OdswiezenieS;
                 if (ruch)
                 {
                     Grunt(s, kafel);
@@ -84,6 +111,7 @@ namespace GraSimply.Gra.Trojwymiar
                 }
                 Obiekty(s, kafel);
             }
+            Drogi(s);
 
             Bohater(s, klasa, dt);
             Wrogowie(s);
@@ -93,6 +121,7 @@ namespace GraSimply.Gra.Trojwymiar
             Zdarzenia(s);
             Osadnicy(s);
             Przybysz(s);
+            DomyBezDrogi(s);
             Duch(s);
             _scena.Migocz(t);
 
@@ -115,22 +144,108 @@ namespace GraSimply.Gra.Trojwymiar
             }
         }
 
+        private int ZasiegTeraz => _miejski ? ZasiegMiasta : Zasieg;
+
+        /// <summary>Drogi to jedna płaska siatka: przebudowuje się tylko po zmianie sieci.</summary>
+        private void Drogi(SwiatWolny s)
+        {
+            if (s.WersjaDrog == _wersjaDrog)
+            {
+                return;
+            }
+            _wersjaDrog = s.WersjaDrog;
+            _drogiWZasiegu = _drogiWZasiegu ?? NowaSiatkaDrog("DrogiWZasiegu", new Color(0.72f, 0.66f, 0.56f));
+            _drogiPoza = _drogiPoza ?? NowaSiatkaDrog("DrogiPozaZasiegiem", new Color(0.62f, 0.3f, 0.24f));
+            var w = new List<(int X, int Y)>();
+            var p = new List<(int X, int Y)>();
+            foreach ((int X, int Y) d in s.Drogi)
+            {
+                (s.DrogaWZasiegu(d.X, d.Y) ? w : p).Add(d);
+            }
+            WypelnijDrogi(_drogiWZasiegu, w);
+            WypelnijDrogi(_drogiPoza, p);
+        }
+
+        private Mesh NowaSiatkaDrog(string nazwa, Color kolor)
+        {
+            var o = new GameObject(nazwa);
+            o.transform.SetParent(_korzen, false);
+            var mesh = new Mesh { name = nazwa, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            o.AddComponent<MeshFilter>().sharedMesh = mesh;
+            MeshRenderer r = o.AddComponent<MeshRenderer>();
+            var material = new Material(Resources.Load<Material>("Materialy/Detal"));
+            material.SetColor("_Odcien", kolor);
+            r.sharedMaterial = material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return mesh;
+        }
+
+        private static void WypelnijDrogi(Mesh mesh, List<(int X, int Y)> kafle)
+        {
+            var wierzcholki = new Vector3[kafle.Count * 4];
+            var normalne = new Vector3[kafle.Count * 4];
+            var trojkaty = new int[kafle.Count * 6];
+            for (int i = 0; i < kafle.Count; i++)
+            {
+                (int x, int y) = kafle[i];
+                wierzcholki[4 * i] = Scena3D.NaSwiat(x, y, 0.03);
+                wierzcholki[4 * i + 1] = Scena3D.NaSwiat(x + 1, y, 0.03);
+                wierzcholki[4 * i + 2] = Scena3D.NaSwiat(x + 1, y + 1, 0.03);
+                wierzcholki[4 * i + 3] = Scena3D.NaSwiat(x, y + 1, 0.03);
+                for (int n = 0; n < 4; n++)
+                {
+                    normalne[4 * i + n] = Vector3.up;
+                }
+                // Oś Y gry biegnie w minus Z świata: ta kolejność patrzy w górę, ku kamerze.
+                trojkaty[6 * i] = 4 * i;
+                trojkaty[6 * i + 1] = 4 * i + 1;
+                trojkaty[6 * i + 2] = 4 * i + 2;
+                trojkaty[6 * i + 3] = 4 * i;
+                trojkaty[6 * i + 4] = 4 * i + 2;
+                trojkaty[6 * i + 5] = 4 * i + 3;
+            }
+            mesh.Clear();
+            mesh.vertices = wierzcholki;
+            mesh.normals = normalne;
+            mesh.triangles = trojkaty;
+            mesh.RecalculateBounds();
+        }
+
+        /// <summary>Dom bez drogi do składu ma nad sobą czerwony znak: nawet przy wielu domach widać, co jest odcięte.</summary>
+        private void DomyBezDrogi(SwiatWolny s)
+        {
+            foreach ((int X, int Y) d in s.Domy.Keys)
+            {
+                if (Math.Abs(d.X - _kafel.X) > ZasiegTeraz || Math.Abs(d.Y - _kafel.Y) > ZasiegTeraz || s.DomPodlaczony(d))
+                {
+                    continue;
+                }
+                (int X, int Y)? e = _scena.NaPulpit(Scena3D.NaSwiat(d.X + 1.0, d.Y + 1.0, 2.2));
+                if (e.HasValue)
+                {
+                    _podpisy.Add(new PodpisOsadnika(e.Value.X, e.Value.Y, "!", new Barwa(232, 96, 80)));
+                }
+            }
+        }
+
         private void Grunt(SwiatWolny s, (int X, int Y) c)
         {
-            int bok = 2 * Zasieg + 1;
+            int zasieg = ZasiegTeraz;
+            Grunt3D grunt = _miejski ? _gruntMiasta : _grunt;
+            int bok = 2 * zasieg + 1;
             for (int y = 0; y < bok; y++)
             {
                 for (int x = 0; x < bok; x++)
                 {
-                    int tx = c.X - Zasieg + x, ty = c.Y - Zasieg + y;
+                    int tx = c.X - zasieg + x, ty = c.Y - zasieg + y;
                     string biom = !GeneratorSwiata.WGranicach(tx, ty) ? "ruiny"
                                 : s.ObiektNa(tx, ty) == Obiekt.Woda ? "woda" : s.Swiat.Biom(tx, ty);
-                    _grunt.Pole(x, y, biom, s.Swiat.Odcien(tx, ty));
+                    grunt.Pole(x, y, biom, s.Swiat.Odcien(tx, ty));
                 }
             }
-            _grunt.Zastosuj();
+            grunt.Zastosuj();
             // Środki tekseli wypadają w środkach pól, więc kolory zlewają się płynnie między sąsiadami.
-            _grunt.Prostokat(c.X - Zasieg, c.Y - Zasieg, c.X + Zasieg + 1, c.Y + Zasieg + 1);
+            grunt.Prostokat(c.X - zasieg, c.Y - zasieg, c.X + zasieg + 1, c.Y + zasieg + 1);
         }
 
         private void Kepki(SwiatWolny s, (int X, int Y) c)
@@ -155,10 +270,11 @@ namespace GraSimply.Gra.Trojwymiar
 
         private void Obiekty(SwiatWolny s, (int X, int Y) c)
         {
+            int zasieg = ZasiegTeraz;
             var doUsuniecia = new List<(int X, int Y)>();
             foreach (KeyValuePair<(int X, int Y), (string Klucz, GameObject Obiekt)> w in _stoi)
             {
-                if (Math.Abs(w.Key.X - c.X) > Zasieg || Math.Abs(w.Key.Y - c.Y) > Zasieg)
+                if (Math.Abs(w.Key.X - c.X) > zasieg || Math.Abs(w.Key.Y - c.Y) > zasieg)
                 {
                     doUsuniecia.Add(w.Key);
                 }
@@ -167,9 +283,9 @@ namespace GraSimply.Gra.Trojwymiar
             {
                 Usun(k);
             }
-            for (int y = c.Y - Zasieg; y <= c.Y + Zasieg; y++)
+            for (int y = c.Y - zasieg; y <= c.Y + zasieg; y++)
             {
-                for (int x = c.X - Zasieg; x <= c.X + Zasieg; x++)
+                for (int x = c.X - zasieg; x <= c.X + zasieg; x++)
                 {
                     Pole(s, x, y);
                 }
@@ -212,7 +328,8 @@ namespace GraSimply.Gra.Trojwymiar
                 return;
             }
             GameObject g = _scena.Modele.Wez(wpis.Value, _korzen);
-            g.transform.position = Scena3D.NaSwiat(x + 0.5, y + 0.5);
+            double srodek = budowla != null ? SwiatWolny.Stopa(budowla) / 2.0 : 0.5;
+            g.transform.position = Scena3D.NaSwiat(x + srodek, y + srodek);
             g.transform.rotation = wpis.Value.LosowyObrot
                 ? Quaternion.Euler(0f, KatalogModeli.Mieszaj(x, y) % 360, 0f)
                 : Quaternion.identity;
@@ -566,15 +683,27 @@ namespace GraSimply.Gra.Trojwymiar
                 {
                     UnityEngine.Object.Destroy(_duch);
                 }
-                // Własna instancja, bez puli: podmienione materiały nie mogą wrócić do prawdziwych budowli.
-                GameObject wzor = _scena.Modele.Wez(KatalogModeli.DlaBudowli(p.Value.Klucz), _korzen);
-                _duch = UnityEngine.Object.Instantiate(wzor, _korzen);
-                _scena.Modele.Oddaj(wzor);
+                if (p.Value.Klucz == "droga" || p.Value.Klucz == "wyburz")
+                {
+                    // Droga i wyburzanie nie mają modelu: duchem jest płaski kafel.
+                    _duch = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    UnityEngine.Object.Destroy(_duch.GetComponent<Collider>());
+                    _duch.transform.SetParent(_korzen, false);
+                    _duch.transform.localScale = new Vector3(1f, 0.06f, 1f);
+                }
+                else
+                {
+                    // Własna instancja, bez puli: podmienione materiały nie mogą wrócić do prawdziwych budowli.
+                    GameObject wzor = _scena.Modele.Wez(KatalogModeli.DlaBudowli(p.Value.Klucz), _korzen);
+                    _duch = UnityEngine.Object.Instantiate(wzor, _korzen);
+                    _scena.Modele.Oddaj(wzor);
+                }
                 _kluczDucha = p.Value.Klucz;
             }
             _duch.SetActive(true);
             Modele.UstawMaterial(_duch, p.Value.Mozna ? _scena.DuchTak : _scena.DuchNie);
-            _duch.transform.position = Scena3D.NaSwiat(p.Value.X + 0.5, p.Value.Y + 0.5);
+            double srodekDucha = SwiatWolny.Stopa(p.Value.Klucz) / 2.0;
+            _duch.transform.position = Scena3D.NaSwiat(p.Value.X + srodekDucha, p.Value.Y + srodekDucha);
         }
     }
 }

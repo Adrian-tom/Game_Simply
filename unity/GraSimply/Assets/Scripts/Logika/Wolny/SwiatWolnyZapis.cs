@@ -74,7 +74,7 @@ namespace GraSimply.Logika.Wolny
     public sealed partial class SwiatWolny
     {
         private const string Naglowek = "SimplyPrzetrwanie";
-        private const int WersjaZapisu = 4;
+        private const int WersjaZapisu = 5;
 
         /// <summary>Ustawiane o świcie: silnik gry zapisuje wtedy świat na dysk.</summary>
         public bool PotrzebnyZapis;
@@ -111,7 +111,15 @@ namespace GraSimply.Logika.Wolny
             W(Naglowek, WersjaZapisu, Seed);
             W("stan", X, Y, Kierunek.X, Kierunek.Y, Godzina, Dzien, Glod, Energia, Hp, Wytrzymalosc, ObozZalozony ? 1 : 0,
               _czasGry, _bylPrzybysz ? 1 : 0, Wybrany, _nastepnaFala, _nastepnyWloczega, _bylaNoc ? 1 : 0, Zabici, _nocPoprzednio ? 1 : 0);
-            W("szczebel", Szczebel);
+            W("szczebel", Szczebel, SterujeBohaterem ? 1 : 0);
+            foreach ((int X, int Y) d in Drogi)
+            {
+                W("droga", d.X, d.Y);
+            }
+            foreach (KeyValuePair<(int X, int Y), DomMiasta> d in Domy)
+            {
+                W("dom", d.Key.X, d.Key.Y, d.Value.Mieszkancy);
+            }
             foreach (KeyValuePair<string, int> p in Plecak)
             {
                 W("plecak", p.Key, p.Value);
@@ -232,6 +240,13 @@ namespace GraSimply.Logika.Wolny
                         break;
                     case "szczebel":
                         s.Szczebel = I(c[1]);
+                        s.SterujeBohaterem = c.Length > 2 && c[2] == "1";
+                        break;
+                    case "droga":
+                        s.Drogi.Add((I(c[1]), I(c[2])));
+                        break;
+                    case "dom":
+                        s.Domy[(I(c[1]), I(c[2]))] = new DomMiasta { Mieszkancy = D(c[3]) };
                         break;
                     case "plecak":
                         s.Plecak[c[1]] = I(c[2]);
@@ -320,6 +335,8 @@ namespace GraSimply.Logika.Wolny
                 }
             }
             s.PrzeliczMiejsca();
+            s.KameraX = s.X;
+            s.KameraY = s.Y;
             s.Wybrany = Math.Max(0, Math.Min(s.Wybrany, s.Obozowisko.Osadnicy.Count - 1));
             s.Pisz($"Wracasz do swojego świata. Dzień {s.Dzien}.");
             return s;

@@ -213,6 +213,10 @@ namespace GraSimply.Logika.Wolny
                 case "tawerna": return "tawerna";
                 case "lecznica": return "lecznica";
                 case "targ": return "targ";
+                case "droga": return "droga";
+                case "dom": return "dom";
+                case "sklad": return "skład";
+                case "wyburz": return "wyburz";
                 case "ognisko": return "ognisko";
                 default: return "śpiwór";
             }
