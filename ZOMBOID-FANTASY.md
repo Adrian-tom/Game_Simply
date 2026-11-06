@@ -125,7 +125,7 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 
 ## Faza 7: cele dla gracza i symulacja balansu (zrobione)
 
-- **Cele:** plakietka pod paskiem surowców prowadzi przez 11 celów: ognisko, namiot, pierwsza noc, przybysz, palisada, tartak. Cel wynika ze stanu świata, więc nie trafia do zapisu, a po zniszczeniu namiotu gra sama wraca do celu „postaw namiot”. Głód, zmęczenie i porzucony plecak wchodzą przed kolejkę.
+- **Cele:** plakietka nad podpowiedzią na dole ekranu prowadzi przez 11 celów: ognisko, namiot, pierwsza noc, przybysz, palisada, tartak. Cel wynika ze stanu świata, więc nie trafia do zapisu, a po zniszczeniu namiotu gra sama wraca do celu „postaw namiot”. Głód, zmęczenie i porzucony plecak wchodzą przed kolejkę.
 - **Bot:** `unity/Testy/BotWolny.cs` gra wyłącznie przez `Wejscie` i słucha tych samych celów co gracz. Ma trzy profile: sprawny, przeciętny i początkujący.
 - **Raport:** `cd unity/Testy && dotnet run -- --symulacja 40 4` (światów, dni).
 

@@ -289,10 +289,6 @@ namespace GraSimply.Grafika
                 _natywne.Wypelnij(Cien, px - 1, py - 1, szer + 2, 8);
                 _natywne.Wypelnij(w < 0.25 ? new Barwa(214, 96, 48) : new Barwa(116, 196, 84), px, py, (int)(szer * w), 6);
             }
-            if (!string.IsNullOrEmpty(CelGracza) && panel == null)
-            {
-                Plakietka(CelGracza, (W - (CelGracza.Length * Znak + 10)) / 2, 44, Styl.Aktywny.Tekst, false);
-            }
             int gora = H;
             if (kafelki != null)
             {
@@ -306,11 +302,17 @@ namespace GraSimply.Grafika
                 Plakietka(podpowiedz, Math.Max(LewaKafelkow, dolnaPolowa - szerPod / 2), gora - 20,
                           Styl.Aktywny.Wyrozniony, false);
             }
+            if (!string.IsNullOrEmpty(CelGracza) && panel == null)
+            {
+                // Nad podpowiedzią: góra ekranu należy do plecaka i dziennika.
+                int szerCelu = CelGracza.Length * Znak + 10;
+                Plakietka(CelGracza, Math.Max(LewaKafelkow, (LewaKafelkow + W) / 2 - szerCelu / 2), gora - 38, Styl.Aktywny.Tekst, false);
+            }
             Powieksz(_natywne, cel);
             return new List<Napis>(_napisy);
         }
 
-        /// <summary>Bieżący cel gracza: plakietka pod paskiem surowców; znika, gdy otwarty jest panel osady.</summary>
+        /// <summary>Bieżący cel gracza: plakietka nad podpowiedzią; znika, gdy otwarty jest panel osady.</summary>
         public string CelGracza;
 
         private const int LewaKafelkow = 192;     // kule życia i energii kończą się przed tą kolumną
