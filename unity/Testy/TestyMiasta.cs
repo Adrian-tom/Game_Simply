@@ -167,7 +167,14 @@ namespace GraSimply.Testy
             k.Budowle[(20, 20)] = "farma";
             Harness.Sprawdz("z farmą kafelek się pojawia", KafelkiWolne.Z(k).Zajecia.Any(z => z.Id == "z:rolnik"));
 
-            Harness.Sprawdz("wyższy szczebel to większa fala",
+            SwiatWolny mala = Swiat();
+            int budzetMalej = mala.BudzetOsady;
+            mala.Obozowisko.Osadnicy.Add(new Osadnik { Imie = "Nowy", Zajecie = "bezczynny", Morale = 60 });
+            mala.Szczebel = 1;
+            Harness.Rowne("osadnik i szczebel podnoszą zagrożenie", budzetMalej + 3, mala.BudzetOsady);
+            mala.Dzien = 30;
+            Harness.Rowne("sam upływ dni nie podnosi zagrożenia", budzetMalej + 3, mala.BudzetOsady);
+            Harness.Sprawdz("większa osada to większa fala",
                             SwiatWolny.SkladFali(1, new Losowanie(7), 6).Count > SwiatWolny.SkladFali(1, new Losowanie(7)).Count);
         }
 

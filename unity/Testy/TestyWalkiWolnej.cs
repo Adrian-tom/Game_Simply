@@ -207,7 +207,7 @@ namespace GraSimply.Testy
         {
             var r = new Losowanie(5);
             int d1 = SwiatWolny.SkladFali(1, r).Sum(t => SwiatWolny.Cechy(t).Koszt);
-            int d6 = SwiatWolny.SkladFali(6, r).Sum(t => SwiatWolny.Cechy(t).Koszt);
+            int d6 = SwiatWolny.SkladFali(6, r, 10).Sum(t => SwiatWolny.Cechy(t).Koszt);
             Harness.Sprawdz($"fale rosną z dniami ({d1} → {d6})", d6 > d1);
             Harness.Sprawdz("pierwszej nocy idą same sługusy", SwiatWolny.SkladFali(1, new Losowanie(7)).All(t => t == TypWroga.Slugus));
 

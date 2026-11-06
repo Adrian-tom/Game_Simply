@@ -65,6 +65,9 @@ namespace GraSimply.Logika.Wolny
         public const int LimitWrogow = 14;
         public const int MaxAtakujacych = 2;
 
+        /// <summary>Co tyle godzin gry przychodzi nocą kolejna fala.</summary>
+        public const double OdstepFal = 3.0;
+
         /// <summary>Z tylu kafli nocny szkielet woli bohatera od budowli: kto stoi przy obozie, ten go broni.</summary>
         public const double ZasiegUwagi = 16.0;
 
@@ -503,7 +506,7 @@ namespace GraSimply.Logika.Wolny
 
             if (noc && _czasGry >= _nastepnaFala)
             {
-                _nastepnaFala = _czasGry + 1.5;
+                _nastepnaFala = _czasGry + OdstepFal;
                 Fala();
             }
             if (!noc && Godzina >= 9 && _czasGry >= _nastepnyWloczega)
@@ -524,11 +527,16 @@ namespace GraSimply.Logika.Wolny
             }
         }
 
-        /// <summary>Budżet fali rośnie z każdą dobą, a silniejsze typy dochodzą z czasem.</summary>
+        /// <summary>
+        /// Zagrożenie zależy od wielkości osady, a nie od kalendarza: mała osada ma mało wrogów, a rozrost
+        /// kosztuje większe fale. Upływ dni decyduje tylko o tym, jakie typy szkieletów już chodzą.
+        /// </summary>
+        public int BudzetOsady => Obozowisko.Osadnicy.Count + Budowle.Count / 3 + Szczebel * 2;
+
         public static List<TypWroga> SkladFali(int dzien, Losowanie rng, int premia = 0)
         {
             var sklad = new List<TypWroga>();
-            int budzet = 3 + dzien * 2 + premia;
+            int budzet = 3 + premia;
             while (budzet > 0)
             {
                 double los = rng.Losowa();
@@ -548,7 +556,7 @@ namespace GraSimply.Logika.Wolny
             (int X, int Y)? oboz = SrodekObozu();
             double cx = oboz.HasValue ? oboz.Value.X + 0.5 : X, cy = oboz.HasValue ? oboz.Value.Y + 0.5 : Y;
             int nowych = 0;
-            foreach (TypWroga t in SkladFali(Dzien, _rngWalki, Szczebel * 2))
+            foreach (TypWroga t in SkladFali(Dzien, _rngWalki, BudzetOsady))
             {
                 if (zywi + nowych >= LimitWrogow)
                 {
