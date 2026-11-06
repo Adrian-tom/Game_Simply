@@ -52,6 +52,10 @@ namespace GraSimply.Logika.Wolny
             {
                 linie.Add("pusty");
             }
+            foreach (KeyValuePair<string, int> w in s.Wyroby.Where(w => w.Value > 0))
+            {
+                linie.Add($"{SwiatWolny.Nazwa(w.Key)}: {w.Value}");
+            }
             if (s.ObozZalozony)
             {
                 linie.Add($"MAGAZYN (ludzie {s.Obozowisko.Osadnicy.Count}/{s.Obozowisko.Chaty})");
@@ -112,7 +116,7 @@ namespace GraSimply.Logika.Wolny
         }
 
         /// <summary>Tyle osadników mieści panel nad kafelkami; dłuższa lista przesuwa się za wyborem.</summary>
-        public const int WierszyOsadnikow = 6;
+        public const int WierszyOsadnikow = 5;
 
         public static int PierwszyWidoczny(SwiatWolny s)
         {
@@ -129,6 +133,24 @@ namespace GraSimply.Logika.Wolny
         public static List<string> Dziennik(SwiatWolny s, int ile = 4)
         {
             return s.Dziennik.Skip(System.Math.Max(0, s.Dziennik.Count - ile)).ToList();
+        }
+
+        /// <summary>Co da E przy placu albo zakładzie, a jeśli stoi, to czego brakuje.</summary>
+        private static string OpisPracy(SwiatWolny s)
+        {
+            if (s.Brak != null)
+            {
+                return $"Brakuje: {s.Brak}";
+            }
+            foreach (PlacBudowy p in s.Place.Values)
+            {
+                if (System.Math.Abs(p.X + 0.5 - s.X) <= SwiatWolny.ZasiegPracy && System.Math.Abs(p.Y + 0.5 - s.Y) <= SwiatWolny.ZasiegPracy)
+                {
+                    EtapBudowy e = SwiatWolny.Etapy[p.Klucz][p.Etap];
+                    return $"E: buduj {SwiatWolny.NazwaBudowli(p.Klucz)} · {e.Nazwa} {(int)(100 * p.Praca / e.Praca)}%";
+                }
+            }
+            return null;
         }
 
         /// <summary>Podpowiedź na dole: co zrobi E albo co stoi na przeszkodzie; w nocy ostrzeżenie.</summary>
@@ -158,6 +180,14 @@ namespace GraSimply.Logika.Wolny
             if (s.WalkaWlaczona && s.Riposta > 0)
             {
                 return "Riposta! Uderz teraz";
+            }
+            if (s.BudowaZEtapami)
+            {
+                string praca = OpisPracy(s);
+                if (praca != null)
+                {
+                    return praca;
+                }
             }
             if (s.Gosc != null && !s.WrogBlisko(8.0))
             {

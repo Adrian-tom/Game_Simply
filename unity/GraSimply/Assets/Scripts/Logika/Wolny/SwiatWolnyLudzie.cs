@@ -272,7 +272,8 @@ namespace GraSimply.Logika.Wolny
                 {
                     udzial *= 0.5;
                 }
-                if (p.O.Zajecie != "bezczynny" && p.O.Zajecie != "straznik" && _rng.Losowa() >= udzial)
+                // Rzemieślnik pracuje w zakładzie na mapie: dniówka z gry fabularnej go nie dotyczy.
+                if (p.O.Zajecie == "rzemieslnik" || (p.O.Zajecie != "bezczynny" && p.O.Zajecie != "straznik" && _rng.Losowa() >= udzial))
                 {
                     zdjeci.Add((p.O, p.O.Zajecie));
                     p.O.Zajecie = "bezczynny";

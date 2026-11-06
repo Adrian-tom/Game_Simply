@@ -304,7 +304,8 @@ namespace GraSimply.Logika.Wolny
                     continue;
                 }
                 bool riposta = Riposta > 0 || g.Stan == StanWroga.Ogluszony;
-                ZadajWrogowi(g, riposta ? obrazenia * 2.6 : obrazenia, ciezki || riposta);
+                double sila = Narzedzia.Contains("miecz") ? obrazenia * 1.35 : obrazenia;
+                ZadajWrogowi(g, riposta ? sila * 2.6 : sila, ciezki || riposta);
                 if (riposta)
                 {
                     Riposta = 0;
@@ -394,6 +395,10 @@ namespace GraSimply.Logika.Wolny
             if (_nietykalny > 0)
             {
                 return false;
+            }
+            if (Narzedzia.Contains("zbroja"))
+            {
+                obrazenia *= 0.75;
             }
             if (Spi)
             {
@@ -845,6 +850,12 @@ namespace GraSimply.Logika.Wolny
             }
             Budowle.Remove(k);
             ZycieBudowli.Remove(k);
+            if (Place.Remove(k))
+            {
+                PrzeliczMiejsca();
+                Pisz($"Szkielety zniszczyły plac budowy: {NazwaBudowli(klucz.Substring(PrzedrostekPlacu.Length))}. Materiały przepadły.");
+                return;
+            }
             PrzeliczMiejsca();
             Pisz(klucz == "chata" ? "Szkielety zburzyły chatę!" : klucz == "namiot" ? "Szkielety podarły namiot!"
                : klucz == "ognisko" ? "Szkielety rozrzuciły ognisko!" : klucz == "palisada" ? "Szkielety przebiły palisadę!"
@@ -857,12 +868,15 @@ namespace GraSimply.Logika.Wolny
             switch (klucz)
             {
                 case "wieza": return 160;
+                case "warsztat":
+                case "tartak":
+                case "kuznia": return 130;
                 case "chata": return 130;
                 case "palisada": return 90;
                 case "brama": return 70;
                 case "namiot": return 60;
                 case "ognisko": return 40;
-                default: return 15;
+                default: return klucz.StartsWith(PrzedrostekPlacu) ? 50 : 15;
             }
         }
 

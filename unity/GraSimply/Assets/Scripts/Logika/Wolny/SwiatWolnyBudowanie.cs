@@ -17,7 +17,7 @@ namespace GraSimply.Logika.Wolny
         public const double ZasiegBudowy = 6.0;
 
         /// <summary>Kolejność budowli w rzędzie kafelków.</summary>
-        public static readonly string[] Budowlane = { "spiwor", "ognisko", "namiot", "chata", "palisada", "brama", "wieza" };
+        public static readonly string[] Budowlane = { "spiwor", "ognisko", "namiot", "chata", "palisada", "brama", "wieza", "warsztat", "tartak", "kuznia" };
 
         public bool TrybBudowy;
 
@@ -56,7 +56,7 @@ namespace GraSimply.Logika.Wolny
             {
                 return "Stoisz w tym miejscu — odsuń się.";
             }
-            if (!Stac(klucz))
+            if (!WymagaBudowy(klucz) && !Stac(klucz))
             {
                 string braki = string.Join(", ", Koszty[klucz].Select(p => $"{p.Value} {Nazwa(p.Key)}"));
                 return $"Brakuje składników. Potrzeba: {braki}.";
@@ -83,7 +83,7 @@ namespace GraSimply.Logika.Wolny
                 return;
             }
             (int x, int y) = KafelBudowy();
-            if (PostawNa(WybranaBudowla, x, y) && !Stac(WybranaBudowla))
+            if (PostawNa(WybranaBudowla, x, y) && !WymagaBudowy(WybranaBudowla) && !Stac(WybranaBudowla))
             {
                 WybranaBudowla = null;       // skończyły się składniki: nie zostawiamy czerwonego ducha
             }
@@ -129,7 +129,16 @@ namespace GraSimply.Logika.Wolny
                 KliknijLudzie(id);
                 return;
             }
-            if (id.StartsWith("b:"))
+            if (id.StartsWith("k:"))
+            {
+                Kategoria = wartosc;
+                WybranaBudowla = null;
+            }
+            else if (id.StartsWith("r:"))
+            {
+                DodajZlecenie(wartosc);
+            }
+            else if (id.StartsWith("b:"))
             {
                 WybranaBudowla = WybranaBudowla == wartosc ? null : wartosc;
             }
@@ -184,7 +193,20 @@ namespace GraSimply.Logika.Wolny
             }
             Osadnik o = ludzie[Wybrany];
             bool bylStraznik = o.Zajecie == "straznik";
-            Pisz(Osada.UstawZajecie(Obozowisko, o, zajecie));
+            if (zajecie == "rzemieslnik")
+            {
+                if (!Stacje.Any(StoiStacja))
+                {
+                    Pisz("Rzemieślnik potrzebuje zakładu: warsztatu, tartaku albo kuźni.");
+                    return;
+                }
+                o.Zajecie = zajecie;
+                Pisz($"{o.Imie} zostaje: rzemieślnik.");
+            }
+            else
+            {
+                Pisz(Osada.UstawZajecie(Obozowisko, o, zajecie));
+            }
             PostacOsadnika p = Postacie.FirstOrDefault(q => q.O == o);
             if (p != null && bylStraznik != (o.Zajecie == "straznik"))
             {

@@ -67,7 +67,8 @@ namespace GraSimply.Testy
             (int bx, int by) = Wolny(s, "brama");
             s.PostawNa("brama", bx, by);
             Harness.Sprawdz("przez bramę przechodzą swoi", !s.Zajety(bx, by));
-            Harness.Rowne("trzy nowe kafelki budowli", 7, KafelkiWolne.Z(Tryb(s)).Budowle.Count);
+            s.Kategoria = "obrona";
+            Harness.Rowne("trzy kafelki obrony", 3, KafelkiWolne.Z(Tryb(s)).Budowle.Count);
             s.TrybBudowy = false;
 
             // Szkielet przed bramą nie przejdzie: musi ją zburzyć.
@@ -266,7 +267,7 @@ namespace GraSimply.Testy
 
             Harness.Rzuca("obcy plik jest odrzucany", () => SwiatWolny.ZZapisu("cokolwiek\t1"));
             Harness.Rzuca("urwany zapis jest odrzucany", () => SwiatWolny.ZZapisu(tekst.Substring(0, tekst.Length / 2)));
-            Harness.Rzuca("zapis z przyszłej wersji jest odrzucany", () => SwiatWolny.ZZapisu(tekst.Replace("SimplyPrzetrwanie\t2", "SimplyPrzetrwanie\t99")));
+            Harness.Rzuca("zapis z przyszłej wersji jest odrzucany", () => SwiatWolny.ZZapisu(tekst.Replace("SimplyPrzetrwanie\t3", "SimplyPrzetrwanie\t99")));
 
             SwiatWolny swit = Bogaty();
             swit.Godzina = 22.0;

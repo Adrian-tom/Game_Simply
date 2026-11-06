@@ -12,7 +12,8 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 |---|---|
 | WASD albo strzałki | ruch względem ekranu (w rzucie skośnym to przekątne siatki), ślizg wzdłuż przeszkód |
 | E albo spacja (przytrzymaj) | zbieraj to, co jest przed bohaterem: ścinaj drzewa, łup skały, zrywaj jagody i zioła |
-| B albo kafelek Buduj | tryb budowania: kafelki śpiwór, ognisko (5 drewna, 3 kamienie), namiot (8 drewna, 6 włókna), chata (12 drewna, 6 kamieni), palisada (3 drewna), brama (5 drewna), wieża (10 drewna, 6 kamieni); duch na mapie pokazuje miejsce (zielony: wolno, czerwony: nie) |
+| B albo kafelek Buduj | tryb budowania z zakładkami Obóz, Obrona, Zakłady i Rzemiosło; duch na mapie pokazuje miejsce (zielony: wolno, czerwony: nie). Koszty są w sekcji o budowie etapami |
+| E przy placu albo zakładzie (trzymaj) | pracuj przy budowie albo przy zleceniu |
 | lewy klik / Enter | postaw wybraną budowlę pod kursorem, do 6 kafli od bohatera; palisadę można stawiać przeciągnięciem |
 | prawy klik / Esc | wycofaj wybór, potem wyjdź z trybu albo zamknij panel |
 | T albo kafelek Magazyn | odłóż plecak do magazynu (przy obozie) |
@@ -93,8 +94,37 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 
 Świadome uproszczenia: choroba i zmęczenie nie mają leczenia poza snem i tym, co liczy `Osada.DzienOsady`. Pełne zasady działają w tym trybie, a gra fabularna ma swoje zasady bez zmian.
 
+## Faza 6: budowa etapami i warsztaty (zrobione)
+
+- **Budowa etapami:** śpiwór i ognisko stają od razu, a reszta zaczyna się od placu budowy. Materiały etapu schodzą z plecaka, magazynu i wyrobów, gdy zaczyna się praca. Bez nich etap stoi, a gra mówi, czego brakuje. Na mapie widać deski, potem rusztowanie, potem niski budynek.
+- **Zespół:** pracuje bohater (trzyma E, do 2,2 kafla od placu) i osadnicy z zawodem budowniczy, gdy plan doby mówi „praca”. Pierwsza osoba daje pełną siłę, a każda kolejna 75% poprzedniej, do tego umiejętność Budowa i młotek bohatera.
+- **Szkielety:** niedokończony plac ma 50 życia, a po jego zniszczeniu materiały przepadają.
+
+| Budowla | Etapy i materiały | Czas jednej osoby |
+|---|---|---|
+| Namiot | szkielet 30 drewna, płótno 20 włókna | 50 s |
+| Chata | fundament 40 kamieni, ściany 25 belek, dach 30 desek | 240 s (pół doby) |
+| Palisada | 8 drewna na kafel | 6 s |
+| Brama | 25 drewna | 15 s |
+| Wieża | podstawa 40 kamieni, konstrukcja 15 belek, platforma 15 desek i 2 liny | 140 s |
+| Warsztat | fundament 15 kamieni, konstrukcja 40 drewna, stoły 15 drewna | 90 s |
+| Tartak | fundament 20 kamieni, konstrukcja 60 drewna, piła 20 drewna i 5 kamieni | 110 s |
+| Kuźnia | palenisko 50 kamieni, ściany 12 belek, komin 20 kamieni | 150 s |
+
+- **Warsztaty i zlecenia:** zakładka Rzemiosło pokazuje przepisy, a klik dopisuje zlecenie do kolejki zakładu (do 8). Materiał schodzi, gdy zaczyna się praca. Wykonuje je bohater stojący przy zakładzie albo osadnik z zawodem rzemieślnik, zgodnie z planem doby.
+
+| Zakład | Przepis |
+|---|---|
+| Tartak | deski (3 drewna daje 2), belka (4 drewna) |
+| Warsztat | lina (3 włókna), młotek, siekiera, kilof |
+| Kuźnia | miecz, zbroja (ruda od górnika) |
+
+- **Narzędzia:** działają od razu i na stałe. Siekiera i kilof przyspieszają zbieranie o połowę, młotek budowę o 30%, miecz daje 35% więcej obrażeń, a zbroja o 25% mniej ran.
+
+Świadome uproszczenia: nie ma noszenia materiałów, narzędzia się nie zużywają, działają tylko na bohatera, a osadnicy biorą materiały z każdej odległości.
+
 ## Co dalej (jeszcze niezrobione)
-1. Budowa kafel po kaflu z rusztowaniami, budynki produkcyjne (pola, tartak, skryptorium z badaniami).
+1. Kolejne budynki produkcyjne (pola, skryptorium z badaniami).
 2. Nagrody i rozwój za walkę.
 3. Narzędzia (siekiera, kilof), kupcy, drogi.
 4. Punkty zainteresowania (ruiny, jaskinie, miasta) z istniejącego generatora regionów.

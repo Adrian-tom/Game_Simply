@@ -98,7 +98,7 @@ namespace GraSimply.Logika
             {
                 return;
             }
-            _ekran.Wolny = zapis ?? new Wolny.SwiatWolny(_rng.Zakres(1, int.MaxValue)) { WalkaWlaczona = true };
+            _ekran.Wolny = zapis ?? new Wolny.SwiatWolny(_rng.Zakres(1, int.MaxValue)) { WalkaWlaczona = true, BudowaZEtapami = true };
             try
             {
                 while (true)

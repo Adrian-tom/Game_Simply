@@ -32,6 +32,10 @@ namespace GraSimply.Logika.Wolny
                 w = new Wejscie();
             }
             double mnoznikRuchu = WalkaWlaczona ? KrokWalki(dt, w) : 1.0;
+            if (BudowaZEtapami && KrokBudowy(dt, w))
+            {
+                w.Dzialaj = false;
+            }
             double dlugosc = Math.Sqrt(w.Dx * w.Dx + w.Dy * w.Dy);
             bool rusza = dlugosc > 1e-9;
 
@@ -115,7 +119,9 @@ namespace GraSimply.Logika.Wolny
             {
                 _zbior = (cel.Value.X, cel.Value.Y, 0.0);
             }
-            double postep = _zbior.Value.Postep + dt / CzasZbioru;
+            Obiekt zbierany = ObiektNa(cel.Value.X, cel.Value.Y);
+            double narzedzie = (zbierany == Obiekt.Drzewo && Narzedzia.Contains("siekiera")) || (zbierany == Obiekt.Skala && Narzedzia.Contains("kilof")) ? 1.5 : 1.0;
+            double postep = _zbior.Value.Postep + dt * narzedzie / CzasZbioru;
             if (postep >= 1.0)
             {
                 Zbierz(cel.Value.X, cel.Value.Y);
@@ -198,6 +204,10 @@ namespace GraSimply.Logika.Wolny
                 case "jagody": return "jagody";
                 case "ziola": return "zioła";
                 case "wlokno": return "włókna";
+                case "belka": return "belki";
+                case "deska": return "deski";
+                case "lina": return "liny";
+                case "ruda": return "rudy";
                 case "spiwor": return "śpiwór";
                 default: return przedmiot;
             }
@@ -233,6 +243,11 @@ namespace GraSimply.Logika.Wolny
             {
                 Pisz(powod);
                 return false;
+            }
+            if (WymagaBudowy(klucz))
+            {
+                PostawPlac(klucz, x, y);
+                return true;
             }
             foreach (KeyValuePair<string, int> p in koszt)
             {

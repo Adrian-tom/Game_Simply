@@ -97,7 +97,15 @@ namespace GraSimply.Gra.Trojwymiar
             _scena.Migocz(t);
 
             PasekZbioru = null;
-            if (s.Zbieranie.HasValue)
+            if (s.PostepPracy.HasValue)
+            {
+                (int X, int Y)? b = _scena.NaPulpit(Scena3D.NaSwiat(s.PostepPracy.Value.X + 0.5, s.PostepPracy.Value.Y + 0.5, 1.6));
+                if (b.HasValue)
+                {
+                    PasekZbioru = (b.Value.X, b.Value.Y, s.PostepPracy.Value.Postep);
+                }
+            }
+            else if (s.Zbieranie.HasValue)
             {
                 (int X, int Y)? p = _scena.NaPulpit(Scena3D.NaSwiat(s.Zbieranie.Value.X + 0.5, s.Zbieranie.Value.Y + 0.5, 1.6));
                 if (p.HasValue)
@@ -174,7 +182,9 @@ namespace GraSimply.Gra.Trojwymiar
             string budowla = null;
             if (s.Budowle.TryGetValue((x, y), out budowla))
             {
-                wpis = KatalogModeli.DlaBudowli(budowla);
+                wpis = s.Place.TryGetValue((x, y), out PlacBudowy plac)
+                    ? KatalogModeli.DlaEtapu(plac.Klucz, plac.Etap, SwiatWolny.Etapy[plac.Klucz].Length)
+                    : KatalogModeli.DlaBudowli(budowla);
             }
             else
             {
@@ -184,7 +194,7 @@ namespace GraSimply.Gra.Trojwymiar
                     wpis = KatalogModeli.DlaObiektu(o, x, y, s.Swiat.Biom(x, y));
                 }
             }
-            string klucz = wpis?.Sciezka;
+            string klucz = wpis?.Sciezka + wpis?.Wysokosc;
             if (_stoi.TryGetValue((x, y), out (string Klucz, GameObject Obiekt) stoi))
             {
                 if (stoi.Klucz == klucz)
@@ -262,7 +272,7 @@ namespace GraSimply.Gra.Trojwymiar
             if (s.Akcja == AkcjaBohatera.Brak)
             {
                 _bohater.Graj(s.Spi || s.Martwy ? Postac3D.Sen : s.Blokuje ? Postac3D.Blok : idzie ? Postac3D.Bieg
-                            : s.Zbieranie.HasValue ? Postac3D.Praca : Postac3D.Spoczynek);
+                            : s.Zbieranie.HasValue || s.BohaterPracuje ? Postac3D.Praca : Postac3D.Spoczynek);
             }
             _latarnia.intensity = Mathf.Lerp(1.8f, 0f, Mathf.Clamp01((float)s.Jasnosc * 1.6f));
         }

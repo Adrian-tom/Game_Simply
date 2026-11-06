@@ -132,8 +132,22 @@ namespace GraSimply.Grafika.Trojwymiar
                 case "palisada": return new WpisModelu("Oboz/fence-fortified", 1.05f);
                 case "brama": return new WpisModelu("Oboz/fence-doorway", 1.05f);
                 case "wieza": return new WpisModelu("Budynki/building_tower_A_blue", 2.4f);
+                case "warsztat": return new WpisModelu("Budynki/building_home_B_blue", 1.9f);
+                case "tartak": return new WpisModelu("Budynki/building_lumbermill_blue", 1.9f);
+                case "kuznia": return new WpisModelu("Budynki/building_blacksmith_blue", 2.0f);
                 default: throw new ArgumentException("Nieznana budowla: " + klucz);
             }
+        }
+
+        /// <summary>Plac budowy: najpierw deski na ziemi, potem rusztowanie, a na końcu budynek jeszcze niżej niż gotowy.</summary>
+        public static WpisModelu DlaEtapu(string klucz, int etap, int etapow)
+        {
+            WpisModelu gotowy = DlaBudowli(klucz);
+            if (etap >= etapow - 1 && etapow > 1)
+            {
+                return new WpisModelu(gotowy.Sciezka, gotowy.Wysokosc * 0.8f);
+            }
+            return etap == 0 ? new WpisModelu("Oboz/structure-floor", 0.25f) : new WpisModelu("Oboz/structure", 1.0f);
         }
 
         /// <summary>Budynek na placu osady.</summary>
@@ -362,7 +376,7 @@ namespace GraSimply.Grafika.Trojwymiar
             lista.AddRange(Suche);
             lista.AddRange(Trawy);
             lista.Add(DlaObiektu(Obiekt.Sciana, 0, 0).Value.Sciezka);
-            foreach (string k in new[] { "spiwor", "ognisko", "namiot", "palisada", "brama", "wieza" })
+            foreach (string k in new[] { "spiwor", "ognisko", "namiot", "palisada", "brama", "wieza", "warsztat", "tartak", "kuznia" })
             {
                 lista.Add(DlaBudowli(k).Sciezka);
             }
@@ -410,6 +424,7 @@ namespace GraSimply.Grafika.Trojwymiar
             }
             lista.Add(PorzuconyPlecak.Sciezka);
             lista.Add("Oboz/structure");
+            lista.Add("Oboz/structure-floor");
             lista.Add("Oboz/fence");
             return lista;
         }

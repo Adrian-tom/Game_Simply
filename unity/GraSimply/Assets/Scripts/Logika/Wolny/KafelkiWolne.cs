@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GraSimply.Logika.Wolny
 {
@@ -28,6 +29,9 @@ namespace GraSimply.Logika.Wolny
 
         /// <summary>Plan doby wybranego osadnika i decyzje o nim.</summary>
         public List<Kafelek> Plan = new List<Kafelek>();
+
+        /// <summary>Zakładki trybu budowania.</summary>
+        public List<Kafelek> Kategorie = new List<Kafelek>();
         public List<Kafelek> Decyzje = new List<Kafelek>();
 
         /// <summary>Numer osadnika w pierwszym wierszu panelu: długa lista przewija się z wyborem.</summary>
@@ -71,9 +75,24 @@ namespace GraSimply.Logika.Wolny
             }
             if (s.TrybBudowy)
             {
-                foreach (string klucz in SwiatWolny.Budowlane)
+                foreach ((string id, string nazwa, string[] budowle) in SwiatWolny.Kategorie)
                 {
-                    k.Budowle.Add(Budowla(s, klucz));
+                    k.Kategorie.Add(new Kafelek { Id = "k:" + id, Nazwa = nazwa, Ikona = id == "rzemioslo" ? "magazyn" : id == "obrona" ? "palisada" : id == "zaklady" ? "kuznia" : "namiot", Wybrany = s.Kategoria == id });
+                    if (s.Kategoria != id)
+                    {
+                        continue;
+                    }
+                    foreach (string klucz in budowle)
+                    {
+                        k.Budowle.Add(Budowla(s, klucz));
+                    }
+                    if (id == "rzemioslo")
+                    {
+                        foreach (Przepis p in SwiatWolny.Przepisy)
+                        {
+                            k.Budowle.Add(KafelekPrzepisu(s, p));
+                        }
+                    }
                 }
             }
             if (s.PanelOtwarty && s.Obozowisko.Osadnicy.Count > 0)
@@ -121,17 +140,37 @@ namespace GraSimply.Logika.Wolny
 
         private static Kafelek Budowla(SwiatWolny s, string klucz)
         {
-            string nazwa = klucz == "spiwor" ? "Śpiwór" : klucz == "ognisko" ? "Ognisko" : klucz == "namiot" ? "Namiot"
-                         : klucz == "palisada" ? "Palisada" : klucz == "brama" ? "Brama" : klucz == "wieza" ? "Wieża" : "Chata";
+            string nazwa = SwiatWolny.NazwaBudowli(klucz);
+            nazwa = char.ToUpperInvariant(nazwa[0]) + nazwa.Substring(1);
             var k = new Kafelek
             {
-                Id = "b:" + klucz, Nazwa = nazwa, Ikona = klucz, Dostepny = s.Stac(klucz), Wybrany = s.WybranaBudowla == klucz,
+                Id = "b:" + klucz, Nazwa = nazwa, Ikona = klucz, Dostepny = true, Wybrany = s.WybranaBudowla == klucz,
             };
-            foreach (KeyValuePair<string, int> p in SwiatWolny.Koszty[klucz])
+            KeyValuePair<string, int>[] koszt = s.BudowaZEtapami ? SwiatWolny.KosztCalkowity(klucz) : SwiatWolny.Koszty[klucz];
+            k.Dostepny = koszt.All(p => s.Razem(p.Key) >= p.Value);
+            // Mieszczą się dwie linie: przy dłuższym koszcie druga mówi, ile składników jeszcze dochodzi.
+            for (int i = 0; i < koszt.Length && i < 2; i++)
             {
+                KeyValuePair<string, int> p = koszt[i];
                 string linia = p.Key == "spiwor" ? "z plecaka" : $"{p.Value} {SwiatWolny.Nazwa(p.Key)}";
+                if (i == 1 && koszt.Length > 2)
+                {
+                    linia += $" +{koszt.Length - 2}";
+                }
                 k.Opis.Add((linia, s.Razem(p.Key) >= p.Value));
             }
+            return k;
+        }
+
+        private static Kafelek KafelekPrzepisu(SwiatWolny s, Przepis p)
+        {
+            bool stoi = s.StoiStacja(p.Stacja);
+            bool ma = p.Narzedzie && s.Narzedzia.Contains(p.Id);
+            var k = new Kafelek { Id = "r:" + p.Id, Nazwa = p.Nazwa, Ikona = p.Stacja, Dostepny = stoi && !ma };
+            KeyValuePair<string, int> m = p.Wejscie[0];
+            k.Opis.Add(($"{m.Value} {SwiatWolny.Nazwa(m.Key)}{(p.Wejscie.Length > 1 ? " +1" : "")}", p.Wejscie.All(w => s.Razem(w.Key) >= w.Value)));
+            int kolejka = s.WKolejce(p.Id);
+            k.Opis.Add((ma ? "masz" : !stoi ? "brak: " + SwiatWolny.NazwaBudowli(p.Stacja) : kolejka > 0 ? $"kolejka {kolejka}" : "kliknij", stoi || ma));
             return k;
         }
     }

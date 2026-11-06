@@ -65,13 +65,13 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Zawody dostępne w panelu: te, które nie wymagają jeszcze budynków.</summary>
         public static readonly string[] ZajeciaPanelu =
         {
-            "bezczynny", "drwal", "kamieniarz", "zielarz", "mysliwy", "gornik", "straznik",
+            "bezczynny", "drwal", "kamieniarz", "zielarz", "mysliwy", "gornik", "straznik", "budowniczy", "rzemieslnik",
         };
 
         /// <summary>Przedmiot z plecaka → surowiec w magazynie osady (włókna magazyn nie przyjmuje).</summary>
         private static readonly Dictionary<string, string> DoMagazynu = new Dictionary<string, string>
         {
-            { "drewno", "drewno" }, { "kamien", "kamien" }, { "ziola", "ziola" }, { "jagody", "zywnosc" },
+            { "drewno", "drewno" }, { "kamien", "kamien" }, { "ziola", "ziola" }, { "jagody", "zywnosc" }, { "ruda", "ruda" },
         };
 
         public Gracz Obozowisko { get; private set; }
@@ -98,7 +98,7 @@ namespace GraSimply.Logika.Wolny
         public int Razem(string przedmiot)
         {
             int zMagazynu = DoMagazynu.TryGetValue(przedmiot, out string s) ? Obozowisko.Surowce.Wez(s) : 0;
-            return Ile(przedmiot) + zMagazynu;
+            return Ile(przedmiot) + zMagazynu + Wyroby.Wez(przedmiot);
         }
 
         private void Zabierz(string przedmiot, int ile)
@@ -108,7 +108,13 @@ namespace GraSimply.Logika.Wolny
             int reszta = ile - zPlecaka;
             if (reszta > 0 && DoMagazynu.TryGetValue(przedmiot, out string s))
             {
-                Obozowisko.Surowce[s] = Obozowisko.Surowce.Wez(s) - reszta;
+                int zMagazynu = Math.Min(Obozowisko.Surowce.Wez(s), reszta);
+                Obozowisko.Surowce[s] = Obozowisko.Surowce.Wez(s) - zMagazynu;
+                reszta -= zMagazynu;
+            }
+            if (reszta > 0)
+            {
+                Wyroby[przedmiot] = Wyroby.Wez(przedmiot) - reszta;
             }
         }
 
@@ -320,6 +326,11 @@ namespace GraSimply.Logika.Wolny
                 return;
             }
             bool przyPracy = !WalkaWlaczona || BlokTeraz(p) == BlokPlanu.Praca;
+            if (BudowaZEtapami && przyPracy && p.O.Chory <= 0 && MiejscePracy(p, out (int X, int Y) stanowisko))
+            {
+                (p.CelX, p.CelY) = WolnyPunktObok(stanowisko.X, stanowisko.Y);
+                return;
+            }
             Obiekt praca = p.O.Chory > 0 || !przyPracy ? Obiekt.Brak : ObiektPracy(p.O.Zajecie);
             if (praca != Obiekt.Brak)
             {

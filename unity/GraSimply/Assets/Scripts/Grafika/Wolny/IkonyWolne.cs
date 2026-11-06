@@ -38,6 +38,30 @@ namespace GraSimply.Grafika.Wolny
                     c.Elipsa(Materialy.Kosc[7], cx - 8, cy - 8, 16, 16);
                     c.Elipsa(Materialy.Pyl[0], cx - 3, cy - 10, 14, 14);
                     break;
+                case "warsztat":
+                    c.Wypelnij(Materialy.Deski[3], cx - 11, cy - 2, 22, 4);
+                    c.Wypelnij(Materialy.Deski[6], cx - 9, cy + 2, 3, 8);
+                    c.Wypelnij(Materialy.Deski[6], cx + 6, cy + 2, 3, 8);
+                    c.Wypelnij(Materialy.Kamien[4], cx - 5, cy - 8, 8, 5);
+                    break;
+                case "tartak":
+                    c.Elipsa(Materialy.Kamien[4], cx - 9, cy - 9, 18, 18);
+                    c.Elipsa(Materialy.Kamien[2], cx - 3, cy - 3, 6, 6);
+                    c.Wypelnij(Materialy.Deski[3], cx - 12, cy + 6, 24, 4);
+                    break;
+                case "kuznia":
+                    c.Wypelnij(Materialy.Kamien[2], cx - 10, cy + 4, 20, 6);
+                    c.Wypelnij(Materialy.Kamien[4], cx - 12, cy - 3, 24, 6);
+                    c.Wypelnij(Materialy.Kamien[2], cx + 2, cy - 7, 8, 5);
+                    break;
+                case "budowniczy":
+                    c.Odcinek(Materialy.Deski[6], cx - 8, cy + 9, cx + 4, cy - 4);
+                    c.Wypelnij(Materialy.Kamien[4], cx - 2, cy - 9, 12, 6);
+                    break;
+                case "rzemieslnik":
+                    c.Wypelnij(Materialy.Deski[3], cx - 10, cy - 5, 20, 14);
+                    c.Wypelnij(Materialy.Kamien[4], cx - 4, cy - 10, 8, 6);
+                    break;
                 case "palisada":
                     foreach (int ox in new[] { -9, -3, 3, 9 })
                     {

@@ -74,7 +74,7 @@ namespace GraSimply.Logika.Wolny
     public sealed partial class SwiatWolny
     {
         private const string Naglowek = "SimplyPrzetrwanie";
-        private const int WersjaZapisu = 2;
+        private const int WersjaZapisu = 3;
 
         /// <summary>Ustawiane o świcie: silnik gry zapisuje wtedy świat na dysk.</summary>
         public bool PotrzebnyZapis;
@@ -142,6 +142,25 @@ namespace GraSimply.Logika.Wolny
                 }
             }
             W("decyzje", _dobreDecyzje);
+            foreach (PlacBudowy b in Place.Values)
+            {
+                W("plac", b.X, b.Y, b.Klucz, b.Etap, b.Praca, b.Zaplacony ? 1 : 0);
+            }
+            foreach (KeyValuePair<string, int> r in Wyroby)
+            {
+                W("wyrob", r.Key, r.Value);
+            }
+            foreach (string n in Narzedzia)
+            {
+                W("narzedzie", n);
+            }
+            foreach (KeyValuePair<string, List<Zlecenie>> k in Zlecenia)
+            {
+                foreach (Zlecenie z in k.Value)
+                {
+                    W("zlecenie", k.Key, z.Co.Id, z.Praca, z.Zaplacone ? 1 : 0);
+                }
+            }
             if (Gosc != null)
             {
                 W("gosc", Bez(Gosc.O.Imie), Gosc.O.Morale, Bez(Gosc.O.Cecha), Gosc.X, Gosc.Y, Gosc.Surowiec, Gosc.Ile, Bez(Gosc.Wskazowka), Gosc.Sekret ?? "");
@@ -179,7 +198,7 @@ namespace GraSimply.Logika.Wolny
             {
                 throw new FormatException("Zapis jest niepełny.");
             }
-            var s = new SwiatWolny(long.Parse(n[2], CultureInfo.InvariantCulture)) { WalkaWlaczona = true };
+            var s = new SwiatWolny(long.Parse(n[2], CultureInfo.InvariantCulture)) { WalkaWlaczona = true, BudowaZEtapami = true };
             s.Plecak.Clear();
             s.Dziennik.Clear();
             s.Obozowisko.Surowce.Clear();
@@ -246,6 +265,23 @@ namespace GraSimply.Logika.Wolny
                             postac.Podejrzany = c[14] == "1";
                         }
                         s.Postacie.Add(postac);
+                        break;
+                    case "plac":
+                        s.Place[(I(c[1]), I(c[2]))] = new PlacBudowy { X = I(c[1]), Y = I(c[2]), Klucz = c[3], Etap = I(c[4]), Praca = D(c[5]), Zaplacony = c[6] == "1" };
+                        break;
+                    case "wyrob":
+                        s.Wyroby[c[1]] = I(c[2]);
+                        break;
+                    case "narzedzie":
+                        s.Narzedzia.Add(c[1]);
+                        break;
+                    case "zlecenie":
+                        if (!s.Zlecenia.TryGetValue(c[1], out List<Zlecenie> kolejka))
+                        {
+                            kolejka = new List<Zlecenie>();
+                            s.Zlecenia[c[1]] = kolejka;
+                        }
+                        kolejka.Add(new Zlecenie { Co = Przepisy.First(p => p.Id == c[2]), Praca = D(c[3]), Zaplacone = c[4] == "1" });
                         break;
                     case "decyzje":
                         s._dobreDecyzje = I(c[1]);

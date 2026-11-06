@@ -331,19 +331,23 @@ namespace GraSimply.Grafika
             }
             if (k.Budowle.Count > 0)
             {
-                // Dwa rzędy: obóz u góry, obrona pod spodem, jak dojdzie więcej budowli.
-                y -= OdstepKafelkow + 50;
-                RzadKafelkow(k.Budowle.GetRange(4, k.Budowle.Count - 4), y, 50);
-                y -= OdstepKafelkow + 50;
-                RzadKafelkow(k.Budowle.GetRange(0, 4), y, 50);
+                // Po cztery w rzędzie, od dołu: przepisów jest więcej niż budowli w zakładce.
+                for (int od = (k.Budowle.Count - 1) / 4 * 4; od >= 0; od -= 4)
+                {
+                    y -= OdstepKafelkow + 50;
+                    RzadKafelkow(k.Budowle.GetRange(od, Math.Min(4, k.Budowle.Count - od)), y, 50);
+                }
+                y -= OdstepKafelkow + 24;
+                RzadKafelkow(k.Kategorie, y, 24);
             }
             if (k.Zajecia.Count > 0)
             {
-                // Dwa rzędy po trzy: nazwy zawodów są za długie na sześć kafelków w jednym rzędzie.
-                y -= OdstepKafelkow + 26;
-                RzadKafelkow(k.Zajecia.GetRange(3, k.Zajecia.Count - 3), y, 26);
-                y -= OdstepKafelkow + 26;
-                RzadKafelkow(k.Zajecia.GetRange(0, 3), y, 26);
+                // Po trzy w rzędzie: nazwy zawodów są za długie na więcej kafelków obok siebie.
+                for (int od = (k.Zajecia.Count - 1) / 3 * 3; od >= 0; od -= 3)
+                {
+                    y -= OdstepKafelkow + 24;
+                    RzadKafelkow(k.Zajecia.GetRange(od, Math.Min(3, k.Zajecia.Count - od)), y, 24);
+                }
             }
             return y;
         }

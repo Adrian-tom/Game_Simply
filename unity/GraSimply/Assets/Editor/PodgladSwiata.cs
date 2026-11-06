@@ -175,6 +175,29 @@ namespace GraSimply.Edytor
             ludzie.Aktualizuj(0.02, new Wejscie { Klik = "g:otworz" });
             KlatkaWolna(g, pulpit, cel, ludzie, "karta-przybysza");
 
+            var b = new SwiatWolny(42) { WalkaWlaczona = true, BudowaZEtapami = true, Godzina = 9.0, ObozZalozony = true };
+            b.Plecak["drewno"] = 200;
+            b.Plecak["kamien"] = 100;
+            b.Plecak["wlokno"] = 40;
+            b.Budowle[(-2, 0)] = "tartak";
+            b.PostawNa("chata", 2, 0);
+            b.PostawNa("namiot", 0, 2);
+            b.PostawNa("kuznia", 2, 2);
+            foreach (PlacBudowy plac in b.Place.Values)
+            {
+                plac.Etap = plac.Klucz == "namiot" ? 1 : plac.Klucz == "kuznia" ? 2 : 0;
+            }
+            b.Aktualizuj(0.02, new Wejscie { Klik = "a:buduj" });
+            KlatkaWolna(g, pulpit, cel, b, "budowa-zakladki");
+            b.Aktualizuj(0.02, new Wejscie { Klik = "k:rzemioslo" });
+            KlatkaWolna(g, pulpit, cel, b, "budowa-przepisy");
+            b.Aktualizuj(0.02, new Wejscie { Klik = "a:buduj" });
+            for (int i = 0; i < 40; i++)
+            {
+                b.Aktualizuj(0.05, new Wejscie { Dzialaj = true });
+            }
+            KlatkaWolna(g, pulpit, cel, b, "budowa-plac");
+
             var w = new SwiatWolny(42);
             (w.X, w.Y) = BrzegWody(w);
             KlatkaWolna(g, pulpit, cel, w, "swiat-woda");

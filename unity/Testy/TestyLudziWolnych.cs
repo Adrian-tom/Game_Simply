@@ -337,7 +337,7 @@ namespace GraSimply.Testy
             Harness.Sprawdz("umiejętności przybysza wracają", w.Gosc.O.Kompetencje != null && w.Gosc.O.Kompetencje.Count == s.Gosc.O.Kompetencje.Count);
             Harness.Rowne("zapis wczytanego jest taki sam", tekst, w.DoZapisu());
 
-            string stary = tekst.Replace("SimplyPrzetrwanie\t2", "SimplyPrzetrwanie\t1");
+            string stary = tekst.Replace("SimplyPrzetrwanie\t3", "SimplyPrzetrwanie\t1");
             string[] linie = stary.Split('\n').Select(l =>
             {
                 if (!l.StartsWith("osadnik\t"))
@@ -360,7 +360,7 @@ namespace GraSimply.Testy
             Harness.Rowne("cztery części doby na kafelkach", 4, k.Plan.Count);
             Harness.Rowne("dwie decyzje o osadniku", 2, k.Decyzje.Count);
             Harness.Rowne("panel mieści sześciu", WidokWolny.WierszyOsadnikow, k.Osadnikow);
-            Harness.Rowne("lista przesuwa się za wyborem", 2, k.PierwszyOsadnik);
+            Harness.Rowne("lista przesuwa się za wyborem", 8 - WidokWolny.WierszyOsadnikow, k.PierwszyOsadnik);
             Harness.Sprawdz("wybrany jest widoczny", WidokWolny.Panel(s).Any(l => l.StartsWith(">") && l.Contains(s.Obozowisko.Osadnicy[7].Imie)));
             Harness.Sprawdz("panel pokazuje zmęczenie", WidokWolny.Panel(s).Any(l => l.Contains("zm.")));
 

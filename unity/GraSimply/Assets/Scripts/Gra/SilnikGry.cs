@@ -154,7 +154,7 @@ namespace GraSimply.Gra
         private void Start()
         {
             _ekran = new Ekran();
-            Logika.Wolny.ZapisWolny.Sciezka = System.IO.Path.Combine(Application.persistentDataPath, "przetrwanie.txt");
+            Logika.Wolny.ZapisWolny.Sciezka = SciezkaZapisu();
             _konsola = new KonsolaKolejkowa();
             // Migawkę budujemy na wątku logiki, nim ten zablokuje się na pytaniu.
             _konsola.PrzedPytaniem = () =>
@@ -956,6 +956,15 @@ namespace GraSimply.Gra
             {
                 // Zamknięcie w trakcie pytania kończy wątek wyjątkiem — tak ma być.
             }
+        }
+
+        /// <summary>Domyślnie katalog danych gry; argument --zapis podaje inny plik, żeby testy nie dotykały prawdziwego zapisu.</summary>
+        private static string SciezkaZapisu()
+        {
+            string[] argumenty = Environment.GetCommandLineArgs();
+            int i = Array.IndexOf(argumenty, "--zapis");
+            return i >= 0 && i + 1 < argumenty.Length ? argumenty[i + 1]
+                : System.IO.Path.Combine(Application.persistentDataPath, "przetrwanie.txt");
         }
 
         private void OnApplicationQuit()
