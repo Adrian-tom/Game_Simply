@@ -234,7 +234,8 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Stawia budowlę na wskazanym kaflu. Zwraca powodzenie; powód odmowy trafia do dziennika.</summary>
         public bool PostawNa(string klucz, int x, int y)
         {
-            if (!Koszty.TryGetValue(klucz, out KeyValuePair<string, int>[] koszt))
+            // Budowla z etapami płaci etap po etapie, więc nie musi mieć ceny w tabeli kosztów.
+            if (!Koszty.TryGetValue(klucz, out KeyValuePair<string, int>[] koszt) && !WymagaBudowy(klucz))
             {
                 return false;
             }

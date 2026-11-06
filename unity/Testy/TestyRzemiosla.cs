@@ -450,7 +450,7 @@ namespace GraSimply.Testy
             Harness.Rowne("obóz na start", "spiwor", k.Budowle[0].Ikona);
             s.Aktualizuj(0.01, new Wejscie { Klik = "k:zaklady" });
             k = KafelkiWolne.Z(s);
-            Harness.Sprawdz("zakładka zakładów", k.Budowle.Select(b => b.Ikona).SequenceEqual(SwiatWolny.Stacje));
+            Harness.Sprawdz("zakładka zakładów", k.Budowle.Select(b => b.Ikona).SequenceEqual(SwiatWolny.Stacje.Concat(SwiatWolny.BudynkiMiejskie)));
             Harness.Sprawdz("zakładka jest wyróżniona", k.Kategorie.Single(c => c.Wybrany).Id == "k:zaklady");
             s.Aktualizuj(0.01, new Wejscie { Klik = "k:rzemioslo" });
             k = KafelkiWolne.Z(s);

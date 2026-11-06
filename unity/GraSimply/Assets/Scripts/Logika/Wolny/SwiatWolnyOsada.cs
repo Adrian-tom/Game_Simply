@@ -173,6 +173,8 @@ namespace GraSimply.Logika.Wolny
         {
             Obozowisko.Chaty = MiejscaNamiotu * Budowle.Values.Count(b => b == "namiot")
                          + MiejscaChaty * Budowle.Values.Count(b => b == "chata");
+            PrzeliczBudynkiMiejskie();
+            SprawdzSzczebel();
         }
 
         /// <summary>Koniec doby: dzień pracy osady, a potem być może nowy człowiek przy ognisku.</summary>
@@ -183,6 +185,8 @@ namespace GraSimply.Logika.Wolny
                 return;
             }
             Obozowisko.Czas = Dzien - 1;
+            // Utrzymanie budynków wejdzie razem z pełną ekonomią: złoto zbiera się na razie tylko na awans.
+            Obozowisko.Zloto += Oboz.UtrzymanieDzienne(Obozowisko);
             List<(Osadnik O, string Zajecie)> zdjeci = WalkaWlaczona ? WylaczNieobecnych() : null;
             (List<string> kronika, List<string> pilne) = Osada.DzienOsady(Obozowisko, _rng);
             if (zdjeci != null)
@@ -208,6 +212,7 @@ namespace GraSimply.Logika.Wolny
                 Pisz($"Przychodzi {nowy.Imie} ({nowy.Cecha}). Umie: {Kompetencje.OpisKrotki(nowy, 2).Replace("🔥", "*")}. Daj zajęcie: Tab.");
             }
             SynchronizujPostacie();
+            SprawdzSzczebel();
         }
 
         /// <summary>Postacie na mapie odpowiadają liście osadników: zmarli i ci, co odeszli, znikają.</summary>

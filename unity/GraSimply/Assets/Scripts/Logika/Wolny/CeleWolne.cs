@@ -19,7 +19,7 @@ namespace GraSimply.Logika.Wolny
     /// </summary>
     public static class CeleWolne
     {
-        public const int Liczba = 11;
+        public const int Liczba = 20;
         public const int NaOgnisko = 5, KamieniNaOgnisko = 3, NaSzkielet = 30, NaPlotno = 20, KafliPalisady = 6;
 
         /// <summary>Bieżący cel albo null, gdy gracz przeszedł już wszystkie (albo gra nie ma tego trybu).</summary>
@@ -34,7 +34,8 @@ namespace GraSimply.Logika.Wolny
 
         private static CelWolny Pilny(SwiatWolny s)
         {
-            if (s.Porzucone.Count > 0)
+            // Bez obozu ważniejsza jest odbudowa: po plecak na drugi koniec mapy idzie się, gdy jest dokąd wrócić.
+            if (s.Porzucone.Count > 0 && s.SrodekObozu().HasValue && !s.CzyNoc)
             {
                 return Cel("plecak", 0, "Odzyskaj plecak: leży tam, gdzie padłeś (E)");
             }
@@ -112,7 +113,44 @@ namespace GraSimply.Logika.Wolny
             {
                 return Cel("tartak", 11, "zbuduj tartak: B, zakładka Zakłady");
             }
-            return null;
+            if (!s.Budowle.ContainsValue("farma"))
+            {
+                return Cel("farma", 12, "zbuduj farmę: B, zakładka Zakłady");
+            }
+            if (s.Obozowisko.Osadnicy.Count > 0 && s.Obozowisko.Osadnicy.All(o => o.Zajecie != "rolnik"))
+            {
+                return Cel("rolnik", 13, "daj komuś pracę rolnika: Tab, kafelek Rolnik");
+            }
+            return DoSzczebla(s, 1, 14)
+                ?? Budynek(s, "spichlerz", 15) ?? Budynek(s, "tawerna", 16)
+                ?? DoSzczebla(s, 2, 17)
+                ?? Budynek(s, "lecznica", 18) ?? Budynek(s, "targ", 19)
+                ?? DoSzczebla(s, 3, 20);
+        }
+
+        private static CelWolny Budynek(SwiatWolny s, string klucz, int numer)
+        {
+            if (s.Budowle.ContainsValue(klucz))
+            {
+                return null;
+            }
+            string nazwa = klucz == "tawerna" ? "tawernę" : SwiatWolny.NazwaBudowli(klucz);
+            return Cel(klucz, numer, $"zbuduj {nazwa}: B, zakładka Zakłady");
+        }
+
+        /// <summary>Droga na szczebel: najpierw miejsca do spania, bo bez nich przybysze idą dalej.</summary>
+        private static CelWolny DoSzczebla(SwiatWolny s, int szczebel, int numer)
+        {
+            if (s.Szczebel >= szczebel)
+            {
+                return null;
+            }
+            if (Osada.WolneChaty(s.Obozowisko) <= 0 || !s.Budowle.ContainsValue("chata"))
+            {
+                return Cel("chata", numer, $"zbuduj chatę: ludzie {s.Obozowisko.Osadnicy.Count}/{s.Obozowisko.Chaty} miejsc");
+            }
+            OpisSzczebla n = SwiatWolny.Szczeble[szczebel];
+            return Cel("szczebel", numer, $"{n.Nazwa.ToLowerInvariant()}: {string.Join(", ", s.BrakiSzczebla())}");
         }
 
         private static CelWolny Cel(string id, int numer, string tekst)

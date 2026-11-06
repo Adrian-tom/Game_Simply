@@ -43,6 +43,7 @@ namespace GraSimply.Testy
         private readonly Dictionary<(int X, int Y), double> _zakazane = new Dictionary<(int X, int Y), double>();
 
         private double _czas, _zwloka;
+        private bool _chceRolnika;
         private string _ostatniCel;
         private (int X, int Y)? _cel;
         private List<(int X, int Y)> _droga = new List<(int X, int Y)>();
@@ -98,7 +99,16 @@ namespace GraSimply.Testy
                 return new Wejscie();
             }
 
+            // Jak człowiek: nocą nie chodzi po lesie, jeśli jest obóz, do którego można wrócić.
+            if (_s.CzyNoc && _s.SrodekObozu().HasValue && !_s.PrzyObozie())
+            {
+                return DoObozu();
+            }
             // Jak człowiek: nie czeka z jedzeniem i snem, aż gra krzyknie.
+            if (_s.Ile("jagody") > 6 && _s.PrzyObozie() && _s.Obozowisko.Osadnicy.Count > 0)
+            {
+                return new Wejscie { Klik = "a:magazyn" };
+            }
             if (_s.Glod < 50.0 && _s.Razem("jagody") > 0)
             {
                 return new Wejscie { Klik = "a:jedz" };
@@ -149,7 +159,19 @@ namespace GraSimply.Testy
                 case "palisada":
                     return Buduj("palisada");
                 case "tartak":
-                    return Buduj("tartak");
+                case "farma":
+                case "spichlerz":
+                case "tawerna":
+                case "lecznica":
+                case "targ":
+                case "chata":
+                    return Buduj(id);
+                case "rolnik":
+                    _chceRolnika = true;
+                    return new Wejscie { Klik = "a:osada" };
+                case "szczebel":
+                    return _s.Obozowisko.Zloto < SwiatWolny.Szczeble[System.Math.Min(_s.Szczebel + 1, SwiatWolny.Szczeble.Length - 1)].Zlota && Handlarz() != null
+                        ? new Wejscie { Klik = "a:osada" } : Zbieraj("drewno");
                 default:
                     return _s.Razem("drewno") < 120 ? Zbieraj("drewno") : DoObozu();
             }
@@ -185,15 +207,57 @@ namespace GraSimply.Testy
             {
                 return new Wejscie { Klik = "g:tak" };
             }
-            for (int i = 0; i < _s.Obozowisko.Osadnicy.Count; i++)
+            int n = _s.Obozowisko.Osadnicy.Count;
+            if (_chceRolnika && n > 0)
+            {
+                _chceRolnika = false;
+                _kolejka.Enqueue(new Wejscie { Klik = "z:rolnik" });
+                return new Wejscie { Klik = "o:" + (n - 1) };
+            }
+            for (int i = 0; i < n; i++)
             {
                 if (_s.Obozowisko.Osadnicy[i].Zajecie == "bezczynny")
                 {
-                    _kolejka.Enqueue(new Wejscie { Klik = "z:drwal" });
+                    _kolejka.Enqueue(new Wejscie { Klik = "z:" + NastepnyZawod() });
                     return new Wejscie { Klik = "o:" + i };
                 }
             }
+            string handlarz = Handlarz();
+            if (handlarz != null)
+            {
+                int kogo = _s.Obozowisko.Osadnicy.FindIndex(o => o.Zajecie == "drwal");
+                if (kogo >= 0)
+                {
+                    _kolejka.Enqueue(new Wejscie { Klik = "z:handlarz" });
+                    return new Wejscie { Klik = "o:" + kogo };
+                }
+            }
             return new Wejscie { Klik = "a:osada" };
+        }
+
+        /// <summary>Targ stoi, a nikt nie handluje: złoto na awans samo się nie zbierze.</summary>
+        private string Handlarz()
+        {
+            return _s.Budowle.ContainsValue("targ") && _s.Obozowisko.Osadnicy.All(o => o.Zajecie != "handlarz") ? "handlarz" : null;
+        }
+
+        /// <summary>Prosty podział pracy: najpierw budowniczy i rzemieślnik, a dalej surowce na zmianę.</summary>
+        private string NastepnyZawod()
+        {
+            List<Osadnik> l = _s.Obozowisko.Osadnicy;
+            if (l.All(o => o.Zajecie != "budowniczy"))
+            {
+                return "budowniczy";
+            }
+            if (l.All(o => o.Zajecie != "straznik"))
+            {
+                return "straznik";
+            }
+            if (l.All(o => o.Zajecie != "rzemieslnik") && _s.Budowle.ContainsValue("tartak"))
+            {
+                return "rzemieslnik";
+            }
+            return l.Count(o => o.Zajecie == "drwal") <= l.Count(o => o.Zajecie == "kamieniarz") ? "drwal" : "kamieniarz";
         }
 
         private Wejscie Buduj(string klucz)
@@ -211,11 +275,38 @@ namespace GraSimply.Testy
                 {
                     if (_s.Razem(m.Key) < m.Value)
                     {
-                        return Zbieraj(m.Key);
+                        return Zdobadz(m.Key);
                     }
                 }
             }
             return Odleglosc(plac.X + 0.5, plac.Y + 0.5) <= 1.9 ? new Wejscie { Dzialaj = true } : IdzDo(plac.X, plac.Y, 1.6);
+        }
+
+        /// <summary>Surowiec z ziemi albo wyrób z zakładu: zlecenie i praca przy tartaku lub warsztacie.</summary>
+        private Wejscie Zdobadz(string material)
+        {
+            Przepis p = SwiatWolny.Przepisy.FirstOrDefault(x => x.Id == material);
+            if (p == null)
+            {
+                return Zbieraj(material);
+            }
+            foreach (KeyValuePair<string, int> m in p.Wejscie)
+            {
+                if (_s.Razem(m.Key) < m.Value)
+                {
+                    return Zdobadz(m.Key);
+                }
+            }
+            if (!_s.StoiStacja(p.Stacja))
+            {
+                return Buduj(p.Stacja);
+            }
+            if (_s.WKolejce(material) == 0)
+            {
+                return new Wejscie { Klik = "r:" + material };
+            }
+            KeyValuePair<(int X, int Y), string> stacja = _s.Budowle.First(b => b.Value == p.Stacja);
+            return Odleglosc(stacja.Key.X + 0.5, stacja.Key.Y + 0.5) <= 1.9 ? new Wejscie { Dzialaj = true } : IdzDo(stacja.Key.X, stacja.Key.Y, 1.6);
         }
 
         private Wejscie Postaw(string klucz)
@@ -299,6 +390,7 @@ namespace GraSimply.Testy
                 case "kamien": return o == Obiekt.Skala;
                 case "jagody": return o == Obiekt.Krzak;
                 case "wlokno": return o == Obiekt.Krzak || o == Obiekt.Ziolo;
+                case "ziola": return o == Obiekt.Ziolo;
                 default: return false;
             }
         }
@@ -585,7 +677,10 @@ namespace GraSimply.Testy
         /// <summary>Kiedy (godzina gry) po raz pierwszy padła budowla danego rodzaju.</summary>
         public readonly Dictionary<string, double> PierwszaStrata = new Dictionary<string, double>();
         public double? NamiotGodzina, NamiotSekunda;
-        public int ZgonyDnia, Zabici, Osadnicy;
+        public int ZgonyDnia, Zabici, Osadnicy, Szczebel;
+
+        /// <summary>Dzień, w którym osada weszła na dany szczebel.</summary>
+        public readonly Dictionary<int, int> DzienSzczebla = new Dictionary<int, int>();
         public string Koniec;
     }
 
@@ -617,6 +712,10 @@ namespace GraSimply.Testy
                 {
                     w.NamiotSekunda = t;
                     w.NamiotGodzina = s.GodzinGry + 7.0;
+                }
+                if (!w.DzienSzczebla.ContainsKey(s.Szczebel))
+                {
+                    w.DzienSzczebla[s.Szczebel] = s.Dzien;
                 }
                 bool ognisko = s.Budowle.ContainsValue("ognisko"), namiot = s.Budowle.ContainsValue("namiot");
                 if (mialOgnisko && !ognisko && !w.PierwszaStrata.ContainsKey("ognisko"))
@@ -652,6 +751,7 @@ namespace GraSimply.Testy
             }
             w.Zabici = s.Zabici;
             w.Osadnicy = s.Obozowisko.Osadnicy.Count;
+            w.Szczebel = s.Szczebel;
             w.Koniec = CeleWolne.Aktualny(s)?.Id ?? "koniec";
             return w;
         }
@@ -696,6 +796,38 @@ namespace GraSimply.Testy
             return (zycie / prob, zgony / prob, sekundy / prob);
         }
 
+        /// <summary>Jedna rozgrywka dzień po dniu: dotnet run -- --przebieg [świat] [dni] [profil 0-2].</summary>
+        public static int Przebieg(long seed, int dni, int profil)
+        {
+            var s = new SwiatWolny(seed) { WalkaWlaczona = true, BudowaZEtapami = true };
+            var bot = new BotWolny(s, ProfilBota.Wszystkie[profil], (int)(seed & 0x7FFFFFFF));
+            int dzien = 0;
+            string ostatni = null;
+            var zdarzenia = new Dictionary<string, int>();
+            string[] wzorce = { "czeka ", "zostaje w osadzie", "ginie z rąk", "poszedł dalej", "nie doczekał", "odchodzi", "Zdrada", "GŁÓD", "podarły namiot", "rozrzuciły ognisko", "Padasz" };
+            while (s.Dzien <= dni)
+            {
+                s.Aktualizuj(Krok, bot.Krok(Krok));
+                string teraz = s.Dziennik.Count > 0 ? s.Dziennik[s.Dziennik.Count - 1] : null;
+                if (teraz != ostatni)
+                {
+                    ostatni = teraz;
+                    foreach (string w in wzorce.Where(w => teraz.Contains(w)))
+                    {
+                        zdarzenia[w] = zdarzenia.TryGetValue(w, out int n) ? n + 1 : 1;
+                    }
+                }
+                if (s.Godzina >= 7.0 && s.Dzien != dzien)
+                {
+                    dzien = s.Dzien;
+                    string budowle = string.Join(" ", s.Budowle.Values.GroupBy(k => k).OrderBy(g => g.Key).Select(g => $"{g.Key}:{g.Count()}"));
+                    Console.WriteLine($"D{s.Dzien,2} {CeleWolne.Aktualny(s)?.Id,-14} P{(s.PanelOtwarty ? 1 : 0)} T{(s.TrybBudowy ? 1 : 0)} G{(s.Gosc != null ? 1 : 0)} ({s.X:0},{s.Y:0}) en{s.Energia:0} zgony {s.Zgony,3} ludzie {s.Obozowisko.Osadnicy.Count} drewno {s.Razem("drewno"),4} kamień {s.Razem("kamien"),4} jedz. {s.Obozowisko.Surowce.Wez("zywnosc"),3} | {budowle}");
+                }
+            }
+            Console.WriteLine("Zdarzenia: " + string.Join(", ", zdarzenia.Select(z => $"{z.Key.Trim()} {z.Value}")));
+            return 0;
+        }
+
         /// <summary>Raport na konsolę: dotnet run -- --symulacja [światów] [dni].</summary>
         public static int Raport(int swiatow, int dni)
         {
@@ -735,8 +867,13 @@ namespace GraSimply.Testy
                     }
                 }
                 Console.WriteLine($"Zgony za dnia, śr.: {wyniki.Average(w => w.ZgonyDnia):0.0}; zabitych śr.: {wyniki.Average(w => w.Zabici):0}; osadników na końcu śr.: {wyniki.Average(w => w.Osadnicy):0.0}");
+                for (int sz = 1; sz < SwiatWolny.Szczeble.Length; sz++)
+                {
+                    List<WynikRozgrywki> doszli = wyniki.Where(w => w.DzienSzczebla.ContainsKey(sz)).ToList();
+                    Console.WriteLine($"{SwiatWolny.Szczeble[sz].Nazwa}: {doszli.Count}/{swiatow}" + (doszli.Count > 0 ? $", mediana dzień {Mediana(doszli.Select(w => (double)w.DzienSzczebla[sz])):0}" : ""));
+                }
                 Console.WriteLine("Pierwsze pojawienie się celu (mediana):");
-                foreach (string id in new[] { "zbierz-ognisko", "ognisko", "zbierz-namiot", "plac-namiot", "szkielet", "wlokno", "plotno", "noc", "przybysz", "zajecie", "palisada", "tartak", "plecak", "jagody", "jedz", "spij" })
+                foreach (string id in new[] { "zbierz-ognisko", "ognisko", "zbierz-namiot", "plac-namiot", "szkielet", "wlokno", "plotno", "noc", "przybysz", "zajecie", "palisada", "tartak", "farma", "rolnik", "chata", "szczebel", "spichlerz", "tawerna", "lecznica", "targ", "plecak", "jagody", "jedz", "spij" })
                 {
                     List<WynikRozgrywki> doszli = wyniki.Where(w => w.Cele.ContainsKey(id)).ToList();
                     if (doszli.Count > 0)

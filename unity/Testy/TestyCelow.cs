@@ -125,6 +125,30 @@ namespace GraSimply.Testy
             }
             Harness.Rowne("palisada stoi: tartak", "tartak", Id(s));
             s.Budowle[(20, 20)] = "tartak";
+            Harness.Rowne("tartak stoi: farma", "farma", Id(s));
+            s.Budowle[(22, 20)] = "farma";
+            Harness.Rowne("farma stoi: ktoś musi na niej pracować", "rolnik", Id(s));
+            s.Obozowisko.Osadnicy[0].Zajecie = "rolnik";
+            Harness.Rowne("brak wolnych miejsc: najpierw chata", "chata", Id(s));
+            s.Budowle[(24, 20)] = "chata";
+            s.Budowle[(26, 20)] = "chata";
+            s.Obozowisko.Chaty = 8;
+            Harness.Rowne("są miejsca: szczebel wioski", "szczebel", Id(s));
+            Harness.Sprawdz("cel mówi, ilu ludzi brakuje", CeleWolne.Aktualny(s).Tekst.Contains("ludzie 1/4"));
+            s.Szczebel = 1;
+            Harness.Rowne("wioska: spichlerz", "spichlerz", Id(s));
+            s.Budowle[(28, 20)] = "spichlerz";
+            Harness.Rowne("potem tawerna", "tawerna", Id(s));
+            s.Budowle[(30, 20)] = "tawerna";
+            s.Szczebel = 2;
+            Harness.Rowne("miasteczko: lecznica", "lecznica", Id(s));
+            s.Budowle[(32, 20)] = "lecznica";
+            Harness.Rowne("potem targ", "targ", Id(s));
+            s.Budowle[(34, 20)] = "targ";
+            Harness.Rowne("droga do miasta", "szczebel", Id(s));
+            Harness.Sprawdz("cel mówi o złocie", CeleWolne.Aktualny(s).Tekst.Contains("złoto"));
+            Harness.Sprawdz("najdłuższy cel się mieści: " + CeleWolne.Aktualny(s).Etykieta, CeleWolne.Aktualny(s).Etykieta.Length <= 56);
+            s.Szczebel = 3;
             Harness.Sprawdz("wszystko zrobione: koniec celów", CeleWolne.Aktualny(s) == null);
         }
 
@@ -142,6 +166,12 @@ namespace GraSimply.Testy
             s.Energia = 100.0;
             s.Porzucone.Add(new PorzuconyPlecak { X = 5, Y = 5, Zawartosc = new Dictionary<string, int>() });
             Harness.Rowne("porzucony plecak: najpierw on", "plecak", Id(s));
+            s.Godzina = 22.0;
+            Harness.Sprawdz("nocą plecak nie jest pilny", Id(s) != "plecak");
+            s.Godzina = 8.0;
+            var bezObozu = Swiat();
+            bezObozu.Porzucone.Add(new PorzuconyPlecak { X = 5, Y = 5, Zawartosc = new Dictionary<string, int>() });
+            Harness.Rowne("bez obozu najpierw odbudowa, nie plecak", "zbierz-ognisko", Id(bezObozu));
             s.Porzucone.Clear();
             s.Energia = 10.0;
             s.Budowle.Clear();

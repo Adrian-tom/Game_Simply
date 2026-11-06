@@ -249,6 +249,10 @@ namespace GraSimply.Testy
             Klik(s, "a:buduj");
 
             s.WalkaWlaczona = true;
+            foreach (string b in SwiatWolny.BudynkiMiejskie)
+            {
+                s.Budowle[(40 + System.Array.IndexOf(SwiatWolny.BudynkiMiejskie, b) * 2, 40)] = b;
+            }
             for (int i = 0; i < 8; i++)
             {
                 var o = new Osadnik { Imie = "Maksymilian" + i, Zajecie = "rzemieslnik", Morale = 60.0 };
@@ -258,7 +262,7 @@ namespace GraSimply.Testy
             Klik(s, "a:osada");
             napisy = Zloz(pulpit, scena, s);
             Harness.Rowne("panel osady pokazuje pięciu naraz", WidokWolny.WierszyOsadnikow, pulpit.PrzyciskiWolne.Count(b => b.Klawisz.StartsWith("o:")));
-            Harness.Rowne("zajęcia są klikalne", SwiatWolny.ZajeciaPanelu.Length, pulpit.PrzyciskiWolne.Count(b => b.Klawisz.StartsWith("z:")));
+            Harness.Rowne("zajęcia są klikalne", SwiatWolny.ZajeciaPanelu.Length + SwiatWolny.ZajeciaZBudynkow.Length, pulpit.PrzyciskiWolne.Count(b => b.Klawisz.StartsWith("z:")));
             Harness.Rowne("plan doby jest klikalny", 4, pulpit.PrzyciskiWolne.Count(b => b.Klawisz.StartsWith("h:") && b.Klawisz != "h:wszyscy"));
             SprawdzUklad(pulpit);
             SprawdzPanel(pulpit, napisy, "osada");

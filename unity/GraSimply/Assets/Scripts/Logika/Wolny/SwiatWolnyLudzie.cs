@@ -128,7 +128,7 @@ namespace GraSimply.Logika.Wolny
                 return;
             }
             bool pierwszy = !_bylPrzybysz;
-            if (!pierwszy && _rng.Losowa() >= 0.35 + Renoma * 0.03)
+            if (!pierwszy && _rng.Losowa() >= 0.35 + Renoma * 0.03 + Szczebel * 0.1)
             {
                 return;
             }
@@ -213,6 +213,7 @@ namespace GraSimply.Logika.Wolny
             Postacie.Add(p);
             Wybrany = Obozowisko.Osadnicy.Count - 1;
             Pisz($"{Gosc.O.Imie} zostaje w osadzie.");
+            SprawdzSzczebel();
             Gosc = null;
             GoscOtwarty = false;
             PanelOtwarty = true;

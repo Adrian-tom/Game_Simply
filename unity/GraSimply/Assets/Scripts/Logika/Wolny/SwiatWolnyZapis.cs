@@ -74,7 +74,7 @@ namespace GraSimply.Logika.Wolny
     public sealed partial class SwiatWolny
     {
         private const string Naglowek = "SimplyPrzetrwanie";
-        private const int WersjaZapisu = 3;
+        private const int WersjaZapisu = 4;
 
         /// <summary>Ustawiane o świcie: silnik gry zapisuje wtedy świat na dysk.</summary>
         public bool PotrzebnyZapis;
@@ -111,6 +111,7 @@ namespace GraSimply.Logika.Wolny
             W(Naglowek, WersjaZapisu, Seed);
             W("stan", X, Y, Kierunek.X, Kierunek.Y, Godzina, Dzien, Glod, Energia, Hp, Wytrzymalosc, ObozZalozony ? 1 : 0,
               _czasGry, _bylPrzybysz ? 1 : 0, Wybrany, _nastepnaFala, _nastepnyWloczega, _bylaNoc ? 1 : 0, Zabici, _nocPoprzednio ? 1 : 0);
+            W("szczebel", Szczebel);
             foreach (KeyValuePair<string, int> p in Plecak)
             {
                 W("plecak", p.Key, p.Value);
@@ -228,6 +229,9 @@ namespace GraSimply.Logika.Wolny
                         s._bylaNoc = c[17] == "1";
                         s.Zabici = I(c[18]);
                         s._nocPoprzednio = c[19] == "1";
+                        break;
+                    case "szczebel":
+                        s.Szczebel = I(c[1]);
                         break;
                     case "plecak":
                         s.Plecak[c[1]] = I(c[2]);

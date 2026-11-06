@@ -39,6 +39,11 @@ namespace GraSimply.Testy
                 return PodgladWolny.Zapisz(argumenty[1]);
             }
 
+            if (argumenty.Length >= 1 && argumenty[0] == "--przebieg")
+            {
+                return SymulacjaWolna.Przebieg(long.Parse(argumenty[1]), int.Parse(argumenty[2]), int.Parse(argumenty[3]));
+            }
+
             if (argumenty.Length >= 1 && argumenty[0] == "--symulacja")
             {
                 int swiatow = argumenty.Length >= 2 ? int.Parse(argumenty[1]) : 30;
@@ -65,6 +70,7 @@ namespace GraSimply.Testy
             TestyLudziWolnych.Uruchom();
             TestyRzemiosla.Uruchom();
             TestyCelow.Uruchom();
+            TestyMiasta.Uruchom();
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
             TestyInterfejsu.Uruchom();

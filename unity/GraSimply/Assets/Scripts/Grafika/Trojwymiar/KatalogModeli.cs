@@ -135,6 +135,11 @@ namespace GraSimply.Grafika.Trojwymiar
                 case "warsztat": return new WpisModelu("Budynki/building_home_B_blue", 1.9f);
                 case "tartak": return new WpisModelu("Budynki/building_lumbermill_blue", 1.9f);
                 case "kuznia": return new WpisModelu("Budynki/building_blacksmith_blue", 2.0f);
+                case "farma": return new WpisModelu("Budynki/building_windmill_blue", 2.3f);
+                case "spichlerz": return new WpisModelu("Budynki/building_home_A_blue", 1.9f);
+                case "tawerna": return new WpisModelu("Budynki/building_tavern_blue", 2.0f);
+                case "lecznica": return new WpisModelu("Budynki/building_church_blue", 2.1f);
+                case "targ": return new WpisModelu("Budynki/building_market_blue", 1.9f);
                 default: throw new ArgumentException("Nieznana budowla: " + klucz);
             }
         }
@@ -376,7 +381,7 @@ namespace GraSimply.Grafika.Trojwymiar
             lista.AddRange(Suche);
             lista.AddRange(Trawy);
             lista.Add(DlaObiektu(Obiekt.Sciana, 0, 0).Value.Sciezka);
-            foreach (string k in new[] { "spiwor", "ognisko", "namiot", "palisada", "brama", "wieza", "warsztat", "tartak", "kuznia" })
+            foreach (string k in new[] { "spiwor", "ognisko", "namiot", "palisada", "brama", "wieza", "warsztat", "tartak", "kuznia", "farma", "spichlerz", "tawerna", "lecznica", "targ" })
             {
                 lista.Add(DlaBudowli(k).Sciezka);
             }

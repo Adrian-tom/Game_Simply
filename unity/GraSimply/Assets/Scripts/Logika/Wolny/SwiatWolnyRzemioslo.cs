@@ -78,6 +78,11 @@ namespace GraSimply.Logika.Wolny
             { "warsztat", new[] { E("Fundament", 25, "kamien", 15), E("Konstrukcja", 50, "drewno", 40), E("Stoły", 15, "drewno", 15) } },
             { "tartak", new[] { E("Fundament", 30, "kamien", 20), E("Konstrukcja", 60, "drewno", 60), E("Piła", 20, "drewno", 20, "kamien", 5) } },
             { "kuznia", new[] { E("Palenisko", 60, "kamien", 50), E("Ściany", 60, "belka", 12), E("Komin", 30, "kamien", 20) } },
+            { "farma", new[] { E("Grządki", 30, "drewno", 20), E("Ogrodzenie", 20, "drewno", 15) } },
+            { "spichlerz", new[] { E("Fundament", 40, "kamien", 30), E("Ściany", 60, "belka", 15), E("Dach", 30, "deska", 20) } },
+            { "tawerna", new[] { E("Fundament", 30, "kamien", 25), E("Ściany", 70, "belka", 15), E("Wnętrze", 40, "deska", 20) } },
+            { "lecznica", new[] { E("Fundament", 30, "kamien", 20), E("Ściany", 60, "belka", 12), E("Wyposażenie", 30, "ziola", 10, "deska", 10) } },
+            { "targ", new[] { E("Plac", 20, "kamien", 15), E("Stragany", 50, "deska", 25), E("Zadaszenie", 30, "wlokno", 15) } },
         };
 
         public static readonly Przepis[] Przepisy =
@@ -99,7 +104,7 @@ namespace GraSimply.Logika.Wolny
         {
             ("oboz", "Obóz", new[] { "spiwor", "ognisko", "namiot", "chata" }),
             ("obrona", "Obrona", new[] { "palisada", "brama", "wieza" }),
-            ("zaklady", "Zakłady", Stacje),
+            ("zaklady", "Zakłady", Stacje.Concat(BudynkiMiejskie).ToArray()),
             ("rzemioslo", "Rzemiosło", new string[0]),
         };
 
@@ -162,6 +167,11 @@ namespace GraSimply.Logika.Wolny
             {
                 kandydaci = Place.Keys;
             }
+            else if (BudynekPracy(p.O.Zajecie) != null)
+            {
+                string budynek = BudynekPracy(p.O.Zajecie);
+                kandydaci = Budowle.Where(b => b.Value == budynek).Select(b => b.Key);
+            }
             else if (p.O.Zajecie == "rzemieslnik")
             {
                 kandydaci = Budowle.Where(b => Zlecenia.TryGetValue(b.Value, out List<Zlecenie> l) && l.Count > 0).Select(b => b.Key);
@@ -198,6 +208,11 @@ namespace GraSimply.Logika.Wolny
                 case "warsztat": return "warsztat";
                 case "tartak": return "tartak";
                 case "kuznia": return "kuźnia";
+                case "farma": return "farma";
+                case "spichlerz": return "spichlerz";
+                case "tawerna": return "tawerna";
+                case "lecznica": return "lecznica";
+                case "targ": return "targ";
                 case "ognisko": return "ognisko";
                 default: return "śpiwór";
             }
@@ -275,12 +290,14 @@ namespace GraSimply.Logika.Wolny
                 Brak = BrakMaterialow(Etapy[najblizszy.Klucz][najblizszy.Etap].Materialy);
             }
 
+            // Plac bez materiałów nie wiąże rąk: obok można wytworzyć brakujące belki albo zebrać drewno.
+            bool bezPlacu = najblizszy == null || Brak != null;
+            bool przyStacji = false;
             foreach (string stacja in Stacje)
             {
-                zajety |= KrokStacji(stacja, bohater && najblizszy == null, dt);
+                przyStacji |= KrokStacji(stacja, bohater && bezPlacu, dt);
             }
-            // Bez materiałów nie ma tu pracy: E zostaje dla drzewa czy skały obok, żeby dało się je zebrać.
-            return zajety && Brak == null;
+            return przyStacji || (zajety && Brak == null);
         }
 
         private string BrakMaterialow(KeyValuePair<string, int>[] m)

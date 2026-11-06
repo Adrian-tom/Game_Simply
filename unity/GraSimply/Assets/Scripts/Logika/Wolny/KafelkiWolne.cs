@@ -123,7 +123,8 @@ namespace GraSimply.Logika.Wolny
                     k.Decyzje.Add(new Kafelek { Id = "x:wygnaj", Nazwa = "Wypędź", Ikona = "szarza" });
                 }
                 string obecne = s.Obozowisko.Osadnicy[s.Wybrany].Zajecie;
-                foreach (string z in SwiatWolny.ZajeciaPanelu)
+                IEnumerable<string> zZawodow = SwiatWolny.ZajeciaZBudynkow.Where(z => s.Budowle.ContainsValue(z.Budynek)).Select(z => z.Zajecie);
+                foreach (string z in SwiatWolny.ZajeciaPanelu.Concat(zZawodow))
                 {
                     k.Zajecia.Add(new Kafelek { Id = "z:" + z, Nazwa = Osada.Zajecie(z).Nazwa, Ikona = z, Wybrany = z == obecne });
                 }
@@ -171,6 +172,12 @@ namespace GraSimply.Logika.Wolny
             };
             KeyValuePair<string, int>[] koszt = s.BudowaZEtapami ? SwiatWolny.KosztCalkowity(klucz) : SwiatWolny.Koszty[klucz];
             k.Dostepny = koszt.All(p => s.Razem(p.Key) >= p.Value);
+            int szczebel = SwiatWolny.WymaganySzczebel(klucz);
+            if (szczebel > s.Szczebel)
+            {
+                k.Dostepny = false;
+                k.Stan = ("od: " + SwiatWolny.Szczeble[szczebel].Nazwa.ToLowerInvariant(), false);
+            }
             foreach (KeyValuePair<string, int> p in koszt)
             {
                 k.Opis.Add((p.Key == "spiwor" ? "z plecaka" : $"{p.Value} {SwiatWolny.Nazwa(p.Key)}", s.Razem(p.Key) >= p.Value));

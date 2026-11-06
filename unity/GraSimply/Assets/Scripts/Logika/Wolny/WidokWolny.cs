@@ -25,7 +25,7 @@ namespace GraSimply.Logika.Wolny
                 Mana = (int)System.Math.Round(s.Energia),
                 MaxMana = 100,
                 Data = s.Czas,
-                Region = s.ObozZalozony ? $"osada: {s.Obozowisko.Osadnicy.Count} os." : "bez obozu",
+                Region = s.ObozZalozony ? $"{(s.BudowaZEtapami ? s.NazwaSzczebla : "osada")}: {s.Obozowisko.Osadnicy.Count} os." : "bez obozu",
                 Biom = s.Swiat.Biom((int)System.Math.Floor(s.X), (int)System.Math.Floor(s.Y)),
                 Zywnosc = $"🍖 głód {(int)s.Glod}%",
                 Zagrozenie = s.Spi ? "śpisz" : s.Jasnosc < 0.3 ? "noc" : "dzień",
@@ -111,6 +111,12 @@ namespace GraSimply.Logika.Wolny
             if (ludzie.Count > 0)
             {
                 linie.Add($"Najlepszy w: {Kompetencje.OpisKrotki(ludzie[s.Wybrany], 3).Replace("🔥", "*")}   (* = pasja)");
+            }
+            if (s.BudowaZEtapami && s.ObozZalozony)
+            {
+                bool ostatni = s.Szczebel + 1 >= SwiatWolny.Szczeble.Length;
+                linie.Add(ostatni ? $"Szczebel: {s.NazwaSzczebla}."
+                                  : $"Szczebel: {s.NazwaSzczebla}. Na {SwiatWolny.Szczeble[s.Szczebel + 1].Nazwa.ToLowerInvariant()}: {string.Join(", ", s.BrakiSzczebla())}.");
             }
             return linie;
         }

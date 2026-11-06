@@ -103,6 +103,11 @@ namespace GraSimply.Logika.Wolny
                 { "palisada", new[] { new KeyValuePair<string, int>("drewno", 3) } },
                 { "brama", new[] { new KeyValuePair<string, int>("drewno", 5) } },
                 { "wieza", new[] { new KeyValuePair<string, int>("drewno", 10), new KeyValuePair<string, int>("kamien", 6) } },
+                { "farma", new[] { new KeyValuePair<string, int>("drewno", 35) } },
+                { "spichlerz", new[] { new KeyValuePair<string, int>("drewno", 30), new KeyValuePair<string, int>("kamien", 30) } },
+                { "tawerna", new[] { new KeyValuePair<string, int>("drewno", 30), new KeyValuePair<string, int>("kamien", 25) } },
+                { "lecznica", new[] { new KeyValuePair<string, int>("drewno", 25), new KeyValuePair<string, int>("kamien", 20) } },
+                { "targ", new[] { new KeyValuePair<string, int>("drewno", 30), new KeyValuePair<string, int>("kamien", 15) } },
             };
 
         public static readonly string[] KluczeBudowli = { "", "spiwor", "ognisko", "namiot", "chata" };

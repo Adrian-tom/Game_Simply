@@ -152,6 +152,18 @@ Ograniczenie: bot nie stawia zamkniętego pierścienia palisady ani wież, więc
 - **Panel boczny:** budowa, rzemiosło, osada i przybysz otwierają się po prawej stronie na całą wysokość ekranu. Bohater stoi na środku, więc mapa wokół niego zostaje widoczna. Koszty są pokazane w całości.
 - **Klawisze i identyfikatory kafelków** się nie zmieniły.
 
+## Faza 9: droga do miasta, etap 1 (zrobione, balans do decyzji)
+
+- **Szczeble:** obóz, wioska (4 ludzi, farma, chata), miasteczko (12 ludzi, spichlerz, tawerna), miasto (30 ludzi, lecznica, targ, 200 zł). Awans jest automatyczny i nie cofa się. Liczba 30 to założenie, stała `LudziNaMiasto`.
+- **Nowe budynki** (zakładka Zakłady): farma od początku, spichlerz i tawerna od wioski, lecznica i targ od miasteczka. Każdy budynek na mapie to jeden poziom w `Osada.DzienOsady`, więc działają jak w Nowej grze: jedzenie, wolniejsze psucie zapasów, morale, leczenie, handel.
+- **Nowe zawody:** rolnik, uzdrowiciel i handlarz pojawiają się w panelu, gdy stoi ich budynek.
+- **Cele:** kolejka ma teraz 20 pozycji, aż do miasta. Porzucony plecak jest pilny tylko za dnia i gdy stoi obóz.
+- **Uproszczenie:** utrzymanie budynków jest na razie darmowe, a złoto służy tylko do awansu na miasto.
+- **Naprawiony błąd:** od fazy 6 tartaku, warsztatu i kuźni nie dało się postawić, bo `PostawNa` odrzucało budowle spoza starej tabeli kosztów. Test przechodzi teraz przez kafelek i klik dla każdej budowli.
+- **Przebieg rozgrywki:** `cd unity/Testy && dotnet run -- --przebieg 1000 30 0` (świat, dni, profil 0-2).
+
+**Stan balansu (20 światów, 30 dni):** żaden bot nie osiąga wioski. W 3 prześledzonych rozgrywkach bohater padał 102-133 razy, a przyjmował najwyżej 2 osadników. Samo osłabianie fal nie wystarcza: nawet przy limicie budżetu i falach co 3 godziny wioski nie było w żadnej rozgrywce. Bot nie stawia zamkniętej palisady ani wież, więc wynik jest zaniżony, ale to on pokazał, gdzie szukać.
+
 ## Co dalej (jeszcze niezrobione)
 1. Kolejne budynki produkcyjne (pola, skryptorium z badaniami).
 2. Nagrody i rozwój za walkę.

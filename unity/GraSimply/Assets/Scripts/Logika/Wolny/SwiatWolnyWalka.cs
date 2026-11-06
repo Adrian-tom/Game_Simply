@@ -525,10 +525,10 @@ namespace GraSimply.Logika.Wolny
         }
 
         /// <summary>Budżet fali rośnie z każdą dobą, a silniejsze typy dochodzą z czasem.</summary>
-        public static List<TypWroga> SkladFali(int dzien, Losowanie rng)
+        public static List<TypWroga> SkladFali(int dzien, Losowanie rng, int premia = 0)
         {
             var sklad = new List<TypWroga>();
-            int budzet = 3 + dzien * 2;
+            int budzet = 3 + dzien * 2 + premia;
             while (budzet > 0)
             {
                 double los = rng.Losowa();
@@ -548,7 +548,7 @@ namespace GraSimply.Logika.Wolny
             (int X, int Y)? oboz = SrodekObozu();
             double cx = oboz.HasValue ? oboz.Value.X + 0.5 : X, cy = oboz.HasValue ? oboz.Value.Y + 0.5 : Y;
             int nowych = 0;
-            foreach (TypWroga t in SkladFali(Dzien, _rngWalki))
+            foreach (TypWroga t in SkladFali(Dzien, _rngWalki, Szczebel * 2))
             {
                 if (zywi + nowych >= LimitWrogow)
                 {
@@ -867,7 +867,7 @@ namespace GraSimply.Logika.Wolny
             Pisz(klucz == "chata" ? "Szkielety zburzyły chatę!" : klucz == "namiot" ? "Szkielety podarły namiot!"
                : klucz == "ognisko" ? "Szkielety rozrzuciły ognisko!" : klucz == "palisada" ? "Szkielety przebiły palisadę!"
                : klucz == "brama" ? "Szkielety wyłamały bramę!" : klucz == "wieza" ? "Szkielety zwaliły wieżę!"
-               : "Szkielety zniszczyły śpiwór!");
+               : $"Szkielety zniszczyły: {NazwaBudowli(klucz)}!");
         }
 
         public static double ZyciePoczatkowe(string klucz)
@@ -877,7 +877,12 @@ namespace GraSimply.Logika.Wolny
                 case "wieza": return 160;
                 case "warsztat":
                 case "tartak":
-                case "kuznia": return 130;
+                case "kuznia":
+                case "spichlerz":
+                case "tawerna": return 130;
+                case "lecznica": return 110;
+                case "targ": return 90;
+                case "farma": return 60;
                 case "chata": return 130;
                 case "palisada": return 90;
                 case "brama": return 70;

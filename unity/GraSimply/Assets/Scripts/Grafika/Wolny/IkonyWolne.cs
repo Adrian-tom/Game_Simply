@@ -38,6 +38,38 @@ namespace GraSimply.Grafika.Wolny
                     c.Elipsa(Materialy.Kosc[7], cx - 8, cy - 8, 16, 16);
                     c.Elipsa(Materialy.Pyl[0], cx - 3, cy - 10, 14, 14);
                     break;
+                case "farma":
+                case "rolnik":
+                    c.Wypelnij(Materialy.Kora[1], cx - 11, cy + 3, 22, 6);
+                    foreach (int ox in new[] { -8, -3, 2, 7 })
+                    {
+                        c.Wypelnij(new Barwa(216, 184, 72), cx + ox, cy - 8, 2, 12);
+                        c.Wypelnij(new Barwa(240, 212, 104), cx + ox - 1, cy - 10, 4, 4);
+                    }
+                    break;
+                case "spichlerz":
+                    c.Wypelnij(Materialy.Deski[3], cx - 9, cy - 3, 18, 12);
+                    c.Odcinek(Materialy.Deski[6], cx - 11, cy - 3, cx, cy - 10);
+                    c.Odcinek(Materialy.Deski[6], cx + 11, cy - 3, cx, cy - 10);
+                    c.Wypelnij(new Barwa(216, 184, 72), cx - 3, cy + 1, 6, 8);
+                    break;
+                case "tawerna":
+                    c.Wypelnij(Materialy.Deski[3], cx - 7, cy - 6, 12, 15);
+                    c.Wypelnij(Materialy.Kosc[7], cx - 7, cy - 9, 12, 4);
+                    c.Obramowanie(Materialy.Deski[6], cx + 5, cy - 3, 5, 8, 1);
+                    break;
+                case "lecznica":
+                case "uzdrowiciel":
+                    c.Wypelnij(new Barwa(214, 48, 38), cx - 3, cy - 9, 6, 18);
+                    c.Wypelnij(new Barwa(214, 48, 38), cx - 9, cy - 3, 18, 6);
+                    break;
+                case "targ":
+                case "handlarz":
+                    c.Wypelnij(new Barwa(214, 48, 38), cx - 11, cy - 9, 22, 6);
+                    c.Wypelnij(Materialy.Deski[6], cx - 10, cy - 3, 2, 12);
+                    c.Wypelnij(Materialy.Deski[6], cx + 8, cy - 3, 2, 12);
+                    c.Wypelnij(Materialy.Deski[3], cx - 8, cy + 2, 16, 4);
+                    break;
                 case "warsztat":
                     c.Wypelnij(Materialy.Deski[3], cx - 11, cy - 2, 22, 4);
                     c.Wypelnij(Materialy.Deski[6], cx - 9, cy + 2, 3, 8);

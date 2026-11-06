@@ -286,11 +286,11 @@ namespace GraSimply.Grafika
                 Logika.Wolny.Kafelek z = k.Zajecia[i];
                 int w = (SzerPanelu - Odstep) / 2;
                 int x = LewaPanelu + i % 2 * (w + Odstep);
-                int zy = y + i / 2 * 36;
-                Tlo(z, x, zy, w, 32);
-                IkonyWolneMale(z.Ikona, x + 16, zy + 16);
-                TekstMaly(z.Nazwa, x + 34, zy + 5, Nad(x, zy, w, 32) ? Jasny : Styl.Aktywny.Tekst);
-                Dodaj(z.Id, x, zy, w, 32);
+                int zy = y + i / 2 * 34;
+                Tlo(z, x, zy, w, 31);
+                IkonyWolneMale(z.Ikona, x + 16, zy + 15);
+                TekstMaly(z.Nazwa, x + 34, zy + 4, Nad(x, zy, w, 31) ? Jasny : Styl.Aktywny.Tekst);
+                Dodaj(z.Id, x, zy, w, 31);
             }
         }
 

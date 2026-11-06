@@ -17,7 +17,7 @@ namespace GraSimply.Logika.Wolny
         public const double ZasiegBudowy = 6.0;
 
         /// <summary>Kolejność budowli w rzędzie kafelków.</summary>
-        public static readonly string[] Budowlane = { "spiwor", "ognisko", "namiot", "chata", "palisada", "brama", "wieza", "warsztat", "tartak", "kuznia" };
+        public static readonly string[] Budowlane = { "spiwor", "ognisko", "namiot", "chata", "palisada", "brama", "wieza", "warsztat", "tartak", "kuznia", "farma", "spichlerz", "tawerna", "lecznica", "targ" };
 
         public bool TrybBudowy;
 
@@ -41,6 +41,10 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Czemu nie można tu postawić budowli (komunikat dla gracza) albo null, gdy można.</summary>
         public string PowodBudowy(string klucz, int x, int y)
         {
+            if (WymaganySzczebel(klucz) > Szczebel)
+            {
+                return $"Najpierw rozwiń osadę: {Szczeble[WymaganySzczebel(klucz)].Nazwa.ToLowerInvariant()}.";
+            }
             double dx = x + 0.5 - X, dy = y + 0.5 - Y;
             if (dx * dx + dy * dy > ZasiegBudowy * ZasiegBudowy)
             {
