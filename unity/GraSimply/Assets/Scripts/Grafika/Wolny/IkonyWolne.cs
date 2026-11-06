@@ -38,6 +38,37 @@ namespace GraSimply.Grafika.Wolny
                     c.Elipsa(Materialy.Kosc[7], cx - 8, cy - 8, 16, 16);
                     c.Elipsa(Materialy.Pyl[0], cx - 3, cy - 10, 14, 14);
                     break;
+                case "palisada":
+                    foreach (int ox in new[] { -9, -3, 3, 9 })
+                    {
+                        c.Wypelnij(Materialy.Deski[3], cx + ox - 2, cy - 7, 5, 17);
+                        c.Wypelnij(Materialy.Deski[6], cx + ox - 1, cy - 10, 3, 3);
+                    }
+                    c.Wypelnij(Materialy.Kora[1], cx - 11, cy - 2, 23, 2);
+                    break;
+                case "brama":
+                    c.Wypelnij(Materialy.Deski[3], cx - 11, cy - 9, 4, 19);
+                    c.Wypelnij(Materialy.Deski[3], cx + 7, cy - 9, 4, 19);
+                    c.Wypelnij(Materialy.Deski[6], cx - 11, cy - 11, 22, 4);
+                    c.Wypelnij(Materialy.Kora[1], cx - 6, cy - 6, 12, 2);
+                    break;
+                case "wieza":
+                    c.Wypelnij(Materialy.Kamien[2], cx - 5, cy - 4, 10, 14);
+                    c.Wypelnij(Materialy.Kamien[4], cx - 7, cy - 7, 14, 4);
+                    for (int r = 0; r < 5; r++)
+                    {
+                        c.Wypelnij(Materialy.SukmanaCzerwona[5], cx - 6 + r, cy - 8 - r, 12 - 2 * r, 1);
+                    }
+                    break;
+                case "straznik":
+                    c.Wypelnij(Materialy.Kamien[4], cx - 8, cy - 8, 16, 11);
+                    for (int r = 0; r < 8; r++)
+                    {
+                        c.Wypelnij(Materialy.Kamien[4], cx - 8 + r, cy + 3 + r, 16 - 2 * r, 1);
+                    }
+                    c.Wypelnij(Materialy.SukmanaCzerwona[5], cx - 1, cy - 6, 2, 13);
+                    c.Wypelnij(Materialy.SukmanaCzerwona[5], cx - 5, cy - 2, 10, 2);
+                    break;
                 case "wir":
                     c.Elipsa(Materialy.Kosc[7], cx - 10, cy - 10, 20, 20, 2);
                     c.Elipsa(Materialy.Kamien[4], cx - 5, cy - 5, 10, 10, 2);

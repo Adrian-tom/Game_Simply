@@ -22,6 +22,20 @@ namespace GraSimply.Testy
             Console.WriteLine($"── {nazwa} ──");
         }
 
+        public static void Rzuca(string nazwa, System.Action dzialanie)
+        {
+            bool rzucilo = false;
+            try
+            {
+                dzialanie();
+            }
+            catch (System.Exception)
+            {
+                rzucilo = true;
+            }
+            Sprawdz(nazwa, rzucilo);
+        }
+
         public static void Sprawdz(string opis, bool warunek)
         {
             if (warunek)

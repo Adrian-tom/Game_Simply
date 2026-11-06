@@ -20,6 +20,14 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Tyle ciosów szkieletów wytrzyma osadnik, zanim zginie.</summary>
         public double Zycie = 45.0;
 
+        /// <summary>Strażnik: ma zbroję i właśnie idzie na wroga albo z nim walczy.</summary>
+        public bool Uzbrojony;
+        public bool WWalce;
+        public double AtakCd;
+
+        /// <summary>Rośnie z każdym ciosem strażnika: warstwa rysująca zaczyna wtedy animację.</summary>
+        public int Ataki;
+
         /// <summary>Środki kafli do przejścia po kolei; pusta = jest na miejscu.</summary>
         public readonly Queue<(double X, double Y)> Trasa = new Queue<(double X, double Y)>();
     }
@@ -42,7 +50,7 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Zawody dostępne w panelu: te, które nie wymagają jeszcze budynków.</summary>
         public static readonly string[] ZajeciaPanelu =
         {
-            "bezczynny", "drwal", "kamieniarz", "zielarz", "mysliwy", "gornik",
+            "bezczynny", "drwal", "kamieniarz", "zielarz", "mysliwy", "gornik", "straznik",
         };
 
         /// <summary>Przedmiot z plecaka → surowiec w magazynie osady (włókna magazyn nie przyjmuje).</summary>
@@ -314,6 +322,10 @@ namespace GraSimply.Logika.Wolny
             _nocPoprzednio = noc;
             foreach (PostacOsadnika p in Postacie)
             {
+                if (p.WWalce)
+                {
+                    continue;
+                }
                 if (zmiana)
                 {
                     NowyCel(p, srodek.Value, noc);

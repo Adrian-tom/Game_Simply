@@ -68,7 +68,7 @@ namespace GraSimply.Testy
             Klik(s, "a:buduj");
             k = KafelkiWolne.Z(s);
             Harness.Sprawdz("kafelek Buduj włącza tryb", s.TrybBudowy && k.Akcje[0].Wybrany);
-            Harness.Rowne("tryb pokazuje cztery budowle", 4, k.Budowle.Count);
+            Harness.Rowne("tryb pokazuje wszystkie budowle", SwiatWolny.Budowlane.Length, k.Budowle.Count);
             Harness.Sprawdz("bez wyboru nie ma ducha", s.PodgladBudowy() == null);
             Harness.Sprawdz("podpowiedź prosi o wybór", WidokWolny.Podpowiedz(s).StartsWith("Wybierz"));
 
@@ -172,7 +172,7 @@ namespace GraSimply.Testy
             Klik(s, "a:osada");
             Harness.Sprawdz("osada zamyka tryb budowania", s.PanelOtwarty && !s.TrybBudowy);
             KafelkiWolne k = KafelkiWolne.Z(s);
-            Harness.Rowne("sześć kafelków zajęć", 6, k.Zajecia.Count);
+            Harness.Rowne("kafelki zajęć z panelu", SwiatWolny.ZajeciaPanelu.Length, k.Zajecia.Count);
             Harness.Rowne("dwa wiersze osadników", 2, k.Osadnikow);
             Harness.Sprawdz("bieżące zajęcie jest wyróżnione", k.Zajecia.Single(z => z.Wybrany).Id == "z:bezczynny");
 
@@ -208,7 +208,7 @@ namespace GraSimply.Testy
 
             Klik(s, "a:buduj");
             Zloz(pulpit, scena, s);
-            Harness.Rowne("w trybie dziewięć przycisków", 9, pulpit.PrzyciskiWolne.Count);
+            Harness.Rowne("w trybie pasek i budowle", 5 + SwiatWolny.Budowlane.Length, pulpit.PrzyciskiWolne.Count);
             Harness.Sprawdz("kafelek chaty ma swój identyfikator", pulpit.PrzyciskiWolne.Any(b => b.Klawisz == "b:chata"));
             foreach (Przycisk b in pulpit.PrzyciskiWolne)
             {

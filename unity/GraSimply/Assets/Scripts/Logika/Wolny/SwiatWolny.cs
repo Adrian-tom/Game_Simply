@@ -100,6 +100,9 @@ namespace GraSimply.Logika.Wolny
                 { "ognisko", new[] { new KeyValuePair<string, int>("drewno", 5), new KeyValuePair<string, int>("kamien", 3) } },
                 { "namiot", new[] { new KeyValuePair<string, int>("drewno", 8), new KeyValuePair<string, int>("wlokno", 6) } },
                 { "chata", new[] { new KeyValuePair<string, int>("drewno", 12), new KeyValuePair<string, int>("kamien", 6) } },
+                { "palisada", new[] { new KeyValuePair<string, int>("drewno", 3) } },
+                { "brama", new[] { new KeyValuePair<string, int>("drewno", 5) } },
+                { "wieza", new[] { new KeyValuePair<string, int>("drewno", 10), new KeyValuePair<string, int>("kamien", 6) } },
             };
 
         public static readonly string[] KluczeBudowli = { "", "spiwor", "ognisko", "namiot", "chata" };
@@ -223,7 +226,7 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Czy kafel jest zajęty: przeszkoda w świecie albo postawiona budowla.</summary>
         public bool Zajety(int x, int y)
         {
-            if (Budowle.TryGetValue((x, y), out string b) && b != "spiwor")
+            if (Budowle.TryGetValue((x, y), out string b) && b != "spiwor" && b != "brama")
             {
                 return true;
             }

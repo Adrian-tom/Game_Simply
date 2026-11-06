@@ -12,8 +12,8 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 |---|---|
 | WASD albo strzałki | ruch względem ekranu (w rzucie skośnym to przekątne siatki), ślizg wzdłuż przeszkód |
 | E albo spacja (przytrzymaj) | zbieraj to, co jest przed bohaterem: ścinaj drzewa, łup skały, zrywaj jagody i zioła |
-| B albo kafelek Buduj | tryb budowania: kafelki śpiwór, ognisko (5 drewna, 3 kamienie), namiot (8 drewna, 6 włókna), chata (12 drewna, 6 kamieni); duch na mapie pokazuje miejsce (zielony: wolno, czerwony: nie) |
-| lewy klik / Enter | postaw wybraną budowlę pod kursorem, do 6 kafli od bohatera |
+| B albo kafelek Buduj | tryb budowania: kafelki śpiwór, ognisko (5 drewna, 3 kamienie), namiot (8 drewna, 6 włókna), chata (12 drewna, 6 kamieni), palisada (3 drewna), brama (5 drewna), wieża (10 drewna, 6 kamieni); duch na mapie pokazuje miejsce (zielony: wolno, czerwony: nie) |
+| lewy klik / Enter | postaw wybraną budowlę pod kursorem, do 6 kafli od bohatera; palisadę można stawiać przeciągnięciem |
 | prawy klik / Esc | wycofaj wybór, potem wyjdź z trybu albo zamknij panel |
 | T albo kafelek Magazyn | odłóż plecak do magazynu (przy obozie) |
 | Tab albo kafelek Osada | panel osady: klik w osadnika, potem kafelek zajęcia (W/S i A/D też działają) |
@@ -65,10 +65,23 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 
 Świadome uproszczenia: za zabijanie nie ma nagród ani rozwoju, osadnicy się nie bronią, a broń bohatera nie zmienia ciosów. Liczby balansu sprawdziły testy, ale nikt jeszcze nie ocenił ich w dłuższej grze.
 
+## Faza 4: obrona i zapis (zrobione)
+
+![fort](unity/podglad/3d/obrona-dzien.png)
+
+- **Palisada i brama:** palisada zatrzymuje wszystkich. Przez bramę przechodzą bohater i osadnicy, a szkielety nie. Szkielet, któremu mur stanie na drodze, zaczyna go burzyć (palisada 90 życia, brama 70).
+- **Wieża:** strzela sama do najbliższego wroga w zasięgu 7,5 kafla, 14 obrażeń co 1,1 s. Ma 160 życia.
+- **Strażnik:** nowe zajęcie w panelu osady. Ma dwa razy więcej życia (90 zamiast 45), a wroga w zasięgu 12 kafli atakuje sam (13 obrażeń co 1,1 s), także w dzień. Nie zbiera surowców, a chory nie walczy.
+- **O świcie:** ocalałe budowle i ludzie wracają do pełnego życia. Zniszczone budowle trzeba postawić od nowa.
+- **Zapis:** gra zapisuje się o świcie, przy wyjściu do menu i przy zamknięciu okna. W menu pojawia się **[3] Kontynuuj przetrwanie**, a **[2]** zaczyna nowy świat i przy pierwszym zapisie zastępuje stary. Poprzedni zapis zostaje jako kopia i wraca, gdy główny plik jest uszkodzony.
+- **Co jest w zapisie:** świat, potrzeby, plecak, budowle i ich rany, ścięte drzewa, magazyn, osadnicy z umiejętnościami, wrogowie i porzucone plecaki. Plik leży w `%USERPROFILE%\AppData\LocalLow\DefaultCompany\GraSimply\przetrwanie.txt`.
+
+Świadome uproszczenia: szkielety nie szukają bramy ani dziury w murze, tylko idą prosto i burzą to, co stoi na drodze. Strażnicy nie dostają rozkazów. Czas odnowienia ciosów specjalnych, trwające ciosy i dokładne trasy osadników nie są zapisywane.
+
 ## Co dalej (jeszcze niezrobione)
 1. Budowa kafel po kaflu z rusztowaniami, budynki produkcyjne (pola, tartak, skryptorium z badaniami).
-2. Palisada i obrona osady (osadnicy z bronią), nagrody i rozwój za walkę.
-3. Zapis świata i postaci, narzędzia (siekiera, kilof), kupcy, drogi.
+2. Nagrody i rozwój za walkę.
+3. Narzędzia (siekiera, kilof), kupcy, drogi.
 4. Punkty zainteresowania (ruiny, jaskinie, miasta) z istniejącego generatora regionów.
 
 ## Techniczne

@@ -240,8 +240,14 @@ namespace GraSimply.Logika.Wolny
             }
             Budowle[(x, y)] = klucz;
             string nazwa = klucz == "spiwor" ? "Rozkładasz śpiwór." : klucz == "ognisko" ? "Palisz ognisko."
-                         : klucz == "chata" ? $"Stawiasz chatę (+{MiejscaChaty} miejsca)." : "Stawiasz namiot.";
-            Pisz(nazwa);
+                         : klucz == "chata" ? $"Stawiasz chatę (+{MiejscaChaty} miejsca)."
+                         : klucz == "namiot" ? "Stawiasz namiot."
+                         : klucz == "wieza" ? "Stawiasz wieżę." : klucz == "brama" ? "Stawiasz bramę." : null;
+            // Palisadę stawia się po kilka kafli naraz: dziennik nie musi wymieniać każdego.
+            if (nazwa != null)
+            {
+                Pisz(nazwa);
+            }
             PrzeliczMiejsca();
             if (!ObozZalozony && Budowle.ContainsValue("namiot") && Budowle.ContainsValue("ognisko"))
             {

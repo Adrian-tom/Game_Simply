@@ -38,6 +38,7 @@ namespace GraSimply.Gra.Trojwymiar
         private int _licznikAkcji;
         private readonly Dictionary<Wrog, Wrog3D> _wrogowie = new Dictionary<Wrog, Wrog3D>();
         private readonly List<GameObject> _pociski = new List<GameObject>();
+        private readonly List<GameObject> _strzaly = new List<GameObject>();
         private readonly Dictionary<PorzuconyPlecak, GameObject> _plecaki = new Dictionary<PorzuconyPlecak, GameObject>();
         private readonly List<(int X, int Y, double Zycie)> _paski = new List<(int X, int Y, double Zycie)>();
 
@@ -86,6 +87,7 @@ namespace GraSimply.Gra.Trojwymiar
             Bohater(s, klasa, dt);
             Wrogowie(s);
             Pociski(s);
+            Strzaly(s);
             Plecaki(s);
             Zdarzenia(s);
             Osadnicy(s);
@@ -185,6 +187,10 @@ namespace GraSimply.Gra.Trojwymiar
             {
                 if (stoi.Klucz == klucz)
                 {
+                    if (budowla == "palisada" || budowla == "brama")
+                    {
+                        Uloz(s, stoi.Obiekt, x, y);
+                    }
                     return;
                 }
                 Usun((x, y));
@@ -198,11 +204,25 @@ namespace GraSimply.Gra.Trojwymiar
             g.transform.rotation = wpis.Value.LosowyObrot
                 ? Quaternion.Euler(0f, KatalogModeli.Mieszaj(x, y) % 360, 0f)
                 : Quaternion.identity;
+            if (budowla == "palisada" || budowla == "brama")
+            {
+                Uloz(s, g, x, y);
+            }
             if (budowla == "ognisko" && g.transform.Find("Blask") == null)
             {
                 _scena.DodajOgien(g.transform, 0.5f);
             }
             _stoi[(x, y)] = (klucz, g);
+        }
+
+        /// <summary>Płot leży przy krawędzi swojego modelu: obraca się wzdłuż sąsiadów i wraca na środek kafla.</summary>
+        private static void Uloz(SwiatWolny s, GameObject g, int x, int y)
+        {
+            bool Mur(int a, int b) => s.Budowle.TryGetValue((a, b), out string k) && (k == "palisada" || k == "brama" || k == "wieza");
+            bool wzdluzY = (Mur(x, y - 1) || Mur(x, y + 1)) && !(Mur(x - 1, y) || Mur(x + 1, y));
+            Quaternion obrot = Quaternion.Euler(0f, wzdluzY ? 90f : 0f, 0f);
+            g.transform.rotation = obrot;
+            g.transform.position = Scena3D.NaSwiat(x + 0.5, y + 0.5) + obrot * new Vector3(0f, 0f, 0.46f);
         }
 
         private void Usun((int X, int Y) k)
@@ -370,6 +390,31 @@ namespace GraSimply.Gra.Trojwymiar
             }
         }
 
+        private void Strzaly(SwiatWolny s)
+        {
+            while (_strzaly.Count < s.Strzaly.Count)
+            {
+                GameObject k = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                UnityEngine.Object.Destroy(k.GetComponent<Collider>());
+                k.transform.SetParent(_korzen, false);
+                k.transform.localScale = Vector3.one * 0.13f;
+                MeshRenderer r = k.GetComponent<MeshRenderer>();
+                r.sharedMaterial = new Material(_scena.Plomien) { color = new Color(1f, 0.92f, 0.6f) };
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _strzaly.Add(k);
+            }
+            for (int i = 0; i < _strzaly.Count; i++)
+            {
+                bool jest = i < s.Strzaly.Count;
+                _strzaly[i].SetActive(jest);
+                if (jest)
+                {
+                    Strzala a = s.Strzaly[i];
+                    _strzaly[i].transform.position = Scena3D.NaSwiat(a.X0 + (a.X1 - a.X0) * a.Czas, a.Y0 + (a.Y1 - a.Y0) * a.Czas, 2.0 - 1.3 * a.Czas);
+                }
+            }
+        }
+
         private void Plecaki(SwiatWolny s)
         {
             foreach (PorzuconyPlecak p in new List<PorzuconyPlecak>(_plecaki.Keys))
@@ -451,6 +496,15 @@ namespace GraSimply.Gra.Trojwymiar
                     _osadnicy[p] = z;
                 }
                 z.Ustaw(p.X, p.Y, p.CelX - p.X, p.CelY - p.Y);
+                if (p.Ataki != z.Licznik)
+                {
+                    z.Licznik = p.Ataki;
+                    z.Cios(Postac3D.CiosLekki, 0.5);
+                }
+                if (p.WWalce && p.AtakCd > 0.6)
+                {
+                    continue;
+                }
                 bool przyPracy = !p.Idzie && !p.Spi && p.O.Zajecie != "bezczynny";
                 z.Graj(p.Spi ? Postac3D.Sen : p.Idzie ? Postac3D.Chod : przyPracy ? Postac3D.Praca : Postac3D.Spoczynek);
                 (int X, int Y)? e = _scena.NaPulpit(Scena3D.NaSwiat(p.X, p.Y, Postac3D.Wzrost + 0.2));

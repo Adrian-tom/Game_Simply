@@ -26,6 +26,9 @@ namespace GraSimply.Logika.Wolny
         public double CelX, CelY;
         public (int X, int Y)? CelBudowla;
         public PostacOsadnika CelOsadnik;
+
+        /// <summary>Mur, który zastąpił drogę: szkielet burzy go, zanim pójdzie dalej.</summary>
+        public (int X, int Y)? Mur;
         public double DoCelu;
     }
 
@@ -140,6 +143,7 @@ namespace GraSimply.Logika.Wolny
 
             Zagrozenia();
             double mnoznik = Spi ? 0.0 : RuchyBohatera(dt, w);
+            KrokObrony(dt);
             KrokWrogow(dt);
             KrokPociskow(dt);
             Porzucone.RemoveAll(p =>
@@ -585,6 +589,11 @@ namespace GraSimply.Logika.Wolny
             }
             Pociski.Clear();
             ZycieBudowli.Clear();
+            PotrzebnyZapis = true;
+            foreach (PostacOsadnika p in Postacie)
+            {
+                p.Zycie = p.Uzbrojony ? ZycieStraznika : ZycieOsadnika;
+            }
             Pisz(ile > 0 ? $"Świt. Ostatnie szkielety ({ile}) rozsypują się w proch." : "Świt. Przetrwałeś noc.");
         }
 
@@ -635,11 +644,11 @@ namespace GraSimply.Logika.Wolny
 
         private void Przesun(Wrog g, double dx, double dy)
         {
-            if (Wolne(g.X + dx, g.Y))
+            if (WolneDlaWroga(g.X + dx, g.Y))
             {
                 g.X += dx;
             }
-            if (Wolne(g.X, g.Y + dy))
+            if (WolneDlaWroga(g.X, g.Y + dy))
             {
                 g.Y += dy;
             }
@@ -649,6 +658,17 @@ namespace GraSimply.Logika.Wolny
         {
             g.CelBudowla = null;
             g.CelOsadnik = null;
+            if (g.Mur.HasValue)
+            {
+                if (Budowle.ContainsKey(g.Mur.Value))
+                {
+                    g.CelBudowla = g.Mur;
+                    g.CelX = g.Mur.Value.X + 0.5;
+                    g.CelY = g.Mur.Value.Y + 0.5;
+                    return;
+                }
+                g.Mur = null;
+            }
             double doBohatera = Dystans(g.X, g.Y, X, Y);
             g.CelX = X;
             g.CelY = Y;
@@ -755,13 +775,25 @@ namespace GraSimply.Logika.Wolny
             Przesun(g, g.KierX * krok, g.KierY * krok);
             if (Math.Abs(g.X - x0) + Math.Abs(g.Y - y0) < krok * 0.25)
             {
-                // Zablokowany na wprost: obchodzi przeszkodę bokiem.
+                // Zablokowany przez mur: burzy go. Przez cokolwiek innego: obchodzi bokiem.
+                (int X, int Y) przed = ((int)Math.Floor(g.X + g.KierX * 0.75), (int)Math.Floor(g.Y + g.KierY * 0.75));
+                if (Budowle.TryGetValue(przed, out string stoi) && Mur(stoi))
+                {
+                    g.Mur = przed;
+                    g.DoCelu = 0;
+                    return;
+                }
                 Przesun(g, -g.KierY * krok, g.KierX * krok);
             }
         }
 
         private void Uderz(Wrog g, double obrazenia, double zasieg)
         {
+            if (g.CelBudowla.HasValue)
+            {
+                UderzBudowle(g.CelBudowla.Value, obrazenia);
+                return;
+            }
             if (g.Typ == TypWroga.Mag)
             {
                 double dx = X - g.X, dy = Y - g.Y, d = Math.Max(1e-6, Math.Sqrt(dx * dx + dy * dy));
@@ -769,11 +801,6 @@ namespace GraSimply.Logika.Wolny
                 {
                     Pociski.Add(new Pocisk { X = g.X, Y = g.Y, VX = dx / d * 6.0, VY = dy / d * 6.0, Zycie = 2.0, Obrazenia = obrazenia });
                 }
-                return;
-            }
-            if (g.CelBudowla.HasValue)
-            {
-                UderzBudowle(g.CelBudowla.Value, obrazenia);
                 return;
             }
             if (g.CelOsadnik != null)
@@ -809,14 +836,19 @@ namespace GraSimply.Logika.Wolny
             ZycieBudowli.Remove(k);
             PrzeliczMiejsca();
             Pisz(klucz == "chata" ? "Szkielety zburzyły chatę!" : klucz == "namiot" ? "Szkielety podarły namiot!"
-               : klucz == "ognisko" ? "Szkielety rozrzuciły ognisko!" : "Szkielety zniszczyły śpiwór!");
+               : klucz == "ognisko" ? "Szkielety rozrzuciły ognisko!" : klucz == "palisada" ? "Szkielety przebiły palisadę!"
+               : klucz == "brama" ? "Szkielety wyłamały bramę!" : klucz == "wieza" ? "Szkielety zwaliły wieżę!"
+               : "Szkielety zniszczyły śpiwór!");
         }
 
         public static double ZyciePoczatkowe(string klucz)
         {
             switch (klucz)
             {
+                case "wieza": return 160;
                 case "chata": return 130;
+                case "palisada": return 90;
+                case "brama": return 70;
                 case "namiot": return 60;
                 case "ognisko": return 40;
                 default: return 15;

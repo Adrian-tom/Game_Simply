@@ -109,6 +109,44 @@ namespace GraSimply.Edytor
             }
             KlatkaWolna(g, pulpit, cel, f, "walka-noc");
 
+            var o = new SwiatWolny(42) { WalkaWlaczona = true, Godzina = 21.0, Dzien = 5 };
+            for (int x = -5; x <= 5; x++)
+            {
+                foreach (int y in new[] { -5, 5 })
+                {
+                    if (o.ObiektNa(x, y) == Obiekt.Brak)
+                    {
+                        o.Budowle[(x, y)] = x == 0 ? "brama" : "palisada";
+                    }
+                }
+            }
+            for (int y = -4; y <= 4; y++)
+            {
+                foreach (int x in new[] { -5, 5 })
+                {
+                    if (o.ObiektNa(x, y) == Obiekt.Brak)
+                    {
+                        o.Budowle[(x, y)] = "palisada";
+                    }
+                }
+            }
+            o.Budowle[(4, 4)] = "wieza";
+            o.Budowle[(0, 1)] = "ognisko";
+            o.Budowle[(-2, 2)] = "chata";
+            o.Budowle[(2, -2)] = "namiot";
+            o.Obozowisko.Chaty = 4;
+            GraSimply.Logika.Osada.ZatrudnijOsadnika(o.Obozowisko, new Losowanie(5), "straznik", true);
+            o.Postacie.Add(new PostacOsadnika { O = o.Obozowisko.Osadnicy[0], X = 2.5, Y = 2.5, CelX = 2.5, CelY = 2.5 });
+            o.Obozowisko.Osadnicy[0].Zajecie = "straznik";
+            for (int i = 0; i < 120; i++)
+            {
+                o.Hp = 100;
+                o.Aktualizuj(0.05, default);
+            }
+            KlatkaWolna(g, pulpit, cel, o, "obrona-noc");
+            o.Godzina = 12.0;
+            KlatkaWolna(g, pulpit, cel, o, "obrona-dzien");
+
             var w = new SwiatWolny(42);
             (w.X, w.Y) = BrzegWody(w);
             KlatkaWolna(g, pulpit, cel, w, "swiat-woda");

@@ -129,6 +129,9 @@ namespace GraSimply.Grafika.Trojwymiar
                 case "ognisko": return new WpisModelu("Oboz/campfire-pit", 0.3f);
                 case "namiot": return new WpisModelu("Oboz/tent-canvas", 1.0f);
                 case "chata": return new WpisModelu(Chata, 1.5f);
+                case "palisada": return new WpisModelu("Oboz/fence-fortified", 1.05f);
+                case "brama": return new WpisModelu("Oboz/fence-doorway", 1.05f);
+                case "wieza": return new WpisModelu("Budynki/building_tower_A_blue", 2.4f);
                 default: throw new ArgumentException("Nieznana budowla: " + klucz);
             }
         }
@@ -257,9 +260,7 @@ namespace GraSimply.Grafika.Trojwymiar
             switch (zajecie)
             {
                 case "drwal": return "Postacie/Barbarian";
-                case "kamieniarz":
-                case "gornik":
-                case "hutnik": return "Postacie/Knight";
+                case "straznik": return "Postacie/Knight";
                 case "zielarz":
                 case "uczony": return "Postacie/Mage";
                 case "mysliwy":
@@ -361,7 +362,7 @@ namespace GraSimply.Grafika.Trojwymiar
             lista.AddRange(Suche);
             lista.AddRange(Trawy);
             lista.Add(DlaObiektu(Obiekt.Sciana, 0, 0).Value.Sciezka);
-            foreach (string k in new[] { "spiwor", "ognisko", "namiot" })
+            foreach (string k in new[] { "spiwor", "ognisko", "namiot", "palisada", "brama", "wieza" })
             {
                 lista.Add(DlaBudowli(k).Sciezka);
             }

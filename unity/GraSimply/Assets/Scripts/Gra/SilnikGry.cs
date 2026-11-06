@@ -154,6 +154,7 @@ namespace GraSimply.Gra
         private void Start()
         {
             _ekran = new Ekran();
+            Logika.Wolny.ZapisWolny.Sciezka = System.IO.Path.Combine(Application.persistentDataPath, "przetrwanie.txt");
             _konsola = new KonsolaKolejkowa();
             // Migawkę budujemy na wątku logiki, nim ten zablokuje się na pytaniu.
             _konsola.PrzedPytaniem = () =>
@@ -417,6 +418,7 @@ namespace GraSimply.Gra
         private Trojwymiar.Grafika3D _grafika3D;
         private string _klasaWolnego = "Wojownik";
         private bool _prawyCofa;
+        private (int X, int Y)? _ostatniKafel;
 
         /// <summary>
         /// Sterowanie: WASD albo strzałki (względem ekranu — w rzucie skośnym to przekątne siatki),
@@ -431,6 +433,7 @@ namespace GraSimply.Gra
             }
             if (Input.GetKeyDown(KeyCode.Escape) && !swiat.Wycofaj() && _konsola.CzekaNaWejscie)
             {
+                Logika.Wolny.ZapisWolny.Zapisz(swiat);
                 Odpowiedz("koniec");
                 return;
             }
@@ -494,6 +497,13 @@ namespace GraSimply.Gra
                     kursor = _grafika3D != null ? _grafika3D.KafelPodKursorem(Input.mousePosition)
                                                 : Pulpit.KafelPodMysza(mysz.x, mysz.y, swiat.X, swiat.Y);
                     poloz |= Input.GetMouseButtonDown(0);
+                    // Palisadę stawia się przeciągnięciem: po jednym kaflu na każdy nowy pod kursorem.
+                    if (swiat.WybranaBudowla == "palisada" && Input.GetMouseButton(0) && kursor != _ostatniKafel
+                        && swiat.PowodBudowy("palisada", kursor.Value.X, kursor.Value.Y) == null)
+                    {
+                        poloz = true;
+                    }
+                    _ostatniKafel = kursor;
                 }
                 else
                 {
@@ -520,6 +530,11 @@ namespace GraSimply.Gra
                 Nawig = nawig,
                 Zmien = zmien,
             });
+            if (swiat.PotrzebnyZapis)
+            {
+                swiat.PotrzebnyZapis = false;
+                Logika.Wolny.ZapisWolny.Zapisz(swiat);
+            }
         }
 
         private void RysujWolny(Logika.Wolny.SwiatWolny swiat)
@@ -944,6 +959,11 @@ namespace GraSimply.Gra
 
         private void OnApplicationQuit()
         {
+            Logika.Wolny.SwiatWolny wolny = _ekran?.Wolny;
+            if (wolny != null)
+            {
+                Logika.Wolny.ZapisWolny.Zapisz(wolny);
+            }
             _konsola?.Zamknij();
         }
     }

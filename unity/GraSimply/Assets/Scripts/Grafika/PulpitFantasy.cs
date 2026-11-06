@@ -319,8 +319,11 @@ namespace GraSimply.Grafika
             }
             if (k.Budowle.Count > 0)
             {
+                // Dwa rzędy: obóz u góry, obrona pod spodem, jak dojdzie więcej budowli.
                 y -= OdstepKafelkow + 50;
-                RzadKafelkow(k.Budowle, y, 50);
+                RzadKafelkow(k.Budowle.GetRange(4, k.Budowle.Count - 4), y, 50);
+                y -= OdstepKafelkow + 50;
+                RzadKafelkow(k.Budowle.GetRange(0, 4), y, 50);
             }
             if (k.Zajecia.Count > 0)
             {

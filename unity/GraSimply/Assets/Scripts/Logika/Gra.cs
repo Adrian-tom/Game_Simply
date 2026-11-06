@@ -53,6 +53,19 @@ namespace GraSimply.Logika
                     {
                         Przetrwanie_();
                     }
+                    else if (wybor == "3" && Wolny.ZapisWolny.Istnieje)
+                    {
+                        Wolny.SwiatWolny zapis = Wolny.ZapisWolny.Wczytaj();
+                        if (zapis == null)
+                        {
+                            _konsola.Pisz("  Nie udało się odczytać zapisu: plik jest uszkodzony.");
+                            Utils.NacisnijEnter(_konsola);
+                        }
+                        else
+                        {
+                            Przetrwanie_(zapis);
+                        }
+                    }
                     else if (wybor == "0")
                     {
                         _konsola.Pisz("\n  Do zobaczenia przy ogniu.");
@@ -79,13 +92,13 @@ namespace GraSimply.Logika
         /// a ten wątek tylko czeka. Esc w oknie wysyła „koniec” i wraca do menu głównego.
         /// Bez okna (testy) tryb nie ma kto aktualizować, więc od razu wracamy.
         /// </summary>
-        private void Przetrwanie_()
+        private void Przetrwanie_(Wolny.SwiatWolny zapis = null)
         {
             if (_ekran == null)
             {
                 return;
             }
-            _ekran.Wolny = new Wolny.SwiatWolny(_rng.Zakres(1, int.MaxValue)) { WalkaWlaczona = true };
+            _ekran.Wolny = zapis ?? new Wolny.SwiatWolny(_rng.Zakres(1, int.MaxValue)) { WalkaWlaczona = true };
             try
             {
                 while (true)
@@ -109,11 +122,17 @@ namespace GraSimply.Logika
             {
                 Utils.BanerTytulowy(_konsola);
                 _konsola.Pisz("  [1]  🎮  Nowa gra (fabuła, obóz, wyprawy)");
-                _konsola.Pisz("  [2]  🏕  Przetrwanie — świat w czasie rzeczywistym");
+                bool jestZapis = Wolny.ZapisWolny.Istnieje;
+                _konsola.Pisz(jestZapis ? "  [2]  🏕  Przetrwanie — nowy świat (zastąpi zapis)"
+                                        : "  [2]  🏕  Przetrwanie — świat w czasie rzeczywistym");
+                if (jestZapis)
+                {
+                    _konsola.Pisz("  [3]  💾  Kontynuuj przetrwanie");
+                }
                 _konsola.Pisz("  [0]  🚪  Wyjście");
                 _konsola.Pisz();
                 string wybor = (_konsola.Czytaj("  Twój wybór: ") ?? "").Trim();
-                if (wybor == "1" || wybor == "2" || wybor == "0")
+                if (wybor == "1" || wybor == "2" || wybor == "0" || (wybor == "3" && jestZapis))
                 {
                     return wybor;
                 }

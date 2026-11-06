@@ -17,7 +17,7 @@ namespace GraSimply.Logika.Wolny
         public const double ZasiegBudowy = 6.0;
 
         /// <summary>Kolejność budowli w rzędzie kafelków.</summary>
-        public static readonly string[] Budowlane = { "spiwor", "ognisko", "namiot", "chata" };
+        public static readonly string[] Budowlane = { "spiwor", "ognisko", "namiot", "chata", "palisada", "brama", "wieza" };
 
         public bool TrybBudowy;
 

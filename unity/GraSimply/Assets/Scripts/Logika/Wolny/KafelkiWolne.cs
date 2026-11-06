@@ -75,7 +75,8 @@ namespace GraSimply.Logika.Wolny
 
         private static Kafelek Budowla(SwiatWolny s, string klucz)
         {
-            string nazwa = klucz == "spiwor" ? "Śpiwór" : klucz == "ognisko" ? "Ognisko" : klucz == "namiot" ? "Namiot" : "Chata";
+            string nazwa = klucz == "spiwor" ? "Śpiwór" : klucz == "ognisko" ? "Ognisko" : klucz == "namiot" ? "Namiot"
+                         : klucz == "palisada" ? "Palisada" : klucz == "brama" ? "Brama" : klucz == "wieza" ? "Wieża" : "Chata";
             var k = new Kafelek
             {
                 Id = "b:" + klucz, Nazwa = nazwa, Ikona = klucz, Dostepny = s.Stac(klucz), Wybrany = s.WybranaBudowla == klucz,

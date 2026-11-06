@@ -41,6 +41,9 @@ namespace GraSimply.Gra.Trojwymiar
         public readonly GameObject Obiekt;
         public string Model;
 
+        /// <summary>Ostatni widziany licznik ciosów z logiki.</summary>
+        public int Licznik;
+
         private readonly Animation _animacja;
         private string _gra;
 
