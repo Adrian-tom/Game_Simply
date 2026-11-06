@@ -266,7 +266,7 @@ namespace GraSimply.Testy
 
             Harness.Rzuca("obcy plik jest odrzucany", () => SwiatWolny.ZZapisu("cokolwiek\t1"));
             Harness.Rzuca("urwany zapis jest odrzucany", () => SwiatWolny.ZZapisu(tekst.Substring(0, tekst.Length / 2)));
-            Harness.Rzuca("zapis z przyszłej wersji jest odrzucany", () => SwiatWolny.ZZapisu(tekst.Replace("SimplyPrzetrwanie\t1", "SimplyPrzetrwanie\t99")));
+            Harness.Rzuca("zapis z przyszłej wersji jest odrzucany", () => SwiatWolny.ZZapisu(tekst.Replace("SimplyPrzetrwanie\t2", "SimplyPrzetrwanie\t99")));
 
             SwiatWolny swit = Bogaty();
             swit.Godzina = 22.0;

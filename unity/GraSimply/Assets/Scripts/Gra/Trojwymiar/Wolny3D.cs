@@ -36,6 +36,7 @@ namespace GraSimply.Gra.Trojwymiar
         private double _odswiez;
         private double _px, _py;
         private int _licznikAkcji;
+        private Postac3D _gosc;
         private readonly Dictionary<Wrog, Wrog3D> _wrogowie = new Dictionary<Wrog, Wrog3D>();
         private readonly List<GameObject> _pociski = new List<GameObject>();
         private readonly List<GameObject> _strzaly = new List<GameObject>();
@@ -91,6 +92,7 @@ namespace GraSimply.Gra.Trojwymiar
             Plecaki(s);
             Zdarzenia(s);
             Osadnicy(s);
+            Przybysz(s);
             Duch(s);
             _scena.Migocz(t);
 
@@ -363,6 +365,27 @@ namespace GraSimply.Gra.Trojwymiar
                         _paski.Add((e.Value.X, e.Value.Y, g.Hp / g.MaxHp));
                     }
                 }
+            }
+        }
+
+        private void Przybysz(SwiatWolny s)
+        {
+            if (s.Gosc == null)
+            {
+                if (_gosc != null)
+                {
+                    _scena.Modele.Oddaj(_gosc.Obiekt);
+                    _gosc = null;
+                }
+                return;
+            }
+            _gosc = _gosc ?? new Postac3D(_scena.Modele, "Postacie/Rogue_Hooded", _korzen);
+            _gosc.Ustaw(s.Gosc.X, s.Gosc.Y, s.X - s.Gosc.X, s.Y - s.Gosc.Y);
+            _gosc.Graj(Postac3D.Spoczynek);
+            (int X, int Y)? e = _scena.NaPulpit(Scena3D.NaSwiat(s.Gosc.X, s.Gosc.Y, Postac3D.Wzrost + 0.2));
+            if (e.HasValue)
+            {
+                _podpisy.Add(new PodpisOsadnika(e.Value.X, e.Value.Y, s.Gosc.O.Imie + " ?", new Barwa(255, 214, 120)));
             }
         }
 

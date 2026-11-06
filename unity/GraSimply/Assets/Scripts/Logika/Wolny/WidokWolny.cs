@@ -74,27 +74,56 @@ namespace GraSimply.Logika.Wolny
             {
                 return null;
             }
+            if (s.GoscOtwarty && s.Gosc != null)
+            {
+                Przybysz g = s.Gosc;
+                return new List<string>
+                {
+                    $"PRZYBYSZ: {g.O.Imie} ({g.O.Cecha})",
+                    $"Umie: {Kompetencje.OpisKrotki(g.O, 3).Replace("🔥", "*")}",
+                    $"Prosi o: {g.Ile} {SwiatWolny.Nazwa(g.Surowiec)}",
+                    $"Wrażenie: {g.Wskazowka}",
+                    $"Wolne miejsca: {Osada.WolneChaty(s.Obozowisko)}. Czeka do 20:00.",
+                };
+            }
             List<Osadnik> ludzie = s.Obozowisko.Osadnicy;
             var linie = new List<string> { $"OSADA — ludzie {ludzie.Count}/{s.Obozowisko.Chaty}" };
             if (ludzie.Count == 0)
             {
-                linie.Add(s.ObozZalozony ? "Jeszcze nikt nie przyszedł. Pierwszy przybysz zjawi się o północy."
+                linie.Add(s.WalkaWlaczona && s.ObozZalozony ? "Jeszcze nikt nie przyszedł. O świcie ktoś może zjawić się przy ognisku."
+                        : s.ObozZalozony ? "Jeszcze nikt nie przyszedł. Pierwszy przybysz zjawi się o północy."
                                          : "Najpierw postaw namiot i ognisko.");
             }
-            for (int i = 0; i < ludzie.Count; i++)
+            int pierwszy = PierwszyWidoczny(s);
+            for (int i = pierwszy; i < ludzie.Count && i < pierwszy + WierszyOsadnikow; i++)
             {
                 Osadnik o = ludzie[i];
                 string u = Kompetencje.ZUmiejetnosciZajecia(o.Zajecie);
                 string poziom = u == null ? "" : $" {Kompetencje.Poziom(o, u)}{new string('*', Kompetencje.Pasja(o, u))}";
                 string znak = i == s.Wybrany ? ">" : " ";
                 linie.Add($"{znak} {Liczby.Dopelnij(o.Imie, 8)} {Liczby.Dopelnij(Osada.Zajecie(o.Zajecie).Nazwa + poziom, 18)}"
-                          + $" morale {Liczby.Format(o.Morale, 0)}{(o.Chory > 0 ? "  chory" : "")}");
+                          + $" morale {Liczby.Format(o.Morale, 0)}{DopiskiOsadnika(s, o)}{(o.Chory > 0 ? "  chory" : "")}");
             }
             if (ludzie.Count > 0)
             {
                 linie.Add($"Najlepszy w: {Kompetencje.OpisKrotki(ludzie[s.Wybrany], 3).Replace("🔥", "*")}   (* = pasja)");
             }
             return linie;
+        }
+
+        /// <summary>Tyle osadników mieści panel nad kafelkami; dłuższa lista przesuwa się za wyborem.</summary>
+        public const int WierszyOsadnikow = 6;
+
+        public static int PierwszyWidoczny(SwiatWolny s)
+        {
+            int n = s.Obozowisko.Osadnicy.Count;
+            return System.Math.Max(0, System.Math.Min(s.Wybrany - WierszyOsadnikow / 2, n - WierszyOsadnikow));
+        }
+
+        private static string DopiskiOsadnika(SwiatWolny s, Osadnik o)
+        {
+            PostacOsadnika p = s.WalkaWlaczona ? s.Postacie.Find(q => q.O == o) : null;
+            return p == null ? "" : $"  zm. {Liczby.Format(p.Zmeczenie, 0)}{(p.Podejrzany ? "  ?" : "")}";
         }
 
         public static List<string> Dziennik(SwiatWolny s, int ile = 4)
@@ -115,7 +144,7 @@ namespace GraSimply.Logika.Wolny
             }
             if (s.PanelOtwarty)
             {
-                return "Kliknij osadnika, potem zajęcie · Tab zamknij";
+                return s.GoscOtwarty ? "Zdecyduj, czy zostaje · G zamknij" : "Kliknij osadnika, potem zajęcie · Tab zamknij";
             }
             if (s.TrybBudowy)
             {
@@ -129,6 +158,10 @@ namespace GraSimply.Logika.Wolny
             if (s.WalkaWlaczona && s.Riposta > 0)
             {
                 return "Riposta! Uderz teraz";
+            }
+            if (s.Gosc != null && !s.WrogBlisko(8.0))
+            {
+                return $"G: {s.Gosc.O.Imie} czeka na decyzję przy ognisku";
             }
             if (s.WalkaWlaczona && s.Porzucone.Any(p => System.Math.Abs(p.X - s.X) + System.Math.Abs(p.Y - s.Y) <= SwiatWolny.Zasieg))
             {

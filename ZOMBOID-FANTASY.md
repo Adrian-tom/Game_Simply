@@ -16,12 +16,13 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 | lewy klik / Enter | postaw wybraną budowlę pod kursorem, do 6 kafli od bohatera; palisadę można stawiać przeciągnięciem |
 | prawy klik / Esc | wycofaj wybór, potem wyjdź z trybu albo zamknij panel |
 | T albo kafelek Magazyn | odłóż plecak do magazynu (przy obozie) |
-| Tab albo kafelek Osada | panel osady: klik w osadnika, potem kafelek zajęcia (W/S i A/D też działają) |
+| Tab albo kafelek Osada | panel osady: klik w osadnika, potem kafelek zajęcia i plan doby (W/S i A/D też działają) |
 | lewy klik albo J | lekki cios w stronę kursora |
 | R albo K | ciężki cios: wolny, ale mocny i przerywa nawet wojownika |
 | prawy klik (trzymaj) albo L | blok; wciśnięty tuż przed trafieniem to parowanie |
 | Shift | unik z chwilą nietykalności |
 | Q / C / V albo kafelki (tylko nocą) | ciosy specjalne: wir, szarża, okrzyk |
+| G albo kafelek Przybysz | karta wędrowca czekającego przy ognisku: przyjmij albo odpraw |
 | F | zjedz jagody |
 | Z | śpij (przy śpiworze albo namiocie; czas płynie 40× szybciej, w namiocie regeneracja jest szybsza) |
 | Esc (gdy nic nie jest otwarte) | powrót do menu głównego |
@@ -77,6 +78,20 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 - **Co jest w zapisie:** świat, potrzeby, plecak, budowle i ich rany, ścięte drzewa, magazyn, osadnicy z umiejętnościami, wrogowie i porzucone plecaki. Plik leży w `%USERPROFILE%\AppData\LocalLow\DefaultCompany\GraSimply\przetrwanie.txt`.
 
 Świadome uproszczenia: szkielety nie szukają bramy ani dziury w murze, tylko idą prosto i burzą to, co stoi na drodze. Strażnicy nie dostają rozkazów. Czas odnowienia ciosów specjalnych, trwające ciosy i dokładne trasy osadników nie są zapisywane.
+
+## Faza 5: harmonogram i przybysze (zrobione)
+
+- **Plan doby:** każdy osadnik ma cztery części doby (rano 5–11, dzień 11–17, wieczór 17–21, noc 21–5), a w każdej pracę, sen, czas wolny albo straż. Klik w kafelek zmienia część, a „Plan dla wszystkich” kopiuje plan na całą osadę.
+- **Skutki planu:** dwie części pracy to pełny plon, mniej to szansa na pracę tego dnia, a trzecia i czwarta dają dodatkowy plon. Praca i straż męczą, sen zdejmuje zmęczenie, a czas wolny poprawia morale. Przy dużym zmęczeniu wydajność spada o połowę, morale leci, a osadnik może paść z przepracowania.
+- **Warta:** osadnik w części „straż” walczy, ale słabiej niż strażnik i bez zbroi. Śpiący strażnik zrywa się dopiero, gdy wróg jest tuż obok, więc nocną wartę trzeba zaplanować.
+- **Przybysze:** w tym trybie nikt nie wprowadza się sam. O świcie przy ognisku może stanąć wędrowiec i czeka do 20:00. Karta pokazuje umiejętności, cechę, wrażenie i cenę, a Ty przyjmujesz albo odprawiasz. Lepsza renoma osady oznacza więcej chętnych i wybór lepszych ludzi.
+- **Ukryte ryzyko:** część przybyszów ma sekret. Wrażenie bywa trafne, ale myli w obie strony: zdrajca może wyglądać zwyczajnie, a uczciwy blado.
+  - **Choroba:** po kilku dniach osadnik dostaje gorączki i może zarazić innych.
+  - **Sabotaż:** spalone zapasy albo wyłamany mur, bez podpisu. Ślad oznacza kogoś znakiem „?”, ale czasem niewinnego.
+  - **Zdrada:** po kilku dniach osadnik ucieka z częścią zapasów i zostawia dziurę w murze.
+- **Wypędzenie:** kafelek w panelu. Gra nie mówi, czy miałeś rację, a wypędzenie niewinnego mocniej uderza w morale.
+
+Świadome uproszczenia: choroba i zmęczenie nie mają leczenia poza snem i tym, co liczy `Osada.DzienOsady`. Pełne zasady działają w tym trybie, a gra fabularna ma swoje zasady bez zmian.
 
 ## Co dalej (jeszcze niezrobione)
 1. Budowa kafel po kaflu z rusztowaniami, budynki produkcyjne (pola, tartak, skryptorium z badaniami).

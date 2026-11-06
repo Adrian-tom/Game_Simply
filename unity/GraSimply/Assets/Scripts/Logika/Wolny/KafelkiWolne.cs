@@ -26,6 +26,13 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Ciosy specjalne: tylko nocą i gdy nic innego nie zajmuje miejsca nad paskiem.</summary>
         public List<Kafelek> Specjalne = new List<Kafelek>();
 
+        /// <summary>Plan doby wybranego osadnika i decyzje o nim.</summary>
+        public List<Kafelek> Plan = new List<Kafelek>();
+        public List<Kafelek> Decyzje = new List<Kafelek>();
+
+        /// <summary>Numer osadnika w pierwszym wierszu panelu: długa lista przewija się z wyborem.</summary>
+        public int PierwszyOsadnik;
+
         /// <summary>Tyle pierwszych wierszy panelu (po nagłówku) to klikalni osadnicy.</summary>
         public int Osadnikow;
 
@@ -37,6 +44,21 @@ namespace GraSimply.Logika.Wolny
             k.Akcje.Add(Akcja("a:osada", "Osada", "Tab", "osada", true, s.PanelOtwarty));
             k.Akcje.Add(Akcja("a:jedz", "Jedz", "F", "jedz", s.Razem("jagody") > 0, false));
             k.Akcje.Add(Akcja("a:spij", "Śpij", "Z", "spij", s.MiejsceSnu() != null, s.Spi));
+            if (s.Gosc != null)
+            {
+                k.Akcje.Add(Akcja("g:otworz", "Przybysz", "G", "osada", true, s.GoscOtwarty));
+            }
+            if (s.GoscOtwarty && s.Gosc != null)
+            {
+                bool stac = s.Razem(s.Gosc.Surowiec) >= s.Gosc.Ile && Osada.WolneChaty(s.Obozowisko) > 0;
+                var tak = new Kafelek { Id = "g:tak", Nazwa = "Przyjmij", Ikona = "osada", Dostepny = stac };
+                tak.Opis.Add(($"{s.Gosc.Ile} {SwiatWolny.Nazwa(s.Gosc.Surowiec)}", s.Razem(s.Gosc.Surowiec) >= s.Gosc.Ile));
+                var nie = new Kafelek { Id = "g:nie", Nazwa = "Odpraw", Ikona = "szarza" };
+                nie.Opis.Add(("bez kosztu", true));
+                k.Decyzje.Add(tak);
+                k.Decyzje.Add(nie);
+                return k;
+            }
             if (s.WalkaWlaczona && s.CzyNoc && !s.TrybBudowy && !s.PanelOtwarty)
             {
                 foreach ((string id, string nazwa, string klawisz, double _) in SwiatWolny.Specjalne)
@@ -56,7 +78,21 @@ namespace GraSimply.Logika.Wolny
             }
             if (s.PanelOtwarty && s.Obozowisko.Osadnicy.Count > 0)
             {
-                k.Osadnikow = s.Obozowisko.Osadnicy.Count;
+                k.PierwszyOsadnik = WidokWolny.PierwszyWidoczny(s);
+                k.Osadnikow = System.Math.Min(WidokWolny.WierszyOsadnikow, s.Obozowisko.Osadnicy.Count - k.PierwszyOsadnik);
+                if (s.WalkaWlaczona)
+                {
+                    Osadnik wybrany = s.Obozowisko.Osadnicy[s.Wybrany];
+                    PostacOsadnika p = s.Postacie.Find(q => q.O == wybrany);
+                    for (int i = 0; p != null && i < 4; i++)
+                    {
+                        var b = new Kafelek { Id = "h:" + i, Nazwa = SwiatWolny.NazwyBlokow[i], Ikona = IkonaBloku(p.Plan[i]) };
+                        b.Opis.Add((NazwaBloku(p.Plan[i]), true));
+                        k.Plan.Add(b);
+                    }
+                    k.Decyzje.Add(new Kafelek { Id = "h:wszyscy", Nazwa = "Plan dla wszystkich", Ikona = "osada" });
+                    k.Decyzje.Add(new Kafelek { Id = "x:wygnaj", Nazwa = "Wypędź", Ikona = "szarza" });
+                }
                 string obecne = s.Obozowisko.Osadnicy[s.Wybrany].Zajecie;
                 foreach (string z in SwiatWolny.ZajeciaPanelu)
                 {
@@ -64,6 +100,16 @@ namespace GraSimply.Logika.Wolny
                 }
             }
             return k;
+        }
+
+        public static string NazwaBloku(BlokPlanu b)
+        {
+            return b == BlokPlanu.Praca ? "praca" : b == BlokPlanu.Odpoczynek ? "sen" : b == BlokPlanu.Wolne ? "wolne" : "straż";
+        }
+
+        private static string IkonaBloku(BlokPlanu b)
+        {
+            return b == BlokPlanu.Praca ? "buduj" : b == BlokPlanu.Odpoczynek ? "spij" : b == BlokPlanu.Wolne ? "jedz" : "straznik";
         }
 
         private static Kafelek Akcja(string id, string nazwa, string klawisz, string ikona, bool dostepny, bool wybrany)

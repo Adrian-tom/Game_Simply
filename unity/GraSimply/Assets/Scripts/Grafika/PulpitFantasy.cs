@@ -243,9 +243,11 @@ namespace GraSimply.Grafika
                     szer = Math.Max(szer, l.Length);
                 }
                 int px = Math.Max((W - (szer * Znak + 14)) / 2, prawaPlecaka + 6);   // obok plecaka, nie na nim
-                Przyciemnij(px, 70, szer * Znak + 14, panel.Count * Wiersz + 8, 215);
-                _natywne.Obramowanie(ZlotoC, px, 70, szer * Znak + 14, panel.Count * Wiersz + 8, 1);
-                int y = 74;
+                // Pod panelem są teraz kafelki planu, więc na ekranie z kafelkami panel idzie wyżej.
+                int py = kafelki != null && kafelki.Plan.Count > 0 ? 44 : 70;
+                Przyciemnij(px, py, szer * Znak + 14, panel.Count * Wiersz + 8, 215);
+                _natywne.Obramowanie(ZlotoC, px, py, szer * Znak + 14, panel.Count * Wiersz + 8, 1);
+                int y = py + 4;
                 for (int i = 0; i < panel.Count; i++)
                 {
                     bool wyroznij = i == 0 || panel[i].StartsWith(">", StringComparison.Ordinal);
@@ -259,7 +261,7 @@ namespace GraSimply.Grafika
                     if (osadnik)
                     {
                         _przyciski.Add(new Przycisk { X = px * K, Y = y * K, Szer = (szer * Znak + 14) * K, Wys = Wiersz * K,
-                                                      Klawisz = "o:" + (i - 1) });
+                                                      Klawisz = "o:" + (kafelki.PierwszyOsadnik + i - 1) });
                     }
                     y += Wiersz;
                 }
@@ -312,6 +314,16 @@ namespace GraSimply.Grafika
         {
             int y = H - 4 - 38;
             RzadKafelkow(k.Akcje, y, 38);
+            if (k.Decyzje.Count > 0)
+            {
+                y -= OdstepKafelkow + 26;
+                RzadKafelkow(k.Decyzje, y, 26);
+            }
+            if (k.Plan.Count > 0)
+            {
+                y -= OdstepKafelkow + 38;
+                RzadKafelkow(k.Plan, y, 38);
+            }
             if (k.Specjalne.Count > 0)
             {
                 y -= OdstepKafelkow + 38;

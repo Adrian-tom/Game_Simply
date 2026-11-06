@@ -274,6 +274,16 @@ namespace GraSimply.Logika
         //  Zatrudnianie, chaty, flagi                                         //
         // ------------------------------------------------------------------ //
 
+        /// <summary>Kandydat z gotowymi umiejętnościami, jeszcze nie w osadzie (przybysze w trybie przetrwania).</summary>
+        public static Osadnik NowyKandydat(Losowanie rng, ICollection<string> zajete)
+        {
+            List<string> pula = Imiona.Where(n => !zajete.Contains(n)).ToList();
+            string imie = rng.Wybierz(pula.Count > 0 ? pula : Imiona.ToList());
+            Osadnik o = Zapewnij(new Osadnik { Imie = imie, Zajecie = "bezczynny", Morale = 60.0 }, rng);
+            Kompetencje.OpisKrotki(o, 1);
+            return o;
+        }
+
         public static string ZatrudnijOsadnika(Gracz gracz, Losowanie rng, string zajecie = "drwal", bool darmo = false)
         {
             if (WolneChaty(gracz) <= 0)

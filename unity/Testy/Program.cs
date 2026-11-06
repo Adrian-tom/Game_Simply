@@ -55,6 +55,7 @@ namespace GraSimply.Testy
             TestyGrafiki3D.Uruchom();
             TestyWalkiWolnej.Uruchom();
             TestyObronyZapisu.Uruchom();
+            TestyLudziWolnych.Uruchom();
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
             TestyInterfejsu.Uruchom();

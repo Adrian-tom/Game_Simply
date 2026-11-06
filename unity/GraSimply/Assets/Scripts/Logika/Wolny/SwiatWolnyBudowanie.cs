@@ -101,6 +101,7 @@ namespace GraSimply.Logika.Wolny
             {
                 TrybBudowy = false;
                 PanelOtwarty = false;
+                GoscOtwarty = false;
                 return true;
             }
             return false;
@@ -123,6 +124,11 @@ namespace GraSimply.Logika.Wolny
                 }
             }
             string wartosc = id.Length > 2 ? id.Substring(2) : "";
+            if (id.StartsWith("g:") || id.StartsWith("h:") || id.StartsWith("x:"))
+            {
+                KliknijLudzie(id);
+                return;
+            }
             if (id.StartsWith("b:"))
             {
                 WybranaBudowla = WybranaBudowla == wartosc ? null : wartosc;
@@ -150,6 +156,7 @@ namespace GraSimply.Logika.Wolny
             }
             else if (id == "a:osada")
             {
+                GoscOtwarty = false;
                 PanelOtwarty = !PanelOtwarty;
                 TrybBudowy = false;
                 WybranaBudowla = null;
@@ -176,8 +183,13 @@ namespace GraSimply.Logika.Wolny
                 return;
             }
             Osadnik o = ludzie[Wybrany];
+            bool bylStraznik = o.Zajecie == "straznik";
             Pisz(Osada.UstawZajecie(Obozowisko, o, zajecie));
             PostacOsadnika p = Postacie.FirstOrDefault(q => q.O == o);
+            if (p != null && bylStraznik != (o.Zajecie == "straznik"))
+            {
+                p.Plan = DomyslnyPlan(o.Zajecie);
+            }
             if (p != null && SrodekObozu().HasValue)
             {
                 NowyCel(p, SrodekObozu().Value, false);

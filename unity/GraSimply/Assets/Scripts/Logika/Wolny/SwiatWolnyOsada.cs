@@ -20,6 +20,21 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Tyle ciosów szkieletów wytrzyma osadnik, zanim zginie.</summary>
         public double Zycie = 45.0;
 
+        /// <summary>Plan doby: rano, dzień, wieczór, noc.</summary>
+        public BlokPlanu[] Plan = SwiatWolny.DomyslnyPlan("");
+
+        public double Zmeczenie;
+        public int DniWOsadzie;
+
+        /// <summary>Ukryta wada przybysza; gracz jej nie widzi.</summary>
+        public string Sekret;
+
+        /// <summary>Ślad po sabotażu wskazał tę osobę, co nie znaczy, że słusznie.</summary>
+        public bool Podejrzany;
+
+        /// <summary>Ostatnia widziana część doby: jej zmiana wysyła osadnika gdzie indziej.</summary>
+        public int NumerBloku = -1;
+
         /// <summary>Strażnik: ma zbroję i właśnie idzie na wroga albo z nim walczy.</summary>
         public bool Uzbrojony;
         public bool WWalce;
@@ -162,12 +177,24 @@ namespace GraSimply.Logika.Wolny
                 return;
             }
             Obozowisko.Czas = Dzien - 1;
+            List<(Osadnik O, string Zajecie)> zdjeci = WalkaWlaczona ? WylaczNieobecnych() : null;
             (List<string> kronika, List<string> pilne) = Osada.DzienOsady(Obozowisko, _rng);
+            if (zdjeci != null)
+            {
+                foreach ((Osadnik o, string zajecie) in zdjeci)
+                {
+                    o.Zajecie = zajecie;
+                }
+            }
             foreach (string w in pilne.Concat(kronika))
             {
                 Pisz(w);
             }
-            if (Osada.WolneChaty(Obozowisko) > 0 && (!_bylPrzybysz || _rng.Losowa() < SzansaPrzybysza))
+            if (WalkaWlaczona)
+            {
+                DobaLudzi();
+            }
+            else if (Osada.WolneChaty(Obozowisko) > 0 && (!_bylPrzybysz || _rng.Losowa() < SzansaPrzybysza))
             {
                 _bylPrzybysz = true;
                 Osada.ZatrudnijOsadnika(Obozowisko, _rng, "bezczynny", true);
@@ -292,7 +319,8 @@ namespace GraSimply.Logika.Wolny
                 (p.CelX, p.CelY) = WolnyPunktObok(dom.X, dom.Y);
                 return;
             }
-            Obiekt praca = p.O.Chory > 0 ? Obiekt.Brak : ObiektPracy(p.O.Zajecie);
+            bool przyPracy = !WalkaWlaczona || BlokTeraz(p) == BlokPlanu.Praca;
+            Obiekt praca = p.O.Chory > 0 || !przyPracy ? Obiekt.Brak : ObiektPracy(p.O.Zajecie);
             if (praca != Obiekt.Brak)
             {
                 // Kilka prób w okolicy obozu: osadnik staje obok drzewa albo skały właściwej dla zawodu.
@@ -326,16 +354,21 @@ namespace GraSimply.Logika.Wolny
                 {
                     continue;
                 }
-                if (zmiana)
+                // W pełnych zasadach sen wyznacza plan osadnika, a nie sama pora doby.
+                bool spi = WalkaWlaczona ? BlokTeraz(p) == BlokPlanu.Odpoczynek : noc;
+                int blok = NumerBloku(Godzina);
+                bool nowyBlok = WalkaWlaczona && p.NumerBloku != blok;
+                p.NumerBloku = blok;
+                if (WalkaWlaczona ? nowyBlok : zmiana)
                 {
-                    NowyCel(p, srodek.Value, noc);
+                    NowyCel(p, srodek.Value, spi);
                 }
                 if (p.Trasa.Count == 0)
                 {
                     p.Idzie = false;
-                    p.Spi = noc;
+                    p.Spi = spi;
                     p.Postoj += dt;
-                    if (!noc && p.Postoj > 6.0)
+                    if (!spi && p.Postoj > 6.0)
                     {
                         NowyCel(p, srodek.Value, false);
                     }
@@ -359,7 +392,7 @@ namespace GraSimply.Logika.Wolny
                 }
                 else if (Zajety((int)Math.Floor(tx), (int)Math.Floor(ty)))
                 {
-                    NowyCel(p, srodek.Value, noc);     // gracz postawił tu budowlę: nowa trasa
+                    NowyCel(p, srodek.Value, spi);     // gracz postawił tu budowlę: nowa trasa
                 }
             }
         }

@@ -500,6 +500,16 @@ namespace GraSimply.Logika.Wolny
                 Wloczega();
             }
             Wrogowie.RemoveAll(g => !g.Nocny && Dystans(g.X, g.Y, X, Y) > 40.0);
+            if (Gosc != null && Godzina >= 20.0)
+            {
+                Pisz($"{Gosc.O.Imie} nie doczekał się decyzji i odchodzi.");
+                Gosc = null;
+                if (GoscOtwarty)
+                {
+                    GoscOtwarty = false;
+                    PanelOtwarty = false;
+                }
+            }
         }
 
         /// <summary>Budżet fali rośnie z każdą dobą, a silniejsze typy dochodzą z czasem.</summary>
@@ -590,6 +600,7 @@ namespace GraSimply.Logika.Wolny
             Pociski.Clear();
             ZycieBudowli.Clear();
             PotrzebnyZapis = true;
+            NowyPrzybysz();
             foreach (PostacOsadnika p in Postacie)
             {
                 p.Zycie = p.Uzbrojony ? ZycieStraznika : ZycieOsadnika;

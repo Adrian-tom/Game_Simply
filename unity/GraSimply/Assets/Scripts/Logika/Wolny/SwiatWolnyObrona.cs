@@ -110,23 +110,27 @@ namespace GraSimply.Logika.Wolny
 
         private void KrokStraznika(PostacOsadnika p, double dt)
         {
-            if (p.O.Zajecie != "straznik")
+            bool straznik = p.O.Zajecie == "straznik";
+            BlokPlanu blok = BlokTeraz(p);
+            bool czuwa = blok == BlokPlanu.Straz || (straznik && blok == BlokPlanu.Praca);
+            if (!straznik && p.Uzbrojony)
+            {
+                p.Uzbrojony = false;
+                p.Zycie = Math.Min(p.Zycie, ZycieOsadnika);
+            }
+            if (!straznik && !czuwa)
             {
                 p.WWalce = false;
-                if (p.Uzbrojony)
-                {
-                    p.Uzbrojony = false;
-                    p.Zycie = Math.Min(p.Zycie, ZycieOsadnika);
-                }
                 return;
             }
-            if (!p.Uzbrojony)
+            if (straznik && !p.Uzbrojony)
             {
                 p.Uzbrojony = true;
                 p.Zycie = Math.Max(p.Zycie, ZycieStraznika);
             }
             p.AtakCd = Math.Max(0, p.AtakCd - dt);
-            Wrog g = NajblizszyWrog(p.X, p.Y, ZasiegStrazy);
+            // Śpiący strażnik zrywa się dopiero, gdy wróg jest tuż obok: nocna warta to wybór w planie.
+            Wrog g = NajblizszyWrog(p.X, p.Y, czuwa ? ZasiegStrazy : 2.5);
             if (g == null || p.O.Chory > 0)
             {
                 p.WWalce = false;
@@ -145,7 +149,7 @@ namespace GraSimply.Logika.Wolny
                 {
                     p.AtakCd = 1.1;
                     p.Ataki++;
-                    ZadajWrogowi(g, 13, false);
+                    ZadajWrogowi(g, straznik ? 13 : 7, false);
                 }
                 return;
             }

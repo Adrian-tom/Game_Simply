@@ -138,6 +138,7 @@ namespace GraSimply.Edytor
             GraSimply.Logika.Osada.ZatrudnijOsadnika(o.Obozowisko, new Losowanie(5), "straznik", true);
             o.Postacie.Add(new PostacOsadnika { O = o.Obozowisko.Osadnicy[0], X = 2.5, Y = 2.5, CelX = 2.5, CelY = 2.5 });
             o.Obozowisko.Osadnicy[0].Zajecie = "straznik";
+            o.Postacie[0].Plan = SwiatWolny.DomyslnyPlan("straznik");
             for (int i = 0; i < 120; i++)
             {
                 o.Hp = 100;
@@ -146,6 +147,33 @@ namespace GraSimply.Edytor
             KlatkaWolna(g, pulpit, cel, o, "obrona-noc");
             o.Godzina = 12.0;
             KlatkaWolna(g, pulpit, cel, o, "obrona-dzien");
+
+            var ludzie = new SwiatWolny(42) { WalkaWlaczona = true, Godzina = 9.0, ObozZalozony = true };
+            ludzie.Budowle[(0, 3)] = "ognisko";
+            ludzie.Budowle[(2, 3)] = "namiot";
+            ludzie.Budowle[(-2, 3)] = "chata";
+            ludzie.Obozowisko.Chaty = 5;
+            var los = new Losowanie(11);
+            for (int i = 0; i < 3; i++)
+            {
+                GraSimply.Logika.Osada.ZatrudnijOsadnika(ludzie.Obozowisko, los, "drwal", true);
+                ludzie.Postacie.Add(new PostacOsadnika { O = ludzie.Obozowisko.Osadnicy[i], X = -1.5 + i, Y = 1.5 + i, CelX = -1.5 + i, CelY = 1.5 + i });
+            }
+            ludzie.PanelOtwarty = true;
+            ludzie.Aktualizuj(0.02, default);
+            KlatkaWolna(g, pulpit, cel, ludzie, "panel-harmonogram");
+            ludzie.PanelOtwarty = false;
+            ludzie.Godzina = 5.2;
+            for (int i = 0; i < 40 && ludzie.Gosc == null; i++)
+            {
+                ludzie.Godzina = 22.0;
+                ludzie.Aktualizuj(0.02, default);
+                ludzie.Wrogowie.Clear();
+                ludzie.Godzina = 5.2;
+                ludzie.Aktualizuj(0.02, default);
+            }
+            ludzie.Aktualizuj(0.02, new Wejscie { Klik = "g:otworz" });
+            KlatkaWolna(g, pulpit, cel, ludzie, "karta-przybysza");
 
             var w = new SwiatWolny(42);
             (w.X, w.Y) = BrzegWody(w);

@@ -465,6 +465,7 @@ namespace GraSimply.Gra
             if (Input.GetKeyDown(KeyCode.Tab)) { klik = "a:osada"; }
             if (Input.GetKeyDown(KeyCode.F)) { klik = "a:jedz"; }
             if (Input.GetKeyDown(KeyCode.Z)) { klik = "a:spij"; }
+            if (Input.GetKeyDown(KeyCode.G)) { klik = "g:otworz"; }
             if (Input.GetKeyDown(KeyCode.Q)) { klik = "s:wir"; }
             if (Input.GetKeyDown(KeyCode.C)) { klik = "s:szarza"; }
             if (Input.GetKeyDown(KeyCode.V)) { klik = "s:okrzyk"; }

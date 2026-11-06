@@ -74,7 +74,7 @@ namespace GraSimply.Logika.Wolny
     public sealed partial class SwiatWolny
     {
         private const string Naglowek = "SimplyPrzetrwanie";
-        private const int WersjaZapisu = 1;
+        private const int WersjaZapisu = 2;
 
         /// <summary>Ustawiane o świcie: silnik gry zapisuje wtedy świat na dysk.</summary>
         public bool PotrzebnyZapis;
@@ -131,13 +131,23 @@ namespace GraSimply.Logika.Wolny
             foreach (Osadnik o in Obozowisko.Osadnicy)
             {
                 PostacOsadnika p = Postacie.FirstOrDefault(q => q.O == o);
-                W("osadnik", Bez(o.Imie), o.Zajecie, o.Morale, Bez(o.Cecha), o.Chory, p?.X ?? X, p?.Y ?? Y, p?.Zycie ?? ZycieOsadnika, p != null && p.Uzbrojony ? 1 : 0);
+                W("osadnik", Bez(o.Imie), o.Zajecie, o.Morale, Bez(o.Cecha), o.Chory, p?.X ?? X, p?.Y ?? Y, p?.Zycie ?? ZycieOsadnika, p != null && p.Uzbrojony ? 1 : 0,
+                  p == null ? "" : string.Join(",", p.Plan.Select(b => (int)b)), p?.Zmeczenie ?? 0.0, p?.Sekret ?? "", p?.DniWOsadzie ?? 0, p != null && p.Podejrzany ? 1 : 0);
                 if (o.Kompetencje != null)
                 {
                     foreach (KeyValuePair<string, Umiejetnosc> u in o.Kompetencje)
                     {
                         W("umiejetnosc", u.Key, u.Value.P, u.Value.Xp, u.Value.Pasja);
                     }
+                }
+            }
+            W("decyzje", _dobreDecyzje);
+            if (Gosc != null)
+            {
+                W("gosc", Bez(Gosc.O.Imie), Gosc.O.Morale, Bez(Gosc.O.Cecha), Gosc.X, Gosc.Y, Gosc.Surowiec, Gosc.Ile, Bez(Gosc.Wskazowka), Gosc.Sekret ?? "");
+                foreach (KeyValuePair<string, Umiejetnosc> u in Gosc.O.Kompetencje ?? new Dictionary<string, Umiejetnosc>())
+                {
+                    W("umiejetnosc", u.Key, u.Value.P, u.Value.Xp, u.Value.Pasja);
                 }
             }
             foreach (Wrog g in Wrogowie.Where(g => g.Stan != StanWroga.Martwy))
@@ -222,10 +232,31 @@ namespace GraSimply.Logika.Wolny
                     case "osadnik":
                         osadnik = new Osadnik { Imie = c[1], Zajecie = c[2], Morale = D(c[3]), Cecha = c[4], Chory = I(c[5]) };
                         s.Obozowisko.Osadnicy.Add(osadnik);
-                        s.Postacie.Add(new PostacOsadnika
+                        var postac = new PostacOsadnika
                         {
                             O = osadnik, X = D(c[6]), Y = D(c[7]), CelX = D(c[6]), CelY = D(c[7]), Zycie = D(c[8]), Uzbrojony = c[9] == "1",
-                        });
+                        };
+                        // Zapis ze starszej wersji nie ma planu ani sekretów: zostają wartości domyślne.
+                        if (c.Length > 14)
+                        {
+                            postac.Plan = c[10].Split(',').Select(b => (BlokPlanu)I(b)).ToArray();
+                            postac.Zmeczenie = D(c[11]);
+                            postac.Sekret = c[12].Length == 0 ? null : c[12];
+                            postac.DniWOsadzie = I(c[13]);
+                            postac.Podejrzany = c[14] == "1";
+                        }
+                        s.Postacie.Add(postac);
+                        break;
+                    case "decyzje":
+                        s._dobreDecyzje = I(c[1]);
+                        break;
+                    case "gosc":
+                        osadnik = new Osadnik { Imie = c[1], Zajecie = "bezczynny", Morale = D(c[2]), Cecha = c[3] };
+                        s.Gosc = new Przybysz
+                        {
+                            O = osadnik, X = D(c[4]), Y = D(c[5]), Surowiec = c[6], Ile = I(c[7]), Wskazowka = c[8],
+                            Sekret = c[9].Length == 0 ? null : c[9],
+                        };
                         break;
                     case "umiejetnosc":
                         osadnik.Kompetencje = osadnik.Kompetencje ?? new Dictionary<string, Umiejetnosc>();
