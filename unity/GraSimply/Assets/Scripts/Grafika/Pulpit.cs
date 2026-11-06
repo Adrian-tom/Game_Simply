@@ -79,6 +79,7 @@ namespace GraSimply.Grafika
         private Plotno _scena;
         private ScenaMapy _scenaMapy;
         private PulpitFantasy _fantasy;
+        private PulpitWolny _wolny;
         private static readonly List<Przycisk> BrakPrzyciskow = new List<Przycisk>();
 
         /// <summary>
@@ -136,27 +137,29 @@ namespace GraSimply.Grafika
         {
             _fantasy = _fantasy ?? new PulpitFantasy();
             scenaWolna.Rysuj(_fantasy.Natywne, swiat, t);
-            _fantasy.CelGracza = CelGracza;
-            return _fantasy.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, scenaWolna.Podpisy,
-                                      kafelki, mysz);
+            _fantasy.PowiekszScene(_plotno);
+            _wolny = _wolny ?? new PulpitWolny();
+            _wolny.CelGracza = CelGracza;
+            return _wolny.Zloz(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, scenaWolna.Podpisy, kafelki, mysz);
         }
 
-        /// <summary>Klatka otwartego świata z samym interfejsem: scenę pod spodem rysuje kamera 3D.</summary>
         /// <summary>Podpowiedź celu dla gracza na tę klatkę trybu przetrwania; null = bez plakietki.</summary>
         public string CelGracza;
 
+        /// <summary>Klatka otwartego świata z samym interfejsem: scenę pod spodem rysuje kamera 3D.</summary>
         public List<Napis> ZlozWolnyNaklad(StanHud hud, IReadOnlyList<string> plecak, IReadOnlyList<string> dziennik,
                                            string podpowiedz, IReadOnlyList<string> panel,
                                            IReadOnlyList<PodpisOsadnika> podpisy, Logika.Wolny.KafelkiWolne kafelki,
                                            (int X, int Y)? mysz, (int X, int Y, double Postep)? pasek,
                                            double? wytrzymalosc = null, IReadOnlyList<(int X, int Y, double Zycie)> paski = null)
         {
-            PulpitFantasy f = Nakladka();
-            f.PasekSwiata = pasek;
-            f.Wytrzymalosc = wytrzymalosc;
-            f.PaskiWrogow = paski;
-            f.CelGracza = CelGracza;
-            return f.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, podpisy, kafelki, mysz);
+            _plotno.Wypelnij(Barwa.Pusta);
+            _wolny = _wolny ?? new PulpitWolny();
+            _wolny.PasekSwiata = pasek;
+            _wolny.Wytrzymalosc = wytrzymalosc;
+            _wolny.PaskiWrogow = paski;
+            _wolny.CelGracza = CelGracza;
+            return _wolny.Zloz(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, podpisy, kafelki, mysz);
         }
 
         /// <summary>Klatka mapy, osady albo menu z samym interfejsem: scenę pod spodem rysuje kamera 3D.</summary>
@@ -184,7 +187,7 @@ namespace GraSimply.Grafika
         }
 
         /// <summary>Kafelki trybu „Zomboid fantasy” z ostatniej klatki — działają w każdym stylu pulpitu.</summary>
-        public List<Przycisk> PrzyciskiWolne => _fantasy != null ? _fantasy.Przyciski : BrakPrzyciskow;
+        public List<Przycisk> PrzyciskiWolne => _wolny != null ? _wolny.Przyciski : BrakPrzyciskow;
 
         /// <summary>
         /// Składa klatkę. Zwraca napisy do narysowania przez Unity w pikselach

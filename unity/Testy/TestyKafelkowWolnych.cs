@@ -20,6 +20,7 @@ namespace GraSimply.Testy
             Wycofywanie();
             PanelMysza();
             Rysowanie();
+            PanelBoczny();
         }
 
         private static void Klik(SwiatWolny s, string id)
@@ -197,6 +198,72 @@ namespace GraSimply.Testy
                                WidokWolny.Podpowiedz(s), WidokWolny.Panel(s), KafelkiWolne.Z(s), mysz);
         }
 
+        /// <summary>Żaden kafelek nie wychodzi poza ekran, nie wchodzi na kule ani na inny kafelek.</summary>
+        private static void SprawdzUklad(Pulpit pulpit)
+        {
+            List<Przycisk> kafelki = pulpit.PrzyciskiWolne.Where(b => b.Klawisz != PulpitWolny.TloPanelu).ToList();
+            foreach (Przycisk b in kafelki)
+            {
+                Harness.Sprawdz($"{b.Klawisz} mieści się na pulpicie i nie wchodzi na kule",
+                                b.X >= PulpitWolny.LewaPaska && b.X + b.Szer <= 1280 && b.Y >= 0 && b.Y + b.Wys <= 720);
+                Harness.Sprawdz($"{b.Klawisz} nie nachodzi na inny kafelek",
+                                !kafelki.Any(i => i != b && i.X < b.X + b.Szer && b.X < i.X + i.Szer
+                                                  && i.Y < b.Y + b.Wys && b.Y < i.Y + i.Wys));
+            }
+        }
+
+        private static void SprawdzPanel(Pulpit pulpit, List<Napis> napisy, string co)
+        {
+            Harness.Sprawdz($"{co}: wszystko poza paskiem leży w panelu, środek mapy jest wolny",
+                            pulpit.PrzyciskiWolne.Where(b => !b.Klawisz.StartsWith("a:") && !b.Klawisz.StartsWith("g:otworz")).All(b => b.X >= PulpitWolny.PanelX));
+            Harness.Sprawdz($"{co}: tekst nie wychodzi poza ekran",
+                            napisy.Where(n => n.Krój == "piksM").All(n => n.X + n.Tekst.Length * 11.5 <= 1282));
+        }
+
+        private static void PanelBoczny()
+        {
+            SwiatWolny s = Bogaty();
+            s.BudowaZEtapami = true;
+            var pulpit = new Pulpit();
+            var scena = new ScenaWolna();
+            Zloz(pulpit, scena, s);
+            Harness.Sprawdz("bez wyboru panelu nie ma", !pulpit.PrzyciskiWolne.Any(b => b.Klawisz == PulpitWolny.TloPanelu));
+
+            Klik(s, "a:buduj");
+            Klik(s, "k:rzemioslo");
+            List<Napis> napisy = Zloz(pulpit, scena, s);
+            Harness.Rowne("wszystkie przepisy są na liście", SwiatWolny.Przepisy.Length, pulpit.PrzyciskiWolne.Count(b => b.Klawisz.StartsWith("r:")));
+            SprawdzUklad(pulpit);
+            SprawdzPanel(pulpit, napisy, "rzemiosło");
+
+            Klik(s, "k:oboz");
+            napisy = Zloz(pulpit, scena, s);
+            foreach (KeyValuePair<string, int> m in SwiatWolny.KosztCalkowity("chata"))
+            {
+                Harness.Sprawdz($"chata pokazuje pełny koszt: {SwiatWolny.Nazwa(m.Key)}", napisy.Any(n => n.Tekst.StartsWith($"{m.Value} {SwiatWolny.Nazwa(m.Key)}")));
+            }
+
+            int godzina = (int)s.Godzina;
+            Klik(s, "-");
+            Harness.Sprawdz("klik w tło panelu nic nie robi", s.TrybBudowy && (int)s.Godzina == godzina);
+            Klik(s, "a:buduj");
+
+            s.WalkaWlaczona = true;
+            for (int i = 0; i < 8; i++)
+            {
+                var o = new Osadnik { Imie = "Maksymilian" + i, Zajecie = "rzemieslnik", Morale = 60.0 };
+                s.Obozowisko.Osadnicy.Add(o);
+                s.Postacie.Add(new PostacOsadnika { O = o });
+            }
+            Klik(s, "a:osada");
+            napisy = Zloz(pulpit, scena, s);
+            Harness.Rowne("panel osady pokazuje pięciu naraz", WidokWolny.WierszyOsadnikow, pulpit.PrzyciskiWolne.Count(b => b.Klawisz.StartsWith("o:")));
+            Harness.Rowne("zajęcia są klikalne", SwiatWolny.ZajeciaPanelu.Length, pulpit.PrzyciskiWolne.Count(b => b.Klawisz.StartsWith("z:")));
+            Harness.Rowne("plan doby jest klikalny", 4, pulpit.PrzyciskiWolne.Count(b => b.Klawisz.StartsWith("h:") && b.Klawisz != "h:wszyscy"));
+            SprawdzUklad(pulpit);
+            SprawdzPanel(pulpit, napisy, "osada");
+        }
+
         private static void Rysowanie()
         {
             SwiatWolny s = Bogaty();
@@ -204,20 +271,16 @@ namespace GraSimply.Testy
             var scena = new ScenaWolna();
             List<Napis> napisy = Zloz(pulpit, scena, s);
             Harness.Rowne("pięć przycisków paska", 5, pulpit.PrzyciskiWolne.Count);
-            Harness.Sprawdz("nazwy kafelków są narysowane", napisy.Any(n => n.Tekst == "Magazyn"));
+            Harness.Sprawdz("klawisze kafelków są narysowane", napisy.Any(n => n.Tekst == "[T]"));
+            Przycisk magazyn = pulpit.PrzyciskiWolne.Single(b => b.Klawisz == "a:magazyn");
+            napisy = Zloz(pulpit, scena, s, (magazyn.X + 4, magazyn.Y + 4));
+            Harness.Sprawdz("nazwę kafelka pokazuje podpowiedź pod kursorem", napisy.Any(n => n.Tekst.StartsWith("Magazyn")));
 
             Klik(s, "a:buduj");
             Zloz(pulpit, scena, s);
-            Harness.Rowne("w trybie pasek, zakładki i budowle", 5 + 4 + 4, pulpit.PrzyciskiWolne.Count);
+            Harness.Rowne("w trybie pasek, zakładki, budowle i tło panelu", 5 + 4 + 4 + 1, pulpit.PrzyciskiWolne.Count);
             Harness.Sprawdz("kafelek chaty ma swój identyfikator", pulpit.PrzyciskiWolne.Any(b => b.Klawisz == "b:chata"));
-            foreach (Przycisk b in pulpit.PrzyciskiWolne)
-            {
-                Harness.Sprawdz($"{b.Klawisz} mieści się na pulpicie i nie wchodzi na kule",
-                                b.X >= 192 * PulpitFantasy.K && b.X + b.Szer <= 1280 && b.Y >= 0 && b.Y + b.Wys <= 720);
-                Harness.Sprawdz($"{b.Klawisz} nie nachodzi na inny kafelek",
-                                !pulpit.PrzyciskiWolne.Any(i => i != b && i.X < b.X + b.Szer && b.X < i.X + i.Szer
-                                                                && i.Y < b.Y + b.Wys && b.Y < i.Y + i.Wys));
-            }
+            SprawdzUklad(pulpit);
 
             byte[] bezMyszy = (byte[])pulpit.Klatka.Dane.Clone();
             Przycisk pierwszy = pulpit.PrzyciskiWolne[1];      // [0] to wybrany „Buduj”: on jaśnieje cały czas

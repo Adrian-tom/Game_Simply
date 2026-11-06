@@ -464,7 +464,7 @@ namespace GraSimply.Testy
             z.Kategoria = "rzemioslo";
             z.TrybBudowy = true;
             z.Aktualizuj(0.01, new Wejscie { Klik = "r:deska" });
-            Harness.Sprawdz("kafelek pokazuje kolejkę", KafelkiWolne.Z(z).Budowle.First(b => b.Id == "r:deska").Opis.Any(o => o.Tekst.Contains("kolejka 1")));
+            Harness.Sprawdz("kafelek pokazuje kolejkę", KafelkiWolne.Z(z).Budowle.First(b => b.Id == "r:deska").Stan?.Tekst == "kolejka 1");
 
             SwiatWolny b = Swiat();
             (int x, int y) = Miejsce(b);

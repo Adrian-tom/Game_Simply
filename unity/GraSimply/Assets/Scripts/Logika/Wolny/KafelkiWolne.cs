@@ -13,6 +13,9 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Linie pod nazwą; Ok = false rysuje się na czerwono (np. brakujący składnik).</summary>
         public List<(string Tekst, bool Ok)> Opis = new List<(string Tekst, bool Ok)>();
 
+        /// <summary>Krótki stan na prawo od nazwy (np. „kolejka 2”); Ok = false rysuje się na czerwono.</summary>
+        public (string Tekst, bool Ok)? Stan;
+
         public bool Dostepny = true;
         public bool Wybrany;
     }
@@ -33,6 +36,9 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Zakładki trybu budowania.</summary>
         public List<Kafelek> Kategorie = new List<Kafelek>();
         public List<Kafelek> Decyzje = new List<Kafelek>();
+
+        /// <summary>Widoczni osadnicy jako wiersze panelu: kto, co robi i jak się czuje.</summary>
+        public List<Kafelek> Osadnicy = new List<Kafelek>();
 
         /// <summary>Numer osadnika w pierwszym wierszu panelu: długa lista przewija się z wyborem.</summary>
         public int PierwszyOsadnik;
@@ -99,6 +105,10 @@ namespace GraSimply.Logika.Wolny
             {
                 k.PierwszyOsadnik = WidokWolny.PierwszyWidoczny(s);
                 k.Osadnikow = System.Math.Min(WidokWolny.WierszyOsadnikow, s.Obozowisko.Osadnicy.Count - k.PierwszyOsadnik);
+                for (int i = 0; i < k.Osadnikow; i++)
+                {
+                    k.Osadnicy.Add(WierszOsadnika(s, k.PierwszyOsadnik + i));
+                }
                 if (s.WalkaWlaczona)
                 {
                     Osadnik wybrany = s.Obozowisko.Osadnicy[s.Wybrany];
@@ -118,6 +128,19 @@ namespace GraSimply.Logika.Wolny
                     k.Zajecia.Add(new Kafelek { Id = "z:" + z, Nazwa = Osada.Zajecie(z).Nazwa, Ikona = z, Wybrany = z == obecne });
                 }
             }
+            return k;
+        }
+
+        private static Kafelek WierszOsadnika(SwiatWolny s, int nr)
+        {
+            Osadnik o = s.Obozowisko.Osadnicy[nr];
+            string u = Kompetencje.ZUmiejetnosciZajecia(o.Zajecie);
+            string poziom = u == null ? "" : $" {Kompetencje.Poziom(o, u)}{new string('*', Kompetencje.Pasja(o, u))}";
+            PostacOsadnika p = s.WalkaWlaczona ? s.Postacie.Find(q => q.O == o) : null;
+            string stan = $"morale {Liczby.Format(o.Morale, 0)}" + (p == null ? "" : $", zmęczenie {Liczby.Format(p.Zmeczenie, 0)}{(p.Podejrzany ? ", ?" : "")}")
+                        + (o.Chory > 0 ? ", chory" : "");
+            var k = new Kafelek { Id = "o:" + nr, Nazwa = $"{o.Imie}: {Osada.Zajecie(o.Zajecie).Nazwa}{poziom}", Ikona = o.Zajecie, Wybrany = nr == s.Wybrany };
+            k.Opis.Add((stan, o.Chory <= 0));
             return k;
         }
 
@@ -148,16 +171,9 @@ namespace GraSimply.Logika.Wolny
             };
             KeyValuePair<string, int>[] koszt = s.BudowaZEtapami ? SwiatWolny.KosztCalkowity(klucz) : SwiatWolny.Koszty[klucz];
             k.Dostepny = koszt.All(p => s.Razem(p.Key) >= p.Value);
-            // Mieszczą się dwie linie: przy dłuższym koszcie druga mówi, ile składników jeszcze dochodzi.
-            for (int i = 0; i < koszt.Length && i < 2; i++)
+            foreach (KeyValuePair<string, int> p in koszt)
             {
-                KeyValuePair<string, int> p = koszt[i];
-                string linia = p.Key == "spiwor" ? "z plecaka" : $"{p.Value} {SwiatWolny.Nazwa(p.Key)}";
-                if (i == 1 && koszt.Length > 2)
-                {
-                    linia += $" +{koszt.Length - 2}";
-                }
-                k.Opis.Add((linia, s.Razem(p.Key) >= p.Value));
+                k.Opis.Add((p.Key == "spiwor" ? "z plecaka" : $"{p.Value} {SwiatWolny.Nazwa(p.Key)}", s.Razem(p.Key) >= p.Value));
             }
             return k;
         }
@@ -167,10 +183,12 @@ namespace GraSimply.Logika.Wolny
             bool stoi = s.StoiStacja(p.Stacja);
             bool ma = p.Narzedzie && s.Narzedzia.Contains(p.Id);
             var k = new Kafelek { Id = "r:" + p.Id, Nazwa = p.Nazwa, Ikona = p.Stacja, Dostepny = stoi && !ma };
-            KeyValuePair<string, int> m = p.Wejscie[0];
-            k.Opis.Add(($"{m.Value} {SwiatWolny.Nazwa(m.Key)}{(p.Wejscie.Length > 1 ? " +1" : "")}", p.Wejscie.All(w => s.Razem(w.Key) >= w.Value)));
+            foreach (KeyValuePair<string, int> m in p.Wejscie)
+            {
+                k.Opis.Add(($"{m.Value} {SwiatWolny.Nazwa(m.Key)}", s.Razem(m.Key) >= m.Value));
+            }
             int kolejka = s.WKolejce(p.Id);
-            k.Opis.Add((ma ? "masz" : !stoi ? "brak: " + SwiatWolny.NazwaBudowli(p.Stacja) : kolejka > 0 ? $"kolejka {kolejka}" : "kliknij", stoi || ma));
+            k.Stan = (ma ? "masz" : !stoi ? "brak: " + SwiatWolny.NazwaBudowli(p.Stacja) : kolejka > 0 ? $"kolejka {kolejka}" : "kliknij", stoi || ma);
             return k;
         }
     }

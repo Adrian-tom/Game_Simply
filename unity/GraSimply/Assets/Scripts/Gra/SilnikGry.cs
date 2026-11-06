@@ -77,6 +77,9 @@ namespace GraSimply.Gra
                  "natywnych 11 px kroju — tylko wielokrotności 11 trzymają siatkę pikseli.")]
         public int RozmiarPikselowy = 22;
 
+        /// <summary>Krój opisów w nakładce przetrwania.</summary>
+        public int RozmiarPikselowyMaly = 18;
+
         [Tooltip("Wyłącz, jeśli zamiast ikon widzisz puste prostokąty — " +
                  "tekst zostanie wtedy bez emoji, ale będzie czytelny. " +
                  "Styl mroczny i tak ich nie pokazuje.")]
@@ -672,13 +675,14 @@ namespace GraSimply.Gra
                 Napis n = napisy[i];
                 bool duzy = n.Krój == "duzy";
                 bool maly = n.Krój == "maly";
-                bool piks = n.Krój == "piks";
+                bool piksMaly = n.Krój == "piksM";
+                bool piks = n.Krój == "piks" || piksMaly;
                 t.font = duzy ? _krojDuzy : maly ? _krojMaly : _krojHud;
-                t.fontSize = piks ? RozmiarPikselowy : duzy ? RozmiarDuzy : maly ? RozmiarMaly : RozmiarHud;
+                t.fontSize = piksMaly ? RozmiarPikselowyMaly : piks ? RozmiarPikselowy : duzy ? RozmiarDuzy : maly ? RozmiarMaly : RozmiarHud;
                 t.fontStyle = duzy ? FontStyle.Bold : FontStyle.Normal;
                 t.color = Barwa2Kolor(n.Kolor);
                 t.text = Przytnij(n.Tekst);
-                int wys = piks ? RozmiarPikselowy * 14 / 11 : duzy ? RozmiarDuzy + 8 : _wysokoscWiersza;
+                int wys = piksMaly ? RozmiarPikselowyMaly * 14 / 11 : piks ? RozmiarPikselowy * 14 / 11 : duzy ? RozmiarDuzy + 8 : _wysokoscWiersza;
                 Rozciagnij(t.rectTransform, n.X, n.Y, Pulpit.Szerokosc - n.X, wys);
             }
         }

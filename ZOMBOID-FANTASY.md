@@ -145,6 +145,13 @@ Odrzucone warianty (bot przeciętny, obóz po nocy 1 i po nocy 2): mocniejsze bu
 
 Ograniczenie: bot nie stawia zamkniętego pierścienia palisady ani wież, więc noce 2 i dalsze są zaniżone. Sprawny bot wypada w nocy 1 gorzej od przeciętnego (24/40 i 31/40 bez śmierci); przyczyny nie badałem, więc profile nadają się do porównywania wersji balansu, a nie poziomu gracza.
 
+## Faza 8: interfejs 1280×720 z panelem bocznym (zrobione)
+
+- **Rozdzielczość:** nakładka przetrwania (`PulpitWolny`) rysuje się wprost w 1280×720, a nie w 640×360 powiększanym dwa razy. Menu, obóz fabularny i mapa zostają na starej siatce.
+- **Dolny pasek:** niskie kafelki z ikoną i klawiszem. Nazwę pokazuje podpowiedź, gdy kursor stoi nad kafelkiem. Ciosy specjalne wchodzą nocą rząd wyżej.
+- **Panel boczny:** budowa, rzemiosło, osada i przybysz otwierają się po prawej stronie na całą wysokość ekranu. Bohater stoi na środku, więc mapa wokół niego zostaje widoczna. Koszty są pokazane w całości.
+- **Klawisze i identyfikatory kafelków** się nie zmieniły.
+
 ## Co dalej (jeszcze niezrobione)
 1. Kolejne budynki produkcyjne (pola, skryptorium z badaniami).
 2. Nagrody i rozwój za walkę.

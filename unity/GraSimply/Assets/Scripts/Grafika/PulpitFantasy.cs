@@ -92,15 +92,6 @@ namespace GraSimply.Grafika
         /// <summary>Skąd brać pozycję bohatera dla strzałek, gdy scenę rysuje nie styl, lecz kamera 3D.</summary>
         public IKadrPostaci Kadr;
 
-        /// <summary>Pasek postępu nad obiektem (piksele natywne, 0–1); rysowany raz, potem się czyści.</summary>
-        public (int X, int Y, double Postep)? PasekSwiata;
-
-        /// <summary>Wytrzymałość 0–1 pod imieniem bohatera; null, gdy tryb nie ma walki.</summary>
-        public double? Wytrzymalosc;
-
-        /// <summary>Paski życia nad wrogami (piksele natywne).</summary>
-        public IReadOnlyList<(int X, int Y, double Zycie)> PaskiWrogow;
-
         /// <summary>Płótno sceny w natywnej rozdzielczości — scena rysuje się wprost do niego.</summary>
         public Plotno Natywne => _natywne;
 
@@ -184,209 +175,6 @@ namespace GraSimply.Grafika
 
             Powieksz(_natywne, cel);
             return new List<Napis>(_napisy);
-        }
-
-        /// <summary>
-        /// Klatka trybu „Zomboid fantasy”: scena narysowana już do <see cref="Natywne"/>, a tu dochodzi
-        /// pasek stanu, plecak w lewym górnym rogu, dziennik zdarzeń i podpowiedź klawiszy na dole.
-        /// </summary>
-        public List<Napis> ZlozWolny(Plotno cel, StanHud hud, string klasa, IReadOnlyList<string> plecak,
-                                     IReadOnlyList<string> dziennik, string podpowiedz,
-                                     IReadOnlyList<string> panel = null,
-                                     IReadOnlyList<PodpisOsadnika> podpisy = null,
-                                     Logika.Wolny.KafelkiWolne kafelki = null, (int X, int Y)? mysz = null)
-        {
-            _napisy.Clear();
-            _przyciski.Clear();
-            _mysz = mysz.HasValue ? (mysz.Value.X / K, mysz.Value.Y / K) : ((int, int)?)null;
-            if (podpisy != null && panel == null)     // imiona nie mogą wchodzić na otwarty panel
-            {
-                foreach (PodpisOsadnika p in podpisy)
-                {
-                    TekstSrodek(p.Tekst, p.X, p.Y - Wiersz + 2, p.Kolor);
-                }
-            }
-            Naglowek(hud);
-            Postac(hud, klasa);
-
-            int znakow = 0;
-            foreach (string l in plecak)
-            {
-                znakow = Math.Max(znakow, l.Length);
-            }
-            int prawaPlecaka = 4 + znakow * Znak + 14;
-            if (plecak.Count > 0)
-            {
-                Przyciemnij(4, 42, znakow * Znak + 14, plecak.Count * Wiersz + 8, 170);
-                int y = 46;
-                foreach (string l in plecak)
-                {
-                    Tekst(l, 10, y, Styl.Aktywny.Tekst);
-                    y += Wiersz;
-                }
-            }
-
-            _dziennik.Clear();
-            foreach (string d in dziennik)
-            {
-                _dziennik.Add(Konsola.BezEmoji(d).Trim());
-            }
-            if (panel == null)
-            {
-                Dziennik(false);
-            }
-            else
-            {
-                int szer = 0;
-                foreach (string l in panel)
-                {
-                    szer = Math.Max(szer, l.Length);
-                }
-                int px = Math.Max((W - (szer * Znak + 14)) / 2, prawaPlecaka + 6);   // obok plecaka, nie na nim
-                // Pod panelem są teraz kafelki planu, więc na ekranie z kafelkami panel idzie wyżej.
-                int py = kafelki != null && kafelki.Plan.Count > 0 ? 44 : 70;
-                Przyciemnij(px, py, szer * Znak + 14, panel.Count * Wiersz + 8, 215);
-                _natywne.Obramowanie(ZlotoC, px, py, szer * Znak + 14, panel.Count * Wiersz + 8, 1);
-                int y = py + 4;
-                for (int i = 0; i < panel.Count; i++)
-                {
-                    bool wyroznij = i == 0 || panel[i].StartsWith(">", StringComparison.Ordinal);
-                    bool osadnik = kafelki != null && i >= 1 && i <= kafelki.Osadnikow;
-                    bool nad = osadnik && Nad(px, y, szer * Znak + 14, Wiersz);
-                    if (nad)
-                    {
-                        Przyciemnij(px + 1, y, szer * Znak + 12, Wiersz, 235, Hx(0x3C2410));
-                    }
-                    Tekst(panel[i], px + 7, y, wyroznij || nad ? Styl.Aktywny.Wyrozniony : Styl.Aktywny.Tekst);
-                    if (osadnik)
-                    {
-                        _przyciski.Add(new Przycisk { X = px * K, Y = y * K, Szer = (szer * Znak + 14) * K, Wys = Wiersz * K,
-                                                      Klawisz = "o:" + (kafelki.PierwszyOsadnik + i - 1) });
-                    }
-                    y += Wiersz;
-                }
-            }
-
-            if (PasekSwiata.HasValue)
-            {
-                (int bx, int by, double postep) = PasekSwiata.Value;
-                _natywne.Wypelnij(Cien, bx - 18, by - 1, 36, 7);
-                _natywne.Wypelnij(ZlotoJ, bx - 17, by, (int)(34 * Math.Max(0.0, Math.Min(1.0, postep))), 5);
-                PasekSwiata = null;
-            }
-            if (PaskiWrogow != null)
-            {
-                foreach ((int wx, int wy, double zycie) in PaskiWrogow)
-                {
-                    _natywne.Wypelnij(Cien, wx - 13, wy - 1, 26, 5);
-                    _natywne.Wypelnij(new Barwa(214, 48, 38), wx - 12, wy, (int)Math.Ceiling(24 * Math.Max(0.0, Math.Min(1.0, zycie))), 3);
-                }
-            }
-            if (Wytrzymalosc.HasValue)
-            {
-                const int px = 6, py = H - 86, szer = 180;
-                double w = Math.Max(0.0, Math.Min(1.0, Wytrzymalosc.Value));
-                _natywne.Wypelnij(Cien, px - 1, py - 1, szer + 2, 8);
-                _natywne.Wypelnij(w < 0.25 ? new Barwa(214, 96, 48) : new Barwa(116, 196, 84), px, py, (int)(szer * w), 6);
-            }
-            int gora = H;
-            if (kafelki != null)
-            {
-                gora = Kafelki(kafelki);
-            }
-            if (!string.IsNullOrEmpty(podpowiedz))
-            {
-                // Na prawo od kul życia i energii, które zajmują lewy dolny róg, nad kafelkami.
-                int szerPod = podpowiedz.Length * Znak + 10;
-                int dolnaPolowa = (LewaKafelkow + W) / 2;
-                Plakietka(podpowiedz, Math.Max(LewaKafelkow, dolnaPolowa - szerPod / 2), gora - 20,
-                          Styl.Aktywny.Wyrozniony, false);
-            }
-            if (!string.IsNullOrEmpty(CelGracza) && panel == null)
-            {
-                // Nad podpowiedzią: góra ekranu należy do plecaka i dziennika.
-                int szerCelu = CelGracza.Length * Znak + 10;
-                Plakietka(CelGracza, Math.Max(LewaKafelkow, (LewaKafelkow + W) / 2 - szerCelu / 2), gora - 38, Styl.Aktywny.Tekst, false);
-            }
-            Powieksz(_natywne, cel);
-            return new List<Napis>(_napisy);
-        }
-
-        /// <summary>Bieżący cel gracza: plakietka nad podpowiedzią; znika, gdy otwarty jest panel osady.</summary>
-        public string CelGracza;
-
-        private const int LewaKafelkow = 192;     // kule życia i energii kończą się przed tą kolumną
-        private const int OdstepKafelkow = 4;
-
-        /// <summary>Pasek akcji na dole, a nad nim rząd budowli albo zajęć. Zwraca górną krawędź całości.</summary>
-        private int Kafelki(Logika.Wolny.KafelkiWolne k)
-        {
-            int y = H - 4 - 38;
-            RzadKafelkow(k.Akcje, y, 38);
-            if (k.Decyzje.Count > 0)
-            {
-                y -= OdstepKafelkow + 26;
-                RzadKafelkow(k.Decyzje, y, 26);
-            }
-            if (k.Plan.Count > 0)
-            {
-                y -= OdstepKafelkow + 38;
-                RzadKafelkow(k.Plan, y, 38);
-            }
-            if (k.Specjalne.Count > 0)
-            {
-                y -= OdstepKafelkow + 38;
-                RzadKafelkow(k.Specjalne, y, 38);
-            }
-            if (k.Budowle.Count > 0)
-            {
-                // Po cztery w rzędzie, od dołu: przepisów jest więcej niż budowli w zakładce.
-                for (int od = (k.Budowle.Count - 1) / 4 * 4; od >= 0; od -= 4)
-                {
-                    y -= OdstepKafelkow + 50;
-                    RzadKafelkow(k.Budowle.GetRange(od, Math.Min(4, k.Budowle.Count - od)), y, 50);
-                }
-                y -= OdstepKafelkow + 24;
-                RzadKafelkow(k.Kategorie, y, 24);
-            }
-            if (k.Zajecia.Count > 0)
-            {
-                // Po trzy w rzędzie: nazwy zawodów są za długie na więcej kafelków obok siebie.
-                for (int od = (k.Zajecia.Count - 1) / 3 * 3; od >= 0; od -= 3)
-                {
-                    y -= OdstepKafelkow + 24;
-                    RzadKafelkow(k.Zajecia.GetRange(od, Math.Min(3, k.Zajecia.Count - od)), y, 24);
-                }
-            }
-            return y;
-        }
-
-        private void RzadKafelkow(List<Logika.Wolny.Kafelek> rzad, int y, int h)
-        {
-            int szer = (W - 4 - LewaKafelkow - OdstepKafelkow * (rzad.Count - 1)) / rzad.Count;
-            for (int i = 0; i < rzad.Count; i++)
-            {
-                Kafel(rzad[i], LewaKafelkow + i * (szer + OdstepKafelkow), y, szer, h);
-            }
-        }
-
-        /// <summary>Kafelek: ikona z lewej, nazwa i opis z prawej. Pod kursorem jaśnieje, wybrany ma grubą ramkę.</summary>
-        private void Kafel(Logika.Wolny.Kafelek k, int x, int y, int w, int h)
-        {
-            bool nad = Nad(x, y, w, h);
-            Przyciemnij(x, y, w, h, nad || k.Wybrany ? 240 : 205, k.Wybrany ? Hx(0x4A3210) : nad ? Hx(0x3C2410) : Hx(0x0A0604));
-            _natywne.Obramowanie(nad || k.Wybrany ? ZlotoJ : ZlotoC, x, y, w, h, k.Wybrany ? 2 : 1);
-            Wolny.IkonyWolne.Rysuj(_natywne, k.Ikona, x + 16, y + h / 2);
-            int tx = x + 31;
-            int ty = y + (h - (1 + k.Opis.Count) * Wiersz) / 2;
-            Barwa nazwa = !k.Dostepny ? Styl.Aktywny.Przygaszony : nad ? Hx(0xFFF4C0) : Styl.Aktywny.Tekst;
-            Tekst(k.Nazwa, tx, ty, nazwa);
-            foreach ((string tekst, bool ok) in k.Opis)
-            {
-                ty += Wiersz;
-                Tekst(tekst, tx, ty, ok ? Styl.Aktywny.Wyrozniony : new Barwa(232, 96, 80));
-            }
-            _przyciski.Add(new Przycisk { X = x * K, Y = y * K, Szer = w * K, Wys = h * K, Klawisz = k.Id });
         }
 
         private static int NajdluzszaLinia(List<string> linie)
@@ -1043,6 +831,12 @@ namespace GraSimply.Grafika
         private void TekstSrodek(string t, int cx, int y, Barwa kolor)
         {
             Tekst(t, cx - t.Length * Znak / 2, y, kolor);
+        }
+
+        /// <summary>Powiększa do pulpitu samą scenę, narysowaną do <see cref="Natywne"/>; interfejs dojdzie osobno.</summary>
+        public void PowiekszScene(Plotno cel)
+        {
+            Powieksz(_natywne, cel);
         }
 
         /// <summary>Powiększenie ×2 wprost do płótna pulpitu — bez nowego płótna co klatkę.</summary>
