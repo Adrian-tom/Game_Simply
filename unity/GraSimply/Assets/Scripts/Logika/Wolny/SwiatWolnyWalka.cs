@@ -73,6 +73,9 @@ namespace GraSimply.Logika.Wolny
         public double Riposta;
         public int Zabici;
 
+        /// <summary>Ile razy bohater padł w tej sesji: statystyka do symulacji balansu, nie trafia do zapisu.</summary>
+        public int Zgony;
+
         public readonly List<Wrog> Wrogowie = new List<Wrog>();
         public readonly List<Pocisk> Pociski = new List<Pocisk>();
         public readonly List<PorzuconyPlecak> Porzucone = new List<PorzuconyPlecak>();
@@ -450,6 +453,7 @@ namespace GraSimply.Logika.Wolny
         /// <summary>Pobudka w obozie (albo przy śpiworze, albo na polanie). Plecak zostaje na miejscu śmierci.</summary>
         private void Smierc()
         {
+            Zgony++;
             if (Plecak.Any(p => p.Value > 0))
             {
                 Porzucone.Add(new PorzuconyPlecak { X = X, Y = Y, Zawartosc = Plecak.Where(p => p.Value > 0).ToDictionary(p => p.Key, p => p.Value) });

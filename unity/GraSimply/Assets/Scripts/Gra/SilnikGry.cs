@@ -547,6 +547,7 @@ namespace GraSimply.Gra
             }
             if (_grafika3D != null)
             {
+                _pulpit.CelGracza = Logika.Wolny.CeleWolne.Aktualny(swiat)?.Etykieta;
                 _grafika3D.RysujWolny(swiat, _czas, Time.unscaledDeltaTime, _klasaWolnego);
                 List<Napis> nakladka = _pulpit.ZlozWolnyNaklad(Logika.Wolny.WidokWolny.Hud(swiat),
                                                                Logika.Wolny.WidokWolny.Plecak(swiat),
@@ -564,6 +565,7 @@ namespace GraSimply.Gra
                 UkryjKonsole();
                 return;
             }
+            _pulpit.CelGracza = Logika.Wolny.CeleWolne.Aktualny(swiat)?.Etykieta;
             _scenaWolna = _scenaWolna ?? new Grafika.Wolny.ScenaWolna();
             List<Napis> napisy = _pulpit.ZlozWolny(_scenaWolna, swiat, _czas,
                                                    Logika.Wolny.WidokWolny.Hud(swiat),

@@ -279,7 +279,8 @@ namespace GraSimply.Logika.Wolny
             {
                 zajety |= KrokStacji(stacja, bohater && najblizszy == null, dt);
             }
-            return zajety;
+            // Bez materiałów nie ma tu pracy: E zostaje dla drzewa czy skały obok, żeby dało się je zebrać.
+            return zajety && Brak == null;
         }
 
         private string BrakMaterialow(KeyValuePair<string, int>[] m)

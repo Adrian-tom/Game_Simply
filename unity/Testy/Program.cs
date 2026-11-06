@@ -39,6 +39,13 @@ namespace GraSimply.Testy
                 return PodgladWolny.Zapisz(argumenty[1]);
             }
 
+            if (argumenty.Length >= 1 && argumenty[0] == "--symulacja")
+            {
+                int swiatow = argumenty.Length >= 2 ? int.Parse(argumenty[1]) : 30;
+                int dni = argumenty.Length >= 3 ? int.Parse(argumenty[2]) : 4;
+                return SymulacjaWolna.Raport(swiatow, dni);
+            }
+
             string katalog = KatalogWzorcow(argumenty);
             Console.WriteLine($"Wzorce: {katalog}");
 
@@ -57,6 +64,7 @@ namespace GraSimply.Testy
             TestyObronyZapisu.Uruchom();
             TestyLudziWolnych.Uruchom();
             TestyRzemiosla.Uruchom();
+            TestyCelow.Uruchom();
             TestyKonsoli.Uruchom();
             TestyEksploracji.Uruchom();
             TestyInterfejsu.Uruchom();

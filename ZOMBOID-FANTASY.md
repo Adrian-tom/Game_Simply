@@ -123,7 +123,28 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 
 Świadome uproszczenia: nie ma noszenia materiałów, narzędzia się nie zużywają, działają tylko na bohatera, a osadnicy biorą materiały z każdej odległości.
 
+## Faza 7: cele dla gracza i symulacja balansu (zrobione)
+
+- **Cele:** plakietka pod paskiem surowców prowadzi przez 11 celów: ognisko, namiot, pierwsza noc, przybysz, palisada, tartak. Cel wynika ze stanu świata, więc nie trafia do zapisu, a po zniszczeniu namiotu gra sama wraca do celu „postaw namiot”. Głód, zmęczenie i porzucony plecak wchodzą przed kolejkę.
+- **Bot:** `unity/Testy/BotWolny.cs` gra wyłącznie przez `Wejscie` i słucha tych samych celów co gracz. Ma trzy profile: sprawny, przeciętny i początkujący.
+- **Raport:** `cd unity/Testy && dotnet run -- --symulacja 40 4` (światów, dni).
+
+Wyniki na 40 światach, 4 dni, 6.11.2026. To boty, a nie ludzie, więc liczby służą do porównywania wersji:
+
+| | Sprawny | Przeciętny | Początkujący |
+|---|---|---|---|
+| Namiot przed pierwszą nocą | 40/40 | 40/40 | 40/40 |
+| Namiot gotowy (mediana, noc o 280 s) | 133 s | 157 s | 213 s |
+| Noc 1 bez śmierci | 30/40 | 24/40 | 21/40 |
+| Obóz stoi po nocy 1 | 4/40 | 4/40 | 4/40 |
+| Obóz stoi po nocy 2 | 0/40 | 0/40 | 0/40 |
+
+**Główny wniosek:** zdążyć z namiotem jest łatwo, ale obóz pada w pierwszą noc około 00:30 bez względu na umiejętności. Fala 5 szkieletów na otwartym terenie kosztuje bota tylko około 7 życia, ale szkielety dalej niż 8 kafli od bohatera idą na budowle, a ognisko ma 40 życia. Bot nie stawia zamkniętego pierścienia palisady ani wież, więc noce 2 i dalsze są zaniżone.
+
+Próbne warianty (bez zmian w grze; obóz stoi po nocy 1 i po nocy 2, bot przeciętny): stan obecny 4 i 0, mocniejsze budynki 8 i 1, lżejsza noc 1 6 i 1, szkielety idą na bohatera do 16 kafli 27 i 23, dwa z tych wariantów razem (mocniejsze budynki i bohater) 32 i 29. Wybór wariantu czeka na decyzję.
+
 ## Co dalej (jeszcze niezrobione)
+0. Wybrać wariant balansu pierwszej nocy (patrz faza 7).
 1. Kolejne budynki produkcyjne (pola, skryptorium z badaniami).
 2. Nagrody i rozwój za walkę.
 3. Narzędzia (siekiera, kilof), kupcy, drogi.
@@ -133,3 +154,4 @@ Wybierasz go w menu głównym: **[2] Przetrwanie — świat w czasie rzeczywisty
 `SwiatWolny.Aktualizuj(dt, Wejscie)` to czysta logika bez Unity (testy: `unity/Testy/TestyWolnego.cs`), `ScenaWolna` rysuje
 stan, `SilnikGry` liczy klatkę na wątku głównym, a wątek logiki tylko czeka (`Gra.Przetrwanie_`).
 Podgląd klatek: `cd unity/Testy && dotnet run -- --wolny <katalog>`.
+Symulacja balansu: `cd unity/Testy && dotnet run -- --symulacja 40 4`.

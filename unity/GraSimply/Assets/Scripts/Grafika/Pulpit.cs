@@ -136,11 +136,15 @@ namespace GraSimply.Grafika
         {
             _fantasy = _fantasy ?? new PulpitFantasy();
             scenaWolna.Rysuj(_fantasy.Natywne, swiat, t);
+            _fantasy.CelGracza = CelGracza;
             return _fantasy.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, scenaWolna.Podpisy,
                                       kafelki, mysz);
         }
 
         /// <summary>Klatka otwartego świata z samym interfejsem: scenę pod spodem rysuje kamera 3D.</summary>
+        /// <summary>Podpowiedź celu dla gracza na tę klatkę trybu przetrwania; null = bez plakietki.</summary>
+        public string CelGracza;
+
         public List<Napis> ZlozWolnyNaklad(StanHud hud, IReadOnlyList<string> plecak, IReadOnlyList<string> dziennik,
                                            string podpowiedz, IReadOnlyList<string> panel,
                                            IReadOnlyList<PodpisOsadnika> podpisy, Logika.Wolny.KafelkiWolne kafelki,
@@ -151,6 +155,7 @@ namespace GraSimply.Grafika
             f.PasekSwiata = pasek;
             f.Wytrzymalosc = wytrzymalosc;
             f.PaskiWrogow = paski;
+            f.CelGracza = CelGracza;
             return f.ZlozWolny(_plotno, hud, "Wojownik", plecak, dziennik, podpowiedz, panel, podpisy, kafelki, mysz);
         }
 
