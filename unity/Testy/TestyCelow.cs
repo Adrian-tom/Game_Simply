@@ -18,6 +18,7 @@ namespace GraSimply.Testy
             Pilne();
             Plakietka();
             ZbieranieObokPlacu();
+            UwagaSzkieletow();
             Bot();
         }
 
@@ -193,6 +194,26 @@ namespace GraSimply.Testy
                 }
             }
             Harness.Sprawdz("znaleziono drzewo do testu", false);
+        }
+
+        /// <summary>Gdzie pójdzie nocny szkielet stojący przy ognisku, gdy bohater jest o tyle kafli od niego.</summary>
+        private static Wrog SzkieletPrzyOgnisku(double odleglosc)
+        {
+            SwiatWolny s = Swiat();
+            s.Godzina = 22.0;
+            s.Budowle[(0, 0)] = "ognisko";
+            var g = new Wrog { Typ = TypWroga.Slugus, X = 0.5, Y = 2.0, Hp = 28, MaxHp = 28, Nocny = true };
+            s.Wrogowie.Add(g);
+            s.X = 0.5 + odleglosc;
+            s.Y = 2.0;
+            s.Aktualizuj(0.05, new Wejscie());
+            return g;
+        }
+
+        private static void UwagaSzkieletow()
+        {
+            Harness.Sprawdz("bohater 12 kafli dalej: szkielet idzie na niego", SzkieletPrzyOgnisku(12.0).CelBudowla == null);
+            Harness.Sprawdz("bohater 20 kafli dalej: szkielet idzie na budowlę", SzkieletPrzyOgnisku(20.0).CelBudowla == (0, 0));
         }
 
         private static void Bot()

@@ -65,6 +65,9 @@ namespace GraSimply.Logika.Wolny
         public const int LimitWrogow = 14;
         public const int MaxAtakujacych = 2;
 
+        /// <summary>Z tylu kafli nocny szkielet woli bohatera od budowli: kto stoi przy obozie, ten go broni.</summary>
+        public const double ZasiegUwagi = 16.0;
+
         public bool WalkaWlaczona;
         public double Wytrzymalosc = MaxWytrzymalosc;
         public AkcjaBohatera Akcja;
@@ -693,7 +696,7 @@ namespace GraSimply.Logika.Wolny
             g.CelX = X;
             g.CelY = Y;
             // Bohater blisko albo brak obozu: idzie na bohatera. Inaczej na najbliższego śpiącego lub budowlę.
-            if (doBohatera < 8.0 || !g.Nocny || !SrodekObozu().HasValue)
+            if (doBohatera < ZasiegUwagi || !g.Nocny || !SrodekObozu().HasValue)
             {
                 return;
             }
